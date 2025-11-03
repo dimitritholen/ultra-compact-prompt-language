@@ -2,7 +2,7 @@
 
 ## The Token Problem Nobody's Talking About
 
-Every interaction with a large language model has a hidden cost: tokens. While we obsess over model capabilities and context windows, we often ignore the efficiency of our prompts themselves. A typical code review request might consume 67 tokens. A complex analysis task? Easily 143 tokens. What if we could cut that in half—or better—without sacrificing comprehension?
+Every interaction with a large language model has a hidden cost: tokens. While we obsess over model capabilities and context windows, we often ignore the efficiency of our prompts themselves. A typical code review request might consume 67 tokens. A complex analysis task? Easily 143 tokens. What if we could cut that in half-or better-without sacrificing comprehension?
 
 Enter UCPL: Ultra-Compact Prompt Language, a structured syntax designed to maximize semantic density while maintaining clarity.
 
@@ -290,7 +290,7 @@ This achieves 30-40% token savings while preserving semantic richness where it m
 
 **Current Constraints:**
 
-1. Models aren't trained on UCPL specifically—comprehension relies on in-context learning
+1. Models aren't trained on UCPL specifically - comprehension relies on in-context learning
 2. Learning curve for new users
 3. Not human-readable for non-practitioners
 4. Risk of semantic ambiguity with aggressive compression
@@ -352,11 +352,11 @@ Common patterns:
 
 ## Conclusion: A Tool, Not a Religion
 
-UCPL isn't about replacing natural language—it's about having options. When token efficiency matters, when you're repeating similar prompts, or when you're hitting context limits, UCPL offers a structured alternative.
+UCPL isn't about replacing natural language-it's about having options. When token efficiency matters, when you're repeating similar prompts, or when you're hitting context limits, UCPL offers a structured alternative.
 
 Start small: Use markdown headers and concise language (20% savings, zero risk). Experiment with basic UCPL on routine tasks. Build a personal macro library. Measure your token usage over time.
 
-The goal isn't maximum compression—it's optimal compression for your specific needs.
+The goal isn't maximum compression - it's optimal compression for your specific needs.
 
 ---
 
