@@ -33,10 +33,11 @@ The syntax uses single-character delimiters (each typically 1 token):
 : key-value separator
 | constraint separator
 > input/output marker
-! priority/warning
+! mandatory constraint 
 ? query/uncertainty
 + addition/inclusion
 - exclusion/removal
+^ priority focus
 ```
 
 ## From Natural Language to UCPL: Side-by-Side Examples
