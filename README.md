@@ -512,10 +512,31 @@ The goal isn't maximum compression—it's better prompts.
 
 ### Documentation
 
+- [QUICK_REFERENCE.md](./docs/QUICK-REFERENCE.md) - Quick reference card for UCPL syntax and tools
+- [CLI_TOOLS.md](./docs/CLI-TOOLS.md) - Command-line tools (ucpl-compress)
+- [CONTEXT_COMPRESSION.md](./docs/CONTEXT-COMPRESSION.md) - Context compression strategies
 - [TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) - Complete v1.1 tool invocation specification
 - [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) - YAML header format and options
 - [BOOTSTRAPPING.md](./docs/BOOTSTRAPPING.md) - Getting started with UCPL
 - [QUICK_START.md](./docs/QUICK_START.md) - Quick start guide
+
+### CLI Tools
+
+- **ucpl-compress** - Compress code context by 75-95% for LLM consumption
+  ```bash
+  # Install
+  chmod +x scripts/ucpl-compress
+
+  # Use (auto-detects language from extension)
+  ucpl-compress src/ --format summary
+  ucpl-compress app.js
+  ucpl-compress main.go
+  ucpl-compress README.md
+  ```
+
+  **Supported Languages**: Python, JavaScript, TypeScript, Go, Markdown
+
+  See [CLI_TOOLS.md](./docs/CLI-TOOLS.md) for full documentation.
 
 ### Editor Support
 

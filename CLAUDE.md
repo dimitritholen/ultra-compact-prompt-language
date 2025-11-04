@@ -97,6 +97,12 @@ JSON structure for efficient processing. **Preferred for API use.**
 
 - `@@capability:subcategory[params]` → Use available tool
 
+**Special Tools**:
+- `@@compress:context[path=file.py, level=full]` → Compress code context semantically
+  - Available via: `ucpl-compress` CLI tool
+  - Levels: full (default), signatures, minimal
+  - Use this to reduce context tokens by 70-90%
+
 ## Execution Mode
 
 **IMPORTANT**: Unless explicitly asked to "explain" or "parse", **execute the workflow immediately**:
