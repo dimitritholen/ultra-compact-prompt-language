@@ -2,6 +2,8 @@
 
 *A New Approach to Token-Efficient LLM Communication*
 
+
+
 ## First glance comparison
 
 These two prompts do exactly the same thing.
@@ -466,10 +468,14 @@ The goal isn't maximum compression - it's optimal compression for your specific 
 
 ## Additional Resources
 
+### Documentation
 - [TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) - Complete v1.1 tool invocation specification
 - [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) - YAML header format and options
 - [BOOTSTRAPPING.md](./docs/BOOTSTRAPPING.md) - Getting started with UCPL
 - [QUICK_START.md](./docs/QUICK_START.md) - Quick start guide
+
+### Editor Support
+- [VS Code Extension](./vscode-extension/) - Official UCPL language extension with syntax highlighting, IntelliSense, and snippets
 
 ---
 
