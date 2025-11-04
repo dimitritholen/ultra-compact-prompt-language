@@ -534,9 +534,34 @@ The goal isn't maximum compression—it's better prompts.
   ucpl-compress README.md
   ```
 
-  **Supported Languages**: Python, JavaScript, TypeScript, Go, Markdown
+  **Supported Languages**: Python, JavaScript, TypeScript, Java, Go, C#, PHP, Rust, Ruby, C++, PowerShell, Bash/Shell, JSON, YAML, Markdown, Plain Text
 
   See [CLI_TOOLS.md](./docs/CLI-TOOLS.md) for full documentation.
+
+### MCP Server (Model Context Protocol)
+
+- **ucpl-compress-mcp** - Universal MCP server for automatic context compression
+  ```bash
+  # Install
+  chmod +x mcp-server/server.js
+  chmod +x scripts/ucpl-compress
+
+  # Configure for Claude Desktop (add to ~/.config/claude/claude_desktop_config.json)
+  {
+    "mcpServers": {
+      "ucpl-compress": {
+        "command": "node",
+        "args": ["/absolute/path/to/ultra-compact-prompt-language/mcp-server/server.js"]
+      }
+    }
+  }
+  ```
+
+  **Workflow**: Ask Claude about code → Claude automatically compresses context → 70-98% fewer tokens → Faster, cheaper responses
+
+  **Compatible with**: Claude Desktop, Claude Code, Codex, Gemini (any MCP-compatible client)
+
+  See [mcp-server/README.md](./mcp-server/README.md) for full setup guide and troubleshooting.
 
 ### Editor Support
 
