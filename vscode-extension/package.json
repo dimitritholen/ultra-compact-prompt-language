@@ -1,0 +1,76 @@
+{
+  "name": "ucpl-language",
+  "displayName": "UCPL - Ultra-Compact Prompt Language",
+  "description": "Language support for UCPL with syntax highlighting, IntelliSense, and snippets",
+  "version": "0.1.1",
+  "publisher": "dimitritholen",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dimitritholen/ultra-compact-prompt-language"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "ucpl",
+    "prompt",
+    "language",
+    "llm",
+    "ai",
+    "prompt-engineering"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "ucpl",
+        "aliases": [
+          "UCPL",
+          "Ultra-Compact Prompt Language"
+        ],
+        "extensions": [
+          ".ucpl"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/ucpl-icon.png",
+          "dark": "./icons/ucpl-icon.png"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ucpl",
+        "scopeName": "source.ucpl",
+        "path": "./syntaxes/ucpl.tmGrammar.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "ucpl",
+        "path": "./snippets/ucpl.code-snippets.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.74.0",
+    "@vscode/test-cli": "^0.0.4",
+    "@vscode/test-electron": "^2.3.8",
+    "typescript": "^5.3.0"
+  }
+}

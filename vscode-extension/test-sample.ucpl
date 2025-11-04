@@ -1,0 +1,56 @@
+---
+format: ucpl
+version: 1.1
+parser: ucpl-standard
+description: Test file for UCPL extension
+tags: [test, example]
+---
+
+@role:dev
+@task:implement|test|verify
+@scope:extension_testing
+
+# Test macro definition
+@def validation:
+  @task:check|syntax|types
+  !fail_fast
+  @out:error_report
+
+# Main workflow
+@workflow:
+  @chain:
+    1.@@read:files[pattern="*.ts"]
+    2.@@execute:shell[cmd="npm run compile"]
+    3.@use validation > $results
+    4.@if $results.errors>0:
+        @task:fix_errors
+    5.@task:generate_report
+
+# Tool invocations test
+@@search:web[query="VS Code extension", recent=true]
+@@think:deep[steps=10, approach=systematic]
+@@memory:save[key=test_result, value=$output, category=note]
+
+# Constraints
+!preserve_functionality
+!add_comprehensive_tests
+?optimize_performance
+~break_existing_features
+
+# Variables
+$test_variable
+$another_var
+
+# Operators test
+^priority_task
+task_one & task_two
+option_a || option_b
+result > output
+
+# Output specification
+@out:code+tests+documentation
+@out:format=markdown
+
+# Input
+>
+>./src/**/*.ts

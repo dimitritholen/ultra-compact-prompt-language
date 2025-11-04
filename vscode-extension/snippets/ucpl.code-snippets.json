@@ -1,0 +1,220 @@
+{
+  "UCPL YAML Header": {
+    "prefix": "ucpl-header",
+    "body": [
+      "---",
+      "format: ucpl",
+      "version: 1.1",
+      "parser: ucpl-standard",
+      "description: ${1:Task description}",
+      "tags: [${2:tag1, tag2}]",
+      "---",
+      "",
+      "$0"
+    ],
+    "description": "YAML frontmatter header for UCPL files"
+  },
+  "UCPL Basic Task": {
+    "prefix": "ucpl-task",
+    "body": [
+      "@role:${1|dev,audit,teach,edit,analyze,debug,design,translate|}",
+      "@task:${2:task_name}|${3:modifier}",
+      "@out:${4|code,bullets,table,json,yaml,steps,diagram,prose|}",
+      "${5:!constraint}",
+      ">$0"
+    ],
+    "description": "Basic UCPL task structure"
+  },
+  "UCPL Workflow": {
+    "prefix": "ucpl-workflow",
+    "body": [
+      "@workflow:",
+      "  @chain:",
+      "    1.@task:${1:first_step} > \\$${2:variable1}",
+      "    2.@task:${3:second_step} > \\$${4:variable2}",
+      "    3.@task:${5:third_step}",
+      "@out:${6:output_format}",
+      ">$0"
+    ],
+    "description": "UCPL workflow with chained tasks"
+  },
+  "UCPL Conditional": {
+    "prefix": "ucpl-if",
+    "body": [
+      "@if ${1:condition}:",
+      "  @task:${2:action}",
+      "@elif ${3:other_condition}:",
+      "  @task:${4:other_action}",
+      "@else:",
+      "  @task:${5:default_action}",
+      "$0"
+    ],
+    "description": "UCPL conditional with if/elif/else"
+  },
+  "UCPL Loop": {
+    "prefix": "ucpl-loop",
+    "body": [
+      "@loop: @until ${1:condition}",
+      "  @task:${2:repeated_action}",
+      "  @if ${3:exit_condition}:",
+      "    @break",
+      "$0"
+    ],
+    "description": "UCPL loop with until condition"
+  },
+  "UCPL Macro Definition": {
+    "prefix": "ucpl-def",
+    "body": [
+      "@def ${1:macro_name}:",
+      "  @task:${2:subtask1}",
+      "  @task:${3:subtask2}",
+      "  @out:${4:output_format}",
+      "$0"
+    ],
+    "description": "Define a reusable UCPL macro"
+  },
+  "UCPL Macro Usage": {
+    "prefix": "ucpl-use",
+    "body": [
+      "@use ${1:macro_name} > \\$${2:result_variable}",
+      "$0"
+    ],
+    "description": "Execute a defined UCPL macro"
+  },
+  "UCPL Tool: Web Search": {
+    "prefix": "tool-search-web",
+    "body": [
+      "@@search:web[query=\"${1:search query}\", recent=${2|true,false|}, sources=${3|academic+official,all|}]",
+      "$0"
+    ],
+    "description": "Web search tool invocation"
+  },
+  "UCPL Tool: Deep Reasoning": {
+    "prefix": "tool-think",
+    "body": [
+      "@@think:deep[steps=${1:10}, approach=${2|systematic,critical,creative|}]",
+      "$0"
+    ],
+    "description": "Deep reasoning tool invocation"
+  },
+  "UCPL Tool: Read Files": {
+    "prefix": "tool-read",
+    "body": [
+      "@@read:files[pattern=\"${1:*.py}\", encoding=${2|utf-8,ascii|}]",
+      "$0"
+    ],
+    "description": "Read files tool invocation"
+  },
+  "UCPL Tool: Execute Shell": {
+    "prefix": "tool-execute",
+    "body": [
+      "@@execute:shell[cmd=\"${1:command}\", timeout=${2:30000}]",
+      "$0"
+    ],
+    "description": "Execute shell command tool invocation"
+  },
+  "UCPL Tool: Memory Save": {
+    "prefix": "tool-memory-save",
+    "body": [
+      "@@memory:save[key=${1:key_name}, value=\\$${2:variable}, category=${3|task,decision,progress,note|}]",
+      "$0"
+    ],
+    "description": "Save to memory tool invocation"
+  },
+  "UCPL Tool: Memory Load": {
+    "prefix": "tool-memory-load",
+    "body": [
+      "@@memory:load[key=${1:key_name}, default=\"${2:default_value}\"]",
+      "$0"
+    ],
+    "description": "Load from memory tool invocation"
+  },
+  "UCPL Constraints Block": {
+    "prefix": "ucpl-constraints",
+    "body": [
+      "# Constraints",
+      "!${1:mandatory_constraint}",
+      "?${2:optional_feature}",
+      "~${3:avoid_this}",
+      "$0"
+    ],
+    "description": "UCPL constraints block with mandatory, optional, and avoid markers"
+  },
+  "UCPL Complete Template": {
+    "prefix": "ucpl-template",
+    "body": [
+      "---",
+      "format: ucpl",
+      "version: 1.1",
+      "parser: ucpl-standard",
+      "description: ${1:Task description}",
+      "tags: [${2:workflow}]",
+      "---",
+      "",
+      "@role:${3|dev,audit,teach,edit,analyze,debug,design,translate|}",
+      "@task:${4:task_name}|${5:modifier}",
+      "@scope:${6:scope}",
+      "",
+      "# Macros",
+      "",
+      "@def ${7:helper_macro}:",
+      "  @task:${8:subtask}",
+      "  @out:${9:format}",
+      "",
+      "# Main workflow",
+      "",
+      "@workflow:",
+      "  @chain:",
+      "    1.@task:${10:step_one}",
+      "    2.@use ${7:helper_macro} > \\$${11:result}",
+      "    3.@task:${12:final_step}",
+      "",
+      "# Constraints",
+      "",
+      "!${13:mandatory_requirement}",
+      "~${14:avoid_this}",
+      "",
+      "# Output specification",
+      "",
+      "@out:${15|code,bullets,table,json,yaml,steps,diagram,prose|}",
+      "",
+      "# Input",
+      "",
+      ">${16:input_data}",
+      "$0"
+    ],
+    "description": "Complete UCPL file template with all sections"
+  },
+  "UCPL Research Workflow": {
+    "prefix": "ucpl-research",
+    "body": [
+      "@role:researcher",
+      "@task:investigate|comprehensive|cited",
+      "@@search:web[query=\"${1:topic}\", recent=true, sources=academic+official]",
+      "@@think:deep[steps=${2:15}, approach=systematic]",
+      "@@memory:save[key=research_\\${3:timestamp}, value=\\$findings, category=note]",
+      "@out:markdown+citations+confidence_scores",
+      "@if \\$confidence<0.8:",
+      "  @@search:web[query=\"${1:topic} criticism\", recent=true]",
+      ">topic:\"${1:topic}\"",
+      "$0"
+    ],
+    "description": "UCPL research workflow with tool invocations"
+  },
+  "UCPL Code Quality Check": {
+    "prefix": "ucpl-qa",
+    "body": [
+      "@def qa_check:",
+      "  @@read:files[pattern=\"*{${1:config_files}}*\"]",
+      "  @@execute:shell[cmd=\\$linting_tools]",
+      "  @task:validate|documentation|complexity|magic_values",
+      "  @if \\$fixable_issues>0:",
+      "    @task:autofix",
+      "    @loop: @until \\$linting_errors==0 || \\$attempts>1",
+      "",
+      "@use qa_check > \\$qa_result",
+      "$0"
+    ],
+    "description": "UCPL quality assurance macro with automated fixing"
+  }
+}
