@@ -1,3 +1,10 @@
+---
+format: ucpl
+version: 1.0
+parser: ucpl-standard
+description: Staff engineer development workflow with quality gates and iterative refinement
+strict: true
+---
 @role:staff_engineer
 @principles:YAGNI+CleanCode+SOLID
 

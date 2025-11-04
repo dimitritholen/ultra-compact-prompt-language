@@ -305,7 +305,21 @@ This achieves 30-40% token savings while preserving semantic richness where it m
 
 ## Getting Started: Quick Reference
 
-Basic structure:
+### YAML Header (Recommended)
+
+All UCPL files should include a YAML frontmatter header to signal proper parsing:
+
+```yaml
+---
+format: ucpl
+version: 1.0
+parser: ucpl-standard
+---
+```
+
+See [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) for full specification.
+
+### Basic Structure
 
 ```
 @role:<role>

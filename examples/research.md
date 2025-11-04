@@ -1,3 +1,10 @@
+---
+format: ucpl
+version: 1.0
+parser: ucpl-standard
+description: Research agent workflow for comprehensive topic investigation with verification
+strict: true
+---
 @role:research_agent
 @principles:accuracy+completeness+verifiability
 

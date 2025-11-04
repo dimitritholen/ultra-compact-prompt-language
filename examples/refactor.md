@@ -1,3 +1,9 @@
+---
+format: ucpl
+version: 1.0
+parser: ucpl-standard
+description: Batch code refactoring workflow with quality scoring and iterative improvement
+---
 @def list_code_files:
   @task:extract|recursive
   @scope:code_files
