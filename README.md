@@ -212,6 +212,22 @@ Now let's explore increasingly complex prompts using pure UCPL syntax.
 
 **Translation**: Define reusable macros for code quality checks and auto-fixing, then execute a conditional workflow: assess code quality, auto-fix if score is below 70, re-assess, and output a comparison table.
 
+### Level 7: Tool-Aware Research Workflow (v1.1)
+
+```
+@role:researcher
+@task:investigate|comprehensive|cited
+@@search:web[query=$topic, recent=true, sources=academic+official]
+@@think:deep[steps=15, approach=systematic]
+@@memory:save[key=research_$timestamp, value=$findings, category=note]
+@out:markdown+citations+confidence_scores
+@if $confidence<0.8:
+  @@search:web[query="$topic criticism", recent=true]
+>topic:"UCPL adoption patterns"
+```
+
+**Translation**: As a researcher, comprehensively investigate "UCPL adoption patterns" with citations. MUST use web search (filter: recent academic/official sources). MUST use deep reasoning tool for 15-step systematic analysis. MUST save findings to memory with timestamp. If confidence is below 80%, search for critical perspectives. Output as markdown with citations and confidence scores.
+
 ## The Vocabulary: Core Keywords
 
 UCPL's efficiency comes from a compact, memorizable vocabulary:
@@ -240,6 +256,65 @@ UCPL's efficiency comes from a compact, memorizable vocabulary:
 * required
 ? optional
 ```
+
+## Tool Invocation (v1.1): Explicit Tool Usage
+
+UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM environments. This makes prompts more portable and tool-agnostic.
+
+### Syntax
+
+```
+@@capability[:subcategory][parameters]
+```
+
+**Key Design**:
+- `@@` prefix signals explicit tool invocation
+- Tool-agnostic: Use abstract capabilities, not specific tool names
+- LLM adapts: Maps capabilities to available tools in its environment
+
+### Universal Tool Categories
+
+| Syntax | Purpose | Maps To (Examples) |
+|--------|---------|-------------------|
+| `@@search:web` | Web search | WebSearch, browser, search API |
+| `@@search:code` | Code pattern search | Grep, semantic search |
+| `@@think:deep` | Deep reasoning | sequential-thinking, o1, CoT |
+| `@@fetch:url` | Retrieve URL content | WebFetch, curl, browser |
+| `@@read:files` | Read files | Read, cat, file API |
+| `@@write:files` | Create/edit files | Write, Edit, file API |
+| `@@execute:shell` | Run commands | Bash, shell, terminal |
+| `@@memory:save` | Persist data | memory-keeper, storage |
+| `@@memory:load` | Retrieve data | memory-keeper, storage |
+
+### Examples
+
+**Basic usage**:
+```
+@@search:web[query="UCPL syntax"]
+@@think:deep[steps=10]
+@@memory:save[key=findings, value=$results]
+```
+
+**In context** (Research workflow):
+```
+@role:researcher
+@task:investigate|comprehensive
+@@search:web[query=$topic, recent=true]
+@@think:deep[steps=10, approach=critical]
+@@memory:save[key=$topic_slug, value=$findings]
+@out:markdown+citations
+```
+
+**Translation**: "You are a researcher investigating comprehensively. MUST use web search for [topic] (recent results). MUST use deep reasoning tool for 10-step critical analysis. MUST persist findings to memory. Output as markdown with citations."
+
+**Token efficiency**: ~35 tokens vs ~95+ in natural language (63% reduction)
+
+**Why `@@`?**
+- Makes tool usage explicit and mandatory
+- Portable across LLM providers (Claude, GPT, Gemini)
+- LLM decides which concrete tool to use based on availability
+
+See [docs/TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) for complete specification.
 
 ## Real-World Performance Data
 
@@ -312,7 +387,7 @@ All UCPL files should include a YAML frontmatter header to signal proper parsing
 ```yaml
 ---
 format: ucpl
-version: 1.0
+version: 1.1
 parser: ucpl-standard
 ---
 ```
@@ -324,6 +399,7 @@ See [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) for full specification.
 ```
 @role:<role>
 @task:<task>|<modifier>|<modifier>
+@@tool:capability[params]          # v1.1: Explicit tool usage
 @out:<format>
 !<critical_constraint>
 >input_data
@@ -375,6 +451,15 @@ The goal isn't maximum compression - it's optimal compression for your specific 
 
 ---
 
+## Additional Resources
+
+- [TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) - Complete v1.1 tool invocation specification
+- [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) - YAML header format and options
+- [BOOTSTRAPPING.md](./docs/BOOTSTRAPPING.md) - Getting started with UCPL
+- [QUICK_START.md](./docs/QUICK_START.md) - Quick start guide
+
+---
+
 **Status**: Experimental - Community validation needed
-**Version**: 1.0
+**Version**: 1.1
 **Contribute**: Test UCPL on your workflows and share results
