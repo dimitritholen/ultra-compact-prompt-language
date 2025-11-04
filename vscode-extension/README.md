@@ -19,12 +19,14 @@ UCPL (Ultra-Compact Prompt Language) is a specialized language for writing token
 
 1. Create a new file with `.ucpl` extension
 2. Start with the YAML header:
+
 ```ucpl
 ---
 format: ucpl
 version: 1.1
 ---
 ```
+
 3. Use IntelliSense (Ctrl+Space) to explore available directives
 
 ## Example: Simple Task
@@ -48,23 +50,27 @@ This expands to: "You are a developer. Refactor and optimize the auth_module. Yo
 ## Core Syntax
 
 ### Directives
+
 - `@role:X` - Set the AI role (e.g., `@role:developer`)
 - `@task:X|Y` - Define task with focus areas
 - `@scope:X` - Limit work to specific area
 - `@out:X+Y` - Specify output format
 
 ### Constraints
+
 - `!X` - MUST do X (mandatory)
 - `?X` - OPTIONAL: X (nice-to-have)
 - `~X` - AVOID: X (discouraged)
 
 ### Operators
+
 - `&` - AND (all conditions)
 - `||` - OR (any condition)
 - `>` - Output to / then do
 - `^X` - Focus on / prioritize X
 
 ### Workflows
+
 ```ucpl
 @workflow:
   @chain:
@@ -74,6 +80,7 @@ This expands to: "You are a developer. Refactor and optimize the auth_module. Yo
 ```
 
 ### Macros (Reusable Functions)
+
 ```ucpl
 @def validate:
   @task:check|syntax|types
@@ -105,6 +112,7 @@ Type `ucpl-` and press Ctrl+Space to see all available snippets:
 ## More Examples
 
 ### Research Task with Tool Usage
+
 ```ucpl
 ---
 format: ucpl
@@ -119,6 +127,7 @@ version: 1.1
 ```
 
 ### Conditional Workflow
+
 ```ucpl
 ---
 format: ucpl
