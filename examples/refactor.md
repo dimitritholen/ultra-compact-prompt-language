@@ -5,7 +5,7 @@ version: 1.0
 parser: ucpl-standard
 description: Batch code refactoring workflow with quality scoring and iterative improvement
 strict: false
-spec_url: "https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
+spec_url: "https://github.com/dimitritholen/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
 tags: [refactoring, code-quality, batch-processing]
 updated: "2025-01-15"
 ---
