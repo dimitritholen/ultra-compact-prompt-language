@@ -1,0 +1,56 @@
+# UCPL Header Template
+#
+# This template demonstrates all available YAML header fields for UCPL files.
+# Copy and customize for your UCPL prompts.
+
+---
+# ===== REQUIRED FIELDS =====
+
+# Identifies this file as UCPL format (enables parser activation)
+format: ucpl
+
+# UCPL specification version (current: 1.0)
+version: 1.0
+
+# Parser implementation to use
+# Options: ucpl-standard (default), ucpl-minimal, ucpl-extended, ucpl-strict
+parser: ucpl-standard
+
+
+# ===== OPTIONAL FIELDS =====
+
+# Human-readable description of what this prompt does
+description: "Brief description of your prompt's purpose"
+
+# Enable strict parsing mode (enforces stricter validation)
+# Set to true for production/critical prompts
+strict: false
+
+# Character encoding (default: utf-8)
+encoding: utf-8
+
+# UCPL dialect/variant identifier (for experimental features)
+# schema: ucpl-extended
+
+# Author or maintainer of this prompt
+# author: "YourName or TeamName"
+
+# Last modification date (ISO 8601 format: YYYY-MM-DD)
+# updated: "2025-01-15"
+
+# Canonical URL to UCPL specification
+# Allows LLMs to fetch latest grammar if needed
+# spec_url: "https://github.com/yourusername/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
+
+# Tags for categorization and searchability
+# tags: [workflow, development, testing]
+
+# Minimum UCPL interpreter version required
+# min_interpreter_version: "1.0"
+
+---
+
+# Your UCPL content starts here
+@role:assistant
+@task:example
+@out:markdown

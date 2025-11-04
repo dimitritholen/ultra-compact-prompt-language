@@ -1,9 +1,13 @@
+<!-- UCPL: Expand with UUIP v1.0 | https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md -->
 ---
 format: ucpl
 version: 1.0
 parser: ucpl-standard
 description: Staff engineer development workflow with quality gates and iterative refinement
 strict: true
+spec_url: "https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
+tags: [workflow, development, testing, quality-gates]
+updated: "2025-01-15"
 ---
 @role:staff_engineer
 @principles:YAGNI+CleanCode+SOLID

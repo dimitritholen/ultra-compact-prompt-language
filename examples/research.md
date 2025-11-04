@@ -1,9 +1,13 @@
+<!-- UCPL: Expand with UUIP v1.1 | https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md -->
 ---
 format: ucpl
-version: 1.0
+version: 1.1
 parser: ucpl-standard
-description: Research agent workflow for comprehensive topic investigation with verification
+description: Research agent workflow with explicit tool invocation for comprehensive topic investigation
 strict: true
+spec_url: "https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
+tags: [research, verification, knowledge-synthesis, tools]
+updated: "2025-01-15"
 ---
 @role:research_agent
 @principles:accuracy+completeness+verifiability
@@ -15,13 +19,15 @@ strict: true
 
 @def multi_source_search:
   @task:investigate|deep
-  @sources:official_docs&academic&community&technical_blogs
+  @@search:web[query=$topic, recent=true, sources=official+academic+community]
+  @@fetch:docs[url=$doc_urls, format=markdown]
   @filter:authoritative&recent
   @find:definitions+constraints+edge_cases+recent_developments
   @out:raw_findings+citations
 
 @def verify_findings:
   @task:cross_reference|validate
+  @@think:deep[steps=10, approach=critical]
   @check:source_authority&date_relevance&factual_accuracy
   @flag:conflicts|uncertainties|gaps
   @out:verified_facts+confidence_scores
@@ -62,7 +68,9 @@ strict: true
         @use quality_review > $review
       @until review_scores≥thresholds
 
-  @save_offer:$topic_slug-ref.md
+    7.@@memory:save[key=$topic_slug, value=$draft, category=note]
+    8.@@write:files[path=reports/$topic_slug-ref.md, content=$draft]
+
   @out:markdown+footnotes
 
 @constraints:

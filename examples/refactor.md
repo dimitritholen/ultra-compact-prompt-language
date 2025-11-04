@@ -1,8 +1,13 @@
+<!-- UCPL: Expand with UUIP v1.0 | https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md -->
 ---
 format: ucpl
 version: 1.0
 parser: ucpl-standard
 description: Batch code refactoring workflow with quality scoring and iterative improvement
+strict: false
+spec_url: "https://github.com/your-repo/ucpl/blob/main/docs/ucpl-interpreter-prompt.md"
+tags: [refactoring, code-quality, batch-processing]
+updated: "2025-01-15"
 ---
 @def list_code_files:
   @task:extract|recursive
