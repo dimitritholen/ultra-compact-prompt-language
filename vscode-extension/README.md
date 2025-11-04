@@ -150,7 +150,7 @@ version: 1.1
 
 ## Contributing
 
-For development setup and contribution guidelines, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+For development setup and contribution guidelines, see [DEVELOPMENT.md](./docs/DEVELOPMENT.md).
 
 ## License
 
