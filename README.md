@@ -2,14 +2,19 @@
 
 *A New Approach to Token-Efficient LLM Communication*
 
-
-
 ## First glance comparison
 
 These two prompts do exactly the same thing.
 
 - [natural language prompt - 1926 tokens](./examples/worktrees-parallel-full.md)
 - [UCPL prompt - 561 tokens](./examples/worktrees-parallel-ucpl.md)
+
+**Convert your existing prompts to UCPL**:
+
+1. Add the [interpreter system prompt](./docs/ucpl-interpreter-prompt.md) to `AGENTS.md` or `CLAUDE.md`
+2. Use the [converter prompt](./.claude/commands/ucpl.md) together with the prompt you wish to convert
+
+*Note: the converter is a Claude Code command, so you can use it like `/ucpl <original_prompt>`, but you can just as easily use it in other LLMs as a general prompt + your original prompt*
 
 ## The Token Problem Nobody's Talking About
 
@@ -469,12 +474,14 @@ The goal isn't maximum compression - it's optimal compression for your specific 
 ## Additional Resources
 
 ### Documentation
+
 - [TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) - Complete v1.1 tool invocation specification
 - [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) - YAML header format and options
 - [BOOTSTRAPPING.md](./docs/BOOTSTRAPPING.md) - Getting started with UCPL
 - [QUICK_START.md](./docs/QUICK_START.md) - Quick start guide
 
 ### Editor Support
+
 - [VS Code Extension](./vscode-extension/) - Official UCPL language extension with syntax highlighting, IntelliSense, and snippets
 
 ---
