@@ -1,0 +1,1617 @@
+#!/usr/bin/env python3
+"""
+UCPL Context Compressor - CLI Tool
+
+A tool for compressing code context into LLM-friendly semantic summaries.
+Can be used by both humans and LLMs as a tool.
+
+Usage:
+    # Compress a file
+    ucpl-compress file.py
+
+    # Compress directory
+    ucpl-compress src/
+
+    # Pipe input
+    cat file.py | ucpl-compress
+
+    # LLM-friendly JSON output
+    ucpl-compress file.py --format json
+
+    # Different compression levels
+    ucpl-compress file.py --level signatures
+
+Author: UCPL Project
+License: MIT
+"""
+
+import argparse
+import ast
+import json
+import re
+import sys
+from pathlib import Path
+from typing import List, Dict, Optional, Any, Tuple
+from dataclasses import dataclass, asdict
+
+try:
+    import tiktoken
+    HAS_TIKTOKEN = True
+except ImportError:
+    HAS_TIKTOKEN = False
+
+
+VERSION = "1.0.0"
+
+
+@dataclass
+class CompressionResult:
+    """Result of compression operation."""
+    file: str
+    original_tokens: int
+    compressed_tokens: int
+    savings_pct: float
+    compressed_content: str
+    error: Optional[str] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
+class ContextCompressor:
+    """Compresses code context to semantic summaries."""
+
+    def __init__(self, level: str = "full", language: str = "python"):
+        """
+        Initialize compressor.
+
+        Args:
+            level: Compression level (full/signatures/minimal)
+            language: Programming language (python/typescript/javascript)
+        """
+        self.level = level
+        self.language = language
+
+        if HAS_TIKTOKEN:
+            self.encoder = tiktoken.encoding_for_model("gpt-4")
+        else:
+            self.encoder = None
+
+    def compress_code(self, code: str, filename: str = "input") -> CompressionResult:
+        """
+        Compress code to semantic summary.
+
+        Args:
+            code: Source code to compress
+            filename: Name of file (for output)
+
+        Returns:
+            CompressionResult with compression details
+        """
+        original_tokens = self.count_tokens(code)
+
+        try:
+            if self.language == "python":
+                compressed = self._compress_python(code, filename)
+            elif self.language in ["javascript", "typescript"]:
+                compressed = self._compress_javascript(code, filename)
+            elif self.language == "markdown":
+                compressed = self._compress_markdown(code, filename)
+            elif self.language == "go":
+                compressed = self._compress_go(code, filename)
+            elif self.language == "json":
+                compressed = self._compress_json(code, filename)
+            elif self.language == "yaml":
+                compressed = self._compress_yaml(code, filename)
+            elif self.language == "html":
+                compressed = self._compress_html(code, filename)
+            elif self.language == "css":
+                compressed = self._compress_css(code, filename)
+            elif self.language == "java":
+                compressed = self._compress_java(code, filename)
+            elif self.language == "rust":
+                compressed = self._compress_rust(code, filename)
+            elif self.language == "ruby":
+                compressed = self._compress_ruby(code, filename)
+            elif self.language == "cpp":
+                compressed = self._compress_cpp(code, filename)
+            elif self.language == "powershell":
+                compressed = self._compress_powershell(code, filename)
+            elif self.language == "shell":
+                compressed = self._compress_shell(code, filename)
+            else:
+                # Fallback: generic compression
+                compressed = self._compress_generic(code, filename)
+
+            compressed_tokens = self.count_tokens(compressed)
+            savings = ((original_tokens - compressed_tokens) / original_tokens * 100) if original_tokens > 0 else 0
+
+            return CompressionResult(
+                file=filename,
+                original_tokens=original_tokens,
+                compressed_tokens=compressed_tokens,
+                savings_pct=savings,
+                compressed_content=compressed
+            )
+
+        except Exception as e:
+            return CompressionResult(
+                file=filename,
+                original_tokens=original_tokens,
+                compressed_tokens=0,
+                savings_pct=0.0,
+                compressed_content="",
+                error=str(e)
+            )
+
+    def _compress_python(self, code: str, filename: str) -> str:
+        """Compress Python code."""
+        try:
+            tree = ast.parse(code)
+        except SyntaxError as e:
+            return f"# {filename}\n# Parse error: {e}\n"
+
+        output = f"# {filename}\n\n"
+
+        # Module docstring
+        module_doc = ast.get_docstring(tree)
+        if module_doc and self.level != "minimal":
+            output += f"{self._truncate_docstring(module_doc)}\n\n"
+
+        # Imports
+        imports = self._extract_imports(tree)
+        if imports and self.level == "full":
+            output += f"**Dependencies**: {', '.join(imports[:10])}"
+            if len(imports) > 10:
+                output += f" (+{len(imports)-10} more)"
+            output += "\n\n"
+
+        # Classes and functions
+        for node in tree.body:
+            if isinstance(node, ast.ClassDef):
+                output += self._summarize_class(node)
+            elif isinstance(node, ast.FunctionDef) and not node.name.startswith("_"):
+                output += self._summarize_function(node)
+
+        return output
+
+    def _compress_javascript(self, code: str, filename: str) -> str:
+        """Compress JavaScript/TypeScript code."""
+        output = f"# {filename}\n\n"
+
+        # Extract imports/requires
+        imports = self._extract_js_imports(code)
+        if imports and self.level == "full":
+            output += f"**Dependencies**: {', '.join(imports[:10])}"
+            if len(imports) > 10:
+                output += f" (+{len(imports)-10} more)"
+            output += "\n\n"
+
+        # Extract classes
+        classes = self._extract_js_classes(code)
+        for class_info in classes:
+            output += self._format_js_class(class_info)
+
+        # Extract functions (not in classes)
+        functions = self._extract_js_functions(code)
+        for func_info in functions:
+            if self.level == "minimal" and func_info["name"].startswith("_"):
+                continue
+            output += self._format_js_function(func_info)
+
+        # Extract interfaces/types (TypeScript)
+        if self.language == "typescript":
+            interfaces = self._extract_ts_interfaces(code)
+            for interface_info in interfaces:
+                output += self._format_ts_interface(interface_info)
+
+        return output
+
+    def _extract_js_imports(self, code: str) -> List[str]:
+        """Extract import/require statements."""
+        imports = []
+
+        # ES6 imports: import X from 'Y'
+        import_pattern = r"import\s+(?:{[^}]+}|[\w*]+)\s+from\s+['\"]([^'\"]+)['\"]"
+        imports.extend(re.findall(import_pattern, code))
+
+        # CommonJS: require('X')
+        require_pattern = r"require\(['\"]([^'\"]+)['\"]\)"
+        imports.extend(re.findall(require_pattern, code))
+
+        return sorted(set(imports))
+
+    def _extract_js_classes(self, code: str) -> List[Dict]:
+        """Extract class definitions."""
+        classes = []
+
+        # Match: class ClassName extends BaseClass {
+        class_pattern = r"(?:export\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{"
+
+        for match in re.finditer(class_pattern, code):
+            class_name = match.group(1)
+            base_class = match.group(2)
+            start_pos = match.end()
+
+            # Find class body (simplified - just get methods)
+            methods = self._extract_class_methods(code, start_pos)
+
+            # Extract JSDoc if available
+            jsdoc = self._extract_jsdoc(code, match.start())
+
+            classes.append({
+                "name": class_name,
+                "base": base_class,
+                "methods": methods,
+                "doc": jsdoc
+            })
+
+        return classes
+
+    def _extract_class_methods(self, code: str, start_pos: int) -> List[Dict]:
+        """Extract methods from class body."""
+        methods = []
+
+        # Find the class body (until matching closing brace)
+        brace_count = 1
+        end_pos = start_pos
+        while end_pos < len(code) and brace_count > 0:
+            if code[end_pos] == '{':
+                brace_count += 1
+            elif code[end_pos] == '}':
+                brace_count -= 1
+            end_pos += 1
+
+        class_body = code[start_pos:end_pos]
+
+        # Match methods: methodName(params) { or async methodName(params) {
+        method_pattern = r"(?:async\s+)?(?:static\s+)?(\w+)\s*\(([^)]*)\)\s*(?::\s*(\w+))?\s*\{"
+
+        for match in re.finditer(method_pattern, class_body):
+            method_name = match.group(1)
+            params = match.group(2)
+            return_type = match.group(3)
+
+            # Skip constructors in minimal mode
+            if self.level == "minimal" and method_name in ["constructor"]:
+                continue
+
+            # Extract JSDoc
+            jsdoc = self._extract_jsdoc(class_body, match.start())
+
+            methods.append({
+                "name": method_name,
+                "params": params,
+                "return_type": return_type,
+                "doc": jsdoc
+            })
+
+        return methods
+
+    def _extract_js_functions(self, code: str) -> List[Dict]:
+        """Extract standalone function definitions."""
+        functions = []
+
+        # Match: function name(params) { or export function name(params) {
+        func_pattern = r"(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)\s*(?::\s*(\w+))?\s*\{"
+
+        # Also match: const name = (params) => { or const name = function(params) {
+        arrow_pattern = r"(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(([^)]*)\)\s*=>"
+
+        for match in re.finditer(func_pattern, code):
+            func_name = match.group(1)
+            params = match.group(2)
+            return_type = match.group(3)
+            jsdoc = self._extract_jsdoc(code, match.start())
+
+            functions.append({
+                "name": func_name,
+                "params": params,
+                "return_type": return_type,
+                "doc": jsdoc
+            })
+
+        for match in re.finditer(arrow_pattern, code):
+            func_name = match.group(1)
+            params = match.group(2)
+            jsdoc = self._extract_jsdoc(code, match.start())
+
+            functions.append({
+                "name": func_name,
+                "params": params,
+                "return_type": None,
+                "doc": jsdoc
+            })
+
+        return functions
+
+    def _extract_ts_interfaces(self, code: str) -> List[Dict]:
+        """Extract TypeScript interfaces and types."""
+        interfaces = []
+
+        # Match: interface Name { or type Name = {
+        interface_pattern = r"(?:export\s+)?(?:interface|type)\s+(\w+)(?:\s+extends\s+([\w,\s]+))?\s*\{"
+
+        for match in re.finditer(interface_pattern, code):
+            name = match.group(1)
+            extends = match.group(2)
+
+            # Extract properties (simplified)
+            start_pos = match.end()
+            brace_count = 1
+            end_pos = start_pos
+            while end_pos < len(code) and brace_count > 0:
+                if code[end_pos] == '{':
+                    brace_count += 1
+                elif code[end_pos] == '}':
+                    brace_count -= 1
+                end_pos += 1
+
+            body = code[start_pos:end_pos]
+
+            # Extract properties: name: type
+            props = []
+            prop_pattern = r"(\w+)(?:\?)?:\s*([^;,\n]+)"
+            for prop_match in re.finditer(prop_pattern, body):
+                props.append(f"{prop_match.group(1)}: {prop_match.group(2).strip()}")
+
+            interfaces.append({
+                "name": name,
+                "extends": extends,
+                "properties": props[:10]  # Limit to 10 properties
+            })
+
+        return interfaces
+
+    def _extract_jsdoc(self, code: str, pos: int) -> Optional[str]:
+        """Extract JSDoc comment before position."""
+        if self.level == "minimal":
+            return None
+
+        # Look backwards for /** ... */
+        search_start = max(0, pos - 500)  # Look back up to 500 chars
+        snippet = code[search_start:pos]
+
+        jsdoc_pattern = r"/\*\*\s*(.*?)\s*\*/"
+        matches = list(re.finditer(jsdoc_pattern, snippet, re.DOTALL))
+
+        if matches:
+            doc = matches[-1].group(1)  # Get last match
+            # Clean up
+            doc = re.sub(r'\n\s*\*\s*', '\n', doc)
+            doc = doc.strip()
+
+            if self.level == "full":
+                lines = doc.split('\n')[:3]
+                return '\n'.join(lines)
+            elif self.level == "signatures":
+                return doc.split('\n')[0]
+
+        return None
+
+    def _format_js_class(self, class_info: Dict) -> str:
+        """Format JavaScript class for output."""
+        output = f"## `{class_info['name']}`"
+
+        if class_info['base']:
+            output += f"(extends {class_info['base']})"
+
+        output += "\n\n"
+
+        if self.level == "full" and class_info['doc']:
+            output += f"{class_info['doc']}\n\n"
+
+        if class_info['methods']:
+            output += "**Methods**:\n"
+            for method in class_info['methods'][:20]:
+                params = method['params'] if method['params'] else ''
+                ret = f" -> {method['return_type']}" if method['return_type'] else ''
+                output += f"- `{method['name']}({params}){ret}`\n"
+
+                if self.level == "full" and method['doc']:
+                    first_line = method['doc'].split('\n')[0]
+                    if len(first_line) > 80:
+                        first_line = first_line[:77] + "..."
+                    output += f"  {first_line}\n"
+
+            if len(class_info['methods']) > 20:
+                output += f"  _(+{len(class_info['methods'])-20} more methods)_\n"
+
+        return output + "\n"
+
+    def _format_js_function(self, func_info: Dict) -> str:
+        """Format JavaScript function for output."""
+        params = func_info['params'] if func_info['params'] else ''
+        ret = f" -> {func_info['return_type']}" if func_info['return_type'] else ''
+        output = f"## `{func_info['name']}({params}){ret}`\n\n"
+
+        if self.level == "full" and func_info['doc']:
+            output += f"{func_info['doc']}\n\n"
+
+        return output
+
+    def _format_ts_interface(self, interface_info: Dict) -> str:
+        """Format TypeScript interface for output."""
+        output = f"## `interface {interface_info['name']}`"
+
+        if interface_info['extends']:
+            output += f" extends {interface_info['extends']}"
+
+        output += "\n\n"
+
+        if interface_info['properties']:
+            output += "**Properties**:\n"
+            for prop in interface_info['properties']:
+                output += f"- {prop}\n"
+
+            if len(interface_info['properties']) > 10:
+                output += f"  _(+more properties)_\n"
+
+        return output + "\n"
+
+    def _compress_markdown(self, code: str, filename: str) -> str:
+        """Compress Markdown files."""
+        output = f"# {filename}\n\n"
+
+        lines = code.splitlines()
+
+        # Extract title (first # heading)
+        title_match = re.search(r'^#\s+(.+)$', code, re.MULTILINE)
+        if title_match:
+            output += f"**Title**: {title_match.group(1)}\n\n"
+
+        # Extract all headings
+        headings = []
+        heading_pattern = r'^(#{1,6})\s+(.+)$'
+        for match in re.finditer(heading_pattern, code, re.MULTILINE):
+            level = len(match.group(1))
+            title = match.group(2)
+            headings.append((level, title))
+
+        if headings:
+            output += "**Structure**:\n"
+            for level, title in headings[:20]:
+                indent = "  " * (level - 1)
+                output += f"{indent}- {title}\n"
+
+            if len(headings) > 20:
+                output += f"  _(+{len(headings)-20} more sections)_\n"
+            output += "\n"
+
+        # Extract code blocks
+        code_blocks = re.findall(r'```(\w+)?\n', code)
+        if code_blocks:
+            langs = [lang for lang in code_blocks if lang]
+            if langs:
+                output += f"**Code Examples**: {len(code_blocks)} blocks"
+                if langs:
+                    output += f" ({', '.join(set(langs))})"
+                output += "\n\n"
+
+        # Extract links
+        links = re.findall(r'\[([^\]]+)\]\(([^)]+)\)', code)
+        if links and self.level == "full":
+            output += f"**Links**: {len(links)} references\n\n"
+
+        # Summary section (first paragraph after title)
+        if self.level == "full":
+            # Find first substantial paragraph
+            paragraphs = [p.strip() for p in code.split('\n\n') if p.strip() and not p.strip().startswith('#')]
+            if paragraphs:
+                summary = paragraphs[0]
+                if len(summary) > 300:
+                    summary = summary[:297] + "..."
+                output += f"**Summary**: {summary}\n\n"
+
+        output += f"**Stats**: {len(lines)} lines, {len(code.split())} words\n"
+
+        return output
+
+    def _compress_go(self, code: str, filename: str) -> str:
+        """Compress Go code."""
+        output = f"# {filename}\n\n"
+
+        # Extract package
+        package_match = re.search(r'^package\s+(\w+)', code, re.MULTILINE)
+        if package_match:
+            output += f"**Package**: {package_match.group(1)}\n\n"
+
+        # Extract imports
+        imports = []
+        import_block = re.search(r'import\s*\((.*?)\)', code, re.DOTALL)
+        if import_block:
+            import_lines = import_block.group(1).strip().split('\n')
+            for line in import_lines:
+                match = re.search(r'"([^"]+)"', line)
+                if match:
+                    imports.append(match.group(1))
+        else:
+            # Single import
+            single_imports = re.findall(r'import\s+"([^"]+)"', code)
+            imports.extend(single_imports)
+
+        if imports and self.level == "full":
+            output += f"**Dependencies**: {', '.join(imports[:10])}"
+            if len(imports) > 10:
+                output += f" (+{len(imports)-10} more)"
+            output += "\n\n"
+
+        # Extract structs
+        struct_pattern = r'type\s+(\w+)\s+struct\s*\{(.*?)\}'
+        for match in re.finditer(struct_pattern, code, re.DOTALL):
+            struct_name = match.group(1)
+            body = match.group(2)
+
+            output += f"## `type {struct_name} struct`\n\n"
+
+            if self.level != "minimal":
+                # Extract fields
+                fields = []
+                field_pattern = r'(\w+)\s+([\w\[\]\*\.]+)(?:\s+`[^`]*`)?'
+                for field_match in re.finditer(field_pattern, body):
+                    field_name = field_match.group(1)
+                    field_type = field_match.group(2)
+                    fields.append(f"{field_name}: {field_type}")
+
+                if fields:
+                    output += "**Fields**:\n"
+                    for field in fields[:20]:
+                        output += f"- {field}\n"
+                    if len(fields) > 20:
+                        output += f"  _(+{len(fields)-20} more fields)_\n"
+
+            output += "\n"
+
+        # Extract interfaces
+        interface_pattern = r'type\s+(\w+)\s+interface\s*\{(.*?)\}'
+        for match in re.finditer(interface_pattern, code, re.DOTALL):
+            interface_name = match.group(1)
+            body = match.group(2)
+
+            output += f"## `interface {interface_name}`\n\n"
+
+            if self.level != "minimal":
+                # Extract methods
+                methods = []
+                method_pattern = r'(\w+)\(([^)]*)\)\s*(\([^)]*\))?'
+                for method_match in re.finditer(method_pattern, body):
+                    method_name = method_match.group(1)
+                    params = method_match.group(2)
+                    returns = method_match.group(3) if method_match.group(3) else ''
+                    methods.append(f"{method_name}({params}){returns}")
+
+                if methods:
+                    output += "**Methods**:\n"
+                    for method in methods[:20]:
+                        output += f"- `{method}`\n"
+
+            output += "\n"
+
+        # Extract functions
+        func_pattern = r'func\s+(?:\((\w+)\s+\*?(\w+)\)\s+)?(\w+)\(([^)]*)\)\s*(\([^)]*\)|[\w\*\[\]]+)?\s*\{'
+        for match in re.finditer(func_pattern, code):
+            receiver_name = match.group(1)
+            receiver_type = match.group(2)
+            func_name = match.group(3)
+            params = match.group(4)
+            returns = match.group(5) if match.group(5) else ''
+
+            if self.level == "minimal" and func_name.startswith("_"):
+                continue
+
+            if receiver_type:
+                output += f"## `func ({receiver_name} {receiver_type}) {func_name}({params}) {returns}`\n\n"
+            else:
+                output += f"## `func {func_name}({params}) {returns}`\n\n"
+
+        return output
+
+    def _compress_json(self, code: str, filename: str) -> str:
+        """Compress JSON files."""
+        output = f"# {filename}\n\n"
+
+        try:
+            data = json.loads(code)
+        except json.JSONDecodeError as e:
+            return f"# {filename}\n# JSON Parse Error: {e}\n"
+
+        # Analyze structure
+        def analyze_structure(obj, path="$"):
+            """Recursively analyze JSON structure."""
+            if isinstance(obj, dict):
+                return {
+                    "type": "object",
+                    "keys": list(obj.keys())[:20],
+                    "key_count": len(obj.keys()),
+                    "nested": {k: analyze_structure(obj[k], f"{path}.{k}")
+                              for k in list(obj.keys())[:5] if isinstance(obj[k], (dict, list))}
+                }
+            elif isinstance(obj, list):
+                return {
+                    "type": "array",
+                    "length": len(obj),
+                    "sample": analyze_structure(obj[0], f"{path}[0]") if obj else None
+                }
+            else:
+                return {"type": type(obj).__name__, "value": str(obj)[:50]}
+
+        structure = analyze_structure(data)
+
+        output += f"**Type**: {structure['type']}\n"
+
+        if structure['type'] == "object":
+            output += f"**Keys** ({structure['key_count']} total): {', '.join(structure['keys'])}\n\n"
+
+            if self.level == "full" and structure.get('nested'):
+                output += "**Structure**:\n"
+                for key, val in structure['nested'].items():
+                    output += f"- `{key}`: {val['type']}"
+                    if val['type'] == 'array':
+                        output += f" ({val['length']} items)"
+                    elif val['type'] == 'object':
+                        output += f" ({val['key_count']} keys)"
+                    output += "\n"
+
+        elif structure['type'] == "array":
+            output += f"**Length**: {structure['length']} items\n"
+            if structure.get('sample'):
+                output += f"**Item Type**: {structure['sample']['type']}\n"
+
+        return output
+
+    def _compress_yaml(self, code: str, filename: str) -> str:
+        """Compress YAML files."""
+        output = f"# {filename}\n\n"
+
+        lines = code.splitlines()
+
+        # Extract top-level keys
+        top_keys = []
+        for line in lines:
+            if line and not line.startswith((' ', '-', '#')):
+                if ':' in line:
+                    key = line.split(':')[0].strip()
+                    top_keys.append(key)
+
+        if top_keys:
+            output += f"**Top-level keys** ({len(top_keys)}): {', '.join(top_keys[:20])}\n"
+            if len(top_keys) > 20:
+                output += f"  _(+{len(top_keys)-20} more)_\n"
+            output += "\n"
+
+        # Count nested levels
+        max_indent = 0
+        for line in lines:
+            if line.strip():
+                indent = len(line) - len(line.lstrip())
+                max_indent = max(max_indent, indent)
+
+        output += f"**Nesting depth**: {max_indent // 2} levels\n"
+        output += f"**Lines**: {len(lines)}\n"
+
+        # Extract comments (if full level)
+        if self.level == "full":
+            comments = [l.strip() for l in lines if l.strip().startswith('#')]
+            if comments:
+                output += f"\n**Comments**: {len(comments)} lines\n"
+
+        return output
+
+    def _compress_html(self, code: str, filename: str) -> str:
+        """Compress HTML files."""
+        output = f"# {filename}\n\n"
+
+        # Extract title
+        title_match = re.search(r'<title>([^<]+)</title>', code, re.IGNORECASE)
+        if title_match:
+            output += f"**Title**: {title_match.group(1)}\n\n"
+
+        # Extract meta tags
+        meta_tags = re.findall(r'<meta\s+([^>]+)>', code, re.IGNORECASE)
+        if meta_tags and self.level == "full":
+            output += f"**Meta tags**: {len(meta_tags)}\n"
+
+        # Count major elements
+        elements = {
+            'div': len(re.findall(r'<div', code, re.IGNORECASE)),
+            'section': len(re.findall(r'<section', code, re.IGNORECASE)),
+            'article': len(re.findall(r'<article', code, re.IGNORECASE)),
+            'p': len(re.findall(r'<p>', code, re.IGNORECASE)),
+            'a': len(re.findall(r'<a\s', code, re.IGNORECASE)),
+            'img': len(re.findall(r'<img', code, re.IGNORECASE)),
+            'form': len(re.findall(r'<form', code, re.IGNORECASE)),
+            'input': len(re.findall(r'<input', code, re.IGNORECASE)),
+            'button': len(re.findall(r'<button', code, re.IGNORECASE)),
+        }
+
+        output += "**Element counts**:\n"
+        for elem, count in sorted(elements.items(), key=lambda x: x[1], reverse=True):
+            if count > 0:
+                output += f"- `<{elem}>`: {count}\n"
+
+        # Extract scripts and styles
+        scripts = re.findall(r'<script[^>]*src=["\']([^"\']+)["\']', code, re.IGNORECASE)
+        if scripts:
+            output += f"\n**External scripts**: {len(scripts)}\n"
+            if self.level == "full":
+                for script in scripts[:5]:
+                    output += f"  - {script}\n"
+
+        stylesheets = re.findall(r'<link[^>]*href=["\']([^"\']+\.css)["\']', code, re.IGNORECASE)
+        if stylesheets:
+            output += f"\n**Stylesheets**: {len(stylesheets)}\n"
+            if self.level == "full":
+                for css in stylesheets[:5]:
+                    output += f"  - {css}\n"
+
+        # Extract IDs and classes
+        ids = set(re.findall(r'id=["\']([^"\']+)["\']', code, re.IGNORECASE))
+        classes = set(re.findall(r'class=["\']([^"\']+)["\']', code, re.IGNORECASE))
+
+        if self.level != "minimal":
+            output += f"\n**IDs**: {len(ids)} unique\n"
+            output += f"**Classes**: {len(classes)} unique\n"
+
+        return output
+
+    def _compress_css(self, code: str, filename: str) -> str:
+        """Compress CSS files."""
+        output = f"# {filename}\n\n"
+
+        # Count selectors
+        selectors = re.findall(r'([^{]+)\s*\{', code)
+        output += f"**Selectors**: {len(selectors)}\n"
+
+        # Extract selector types
+        classes = len([s for s in selectors if '.' in s])
+        ids = len([s for s in selectors if '#' in s])
+        elements = len([s for s in selectors if not any(c in s for c in ['.', '#', '@'])])
+        media_queries = len(re.findall(r'@media', code))
+
+        output += f"- Classes: {classes}\n"
+        output += f"- IDs: {ids}\n"
+        output += f"- Elements: {elements}\n"
+        output += f"- Media queries: {media_queries}\n\n"
+
+        # Extract common properties
+        properties = re.findall(r'([a-z-]+):\s*([^;]+);', code)
+        prop_counts = {}
+        for prop, _ in properties:
+            prop = prop.strip()
+            prop_counts[prop] = prop_counts.get(prop, 0) + 1
+
+        if self.level == "full" and prop_counts:
+            output += "**Most used properties**:\n"
+            for prop, count in sorted(prop_counts.items(), key=lambda x: x[1], reverse=True)[:10]:
+                output += f"- `{prop}`: {count} times\n"
+
+        # Extract variables
+        variables = re.findall(r'--([a-z-]+):', code)
+        if variables:
+            output += f"\n**CSS Variables**: {len(set(variables))}\n"
+            if self.level == "full":
+                for var in sorted(set(variables))[:10]:
+                    output += f"- `--{var}`\n"
+
+        # Extract imports
+        imports = re.findall(r'@import\s+["\']([^"\']+)["\']', code)
+        if imports:
+            output += f"\n**Imports**: {len(imports)}\n"
+
+        output += f"\n**Total size**: {len(code)} bytes ({len(code.splitlines())} lines)\n"
+
+        return output
+
+    def _compress_java(self, code: str, filename: str) -> str:
+        """Compress Java files."""
+        output = f"# {filename}\n\n"
+
+        # Extract package
+        package_match = re.search(r'package\s+([\w.]+);', code)
+        if package_match:
+            output += f"**Package**: {package_match.group(1)}\n\n"
+
+        # Extract imports
+        imports = re.findall(r'import\s+([\w.*]+);', code)
+        if imports and self.level == "full":
+            output += f"**Imports** ({len(imports)}): {', '.join(imports[:10])}"
+            if len(imports) > 10:
+                output += f" (+{len(imports)-10} more)"
+            output += "\n\n"
+
+        # Extract classes and interfaces
+        class_pattern = r'(?:public\s+)?(?:abstract\s+)?(?:final\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?(?:\s+implements\s+([\w,\s]+))?'
+        for match in re.finditer(class_pattern, code):
+            class_name = match.group(1)
+            extends = match.group(2)
+            implements = match.group(3)
+
+            output += f"## `class {class_name}`"
+            if extends:
+                output += f" extends {extends}"
+            if implements:
+                output += f" implements {implements}"
+            output += "\n\n"
+
+            # Find methods in this class (simplified)
+            methods = self._extract_java_methods(code)
+            if methods and self.level != "minimal":
+                output += "**Methods**:\n"
+                for method in methods[:20]:
+                    output += f"- `{method}`\n"
+                if len(methods) > 20:
+                    output += f"  _(+{len(methods)-20} more)_\n"
+
+        # Extract interfaces
+        interface_pattern = r'(?:public\s+)?interface\s+(\w+)(?:\s+extends\s+([\w,\s]+))?'
+        for match in re.finditer(interface_pattern, code):
+            interface_name = match.group(1)
+            extends = match.group(2)
+
+            output += f"\n## `interface {interface_name}`"
+            if extends:
+                output += f" extends {extends}"
+            output += "\n\n"
+
+        return output
+
+    def _extract_java_methods(self, code: str) -> List[str]:
+        """Extract Java method signatures."""
+        methods = []
+        # Simplified: public/private/protected returnType methodName(params)
+        method_pattern = r'(?:public|private|protected)\s+(?:static\s+)?(?:final\s+)?(\w+)\s+(\w+)\s*\(([^)]*)\)'
+        for match in re.finditer(method_pattern, code):
+            return_type = match.group(1)
+            method_name = match.group(2)
+            params = match.group(3).strip()
+
+            # Skip constructors in minimal mode
+            if method_name[0].isupper():  # Likely a constructor
+                continue
+
+            methods.append(f"{return_type} {method_name}({params})")
+
+        return methods
+
+    def _compress_rust(self, code: str, filename: str) -> str:
+        """Compress Rust files."""
+        output = f"# {filename}\n\n"
+
+        # Extract mod/crate
+        mod_pattern = r'(?:pub\s+)?mod\s+(\w+)'
+        mods = re.findall(mod_pattern, code)
+        if mods:
+            output += f"**Modules**: {', '.join(mods)}\n\n"
+
+        # Extract use statements
+        uses = re.findall(r'use\s+([^;]+);', code)
+        if uses and self.level == "full":
+            output += f"**Dependencies** ({len(uses)}): {', '.join(uses[:10])}"
+            if len(uses) > 10:
+                output += f" (+{len(uses)-10} more)"
+            output += "\n\n"
+
+        # Extract structs
+        struct_pattern = r'(?:pub\s+)?struct\s+(\w+)(?:<[^>]+>)?\s*\{'
+        for match in re.finditer(struct_pattern, code):
+            struct_name = match.group(1)
+            output += f"## `struct {struct_name}`\n"
+
+            # Find fields
+            start_pos = match.end()
+            brace_count = 1
+            end_pos = start_pos
+            while end_pos < len(code) and brace_count > 0:
+                if code[end_pos] == '{':
+                    brace_count += 1
+                elif code[end_pos] == '}':
+                    brace_count -= 1
+                end_pos += 1
+
+            body = code[start_pos:end_pos]
+
+            if self.level != "minimal":
+                fields = re.findall(r'(\w+):\s*([^,\n]+)', body)
+                if fields:
+                    output += "**Fields**:\n"
+                    for field_name, field_type in fields[:10]:
+                        output += f"- `{field_name}: {field_type.strip()}`\n"
+                    if len(fields) > 10:
+                        output += f"  _(+{len(fields)-10} more)_\n"
+            output += "\n"
+
+        # Extract enums
+        enum_pattern = r'(?:pub\s+)?enum\s+(\w+)\s*\{'
+        for match in re.finditer(enum_pattern, code):
+            enum_name = match.group(1)
+            output += f"## `enum {enum_name}`\n\n"
+
+        # Extract traits
+        trait_pattern = r'(?:pub\s+)?trait\s+(\w+)\s*\{'
+        for match in re.finditer(trait_pattern, code):
+            trait_name = match.group(1)
+            output += f"## `trait {trait_name}`\n\n"
+
+        # Extract functions
+        fn_pattern = r'(?:pub\s+)?(?:async\s+)?fn\s+(\w+)(?:<[^>]+>)?\s*\(([^)]*)\)(?:\s*->\s*([^\{]+))?'
+        functions = []
+        for match in re.finditer(fn_pattern, code):
+            fn_name = match.group(1)
+            params = match.group(2).strip()
+            returns = match.group(3).strip() if match.group(3) else ''
+
+            if self.level == "minimal" and fn_name.startswith("_"):
+                continue
+
+            sig = f"{fn_name}({params})"
+            if returns:
+                sig += f" -> {returns}"
+            functions.append(sig)
+
+        if functions:
+            output += "**Functions**:\n"
+            for fn in functions[:20]:
+                output += f"- `{fn}`\n"
+            if len(functions) > 20:
+                output += f"  _(+{len(functions)-20} more)_\n"
+
+        return output
+
+    def _compress_ruby(self, code: str, filename: str) -> str:
+        """Compress Ruby files."""
+        output = f"# {filename}\n\n"
+
+        # Extract requires
+        requires = re.findall(r'require\s+["\']([^"\']+)["\']', code)
+        if requires and self.level == "full":
+            output += f"**Dependencies** ({len(requires)}): {', '.join(requires[:10])}"
+            if len(requires) > 10:
+                output += f" (+{len(requires)-10} more)"
+            output += "\n\n"
+
+        # Extract modules
+        module_pattern = r'module\s+(\w+)'
+        modules = re.findall(module_pattern, code)
+        if modules:
+            output += f"**Modules**: {', '.join(modules)}\n\n"
+
+        # Extract classes
+        class_pattern = r'class\s+(\w+)(?:\s*<\s*(\w+))?'
+        for match in re.finditer(class_pattern, code):
+            class_name = match.group(1)
+            parent = match.group(2)
+
+            output += f"## `class {class_name}`"
+            if parent:
+                output += f" < {parent}"
+            output += "\n\n"
+
+            # Find methods
+            methods = self._extract_ruby_methods(code, match.start())
+            if methods and self.level != "minimal":
+                output += "**Methods**:\n"
+                for method in methods[:20]:
+                    output += f"- `{method}`\n"
+                if len(methods) > 20:
+                    output += f"  _(+{len(methods)-20} more)_\n"
+            output += "\n"
+
+        # Standalone methods
+        standalone = self._extract_ruby_methods(code, 0)
+        if standalone:
+            output += "**Functions**:\n"
+            for method in standalone[:10]:
+                output += f"- `{method}`\n"
+
+        return output
+
+    def _extract_ruby_methods(self, code: str, start_pos: int) -> List[str]:
+        """Extract Ruby method definitions."""
+        methods = []
+        method_pattern = r'def\s+(self\.)?(\w+)(?:\(([^)]*)\))?'
+
+        for match in re.finditer(method_pattern, code[start_pos:]):
+            is_class_method = match.group(1)
+            method_name = match.group(2)
+            params = match.group(3) if match.group(3) else ''
+
+            prefix = "self." if is_class_method else ""
+            methods.append(f"{prefix}{method_name}({params})")
+
+        return methods
+
+    def _compress_cpp(self, code: str, filename: str) -> str:
+        """Compress C++ files."""
+        output = f"# {filename}\n\n"
+
+        # Extract includes
+        includes = re.findall(r'#include\s+[<"]([^>"]+)[>"]', code)
+        if includes and self.level == "full":
+            output += f"**Includes** ({len(includes)}): {', '.join(includes[:10])}"
+            if len(includes) > 10:
+                output += f" (+{len(includes)-10} more)"
+            output += "\n\n"
+
+        # Extract namespaces
+        namespaces = re.findall(r'namespace\s+(\w+)', code)
+        if namespaces:
+            output += f"**Namespaces**: {', '.join(set(namespaces))}\n\n"
+
+        # Extract classes
+        class_pattern = r'class\s+(\w+)(?:\s*:\s*(?:public|private|protected)\s+(\w+))?'
+        for match in re.finditer(class_pattern, code):
+            class_name = match.group(1)
+            base_class = match.group(2)
+
+            output += f"## `class {class_name}`"
+            if base_class:
+                output += f" : {base_class}"
+            output += "\n\n"
+
+            # Extract public methods (simplified)
+            methods = self._extract_cpp_methods(code, match.start())
+            if methods and self.level != "minimal":
+                output += "**Methods**:\n"
+                for method in methods[:20]:
+                    output += f"- `{method}`\n"
+                if len(methods) > 20:
+                    output += f"  _(+{len(methods)-20} more)_\n"
+            output += "\n"
+
+        # Extract structs
+        struct_pattern = r'struct\s+(\w+)'
+        structs = re.findall(struct_pattern, code)
+        if structs:
+            for struct_name in structs:
+                output += f"## `struct {struct_name}`\n\n"
+
+        # Extract templates
+        templates = re.findall(r'template\s*<([^>]+)>', code)
+        if templates and self.level == "full":
+            output += f"**Templates**: {len(templates)}\n"
+
+        return output
+
+    def _extract_cpp_methods(self, code: str, class_start: int) -> List[str]:
+        """Extract C++ method signatures."""
+        methods = []
+
+        # Look for methods after class definition
+        # Simplified: returnType methodName(params)
+        method_pattern = r'(?:virtual\s+)?(?:static\s+)?(\w+(?:\s*\*)?)\s+(\w+)\s*\(([^)]*)\)(?:\s+const)?(?:\s*=\s*0)?'
+
+        for match in re.finditer(method_pattern, code[class_start:class_start+5000]):
+            return_type = match.group(1).strip()
+            method_name = match.group(2)
+            params = match.group(3).strip()
+
+            # Skip common non-methods
+            if method_name in ['if', 'while', 'for', 'switch', 'return']:
+                continue
+
+            methods.append(f"{return_type} {method_name}({params})")
+
+        return methods[:20]
+
+    def _compress_powershell(self, code: str, filename: str) -> str:
+        """Compress PowerShell files."""
+        output = f"# {filename}\n\n"
+
+        # Extract functions
+        func_pattern = r'function\s+([\w-]+)\s*(?:\(([^)]*)\))?'
+        functions = []
+
+        for match in re.finditer(func_pattern, code):
+            func_name = match.group(1)
+            params = match.group(2) if match.group(2) else ''
+            functions.append(f"{func_name}({params})")
+
+        if functions:
+            output += f"**Functions** ({len(functions)}):\n"
+            for func in functions[:20]:
+                output += f"- `{func}`\n"
+            if len(functions) > 20:
+                output += f"  _(+{len(functions)-20} more)_\n"
+            output += "\n"
+
+        # Extract cmdlets used
+        cmdlets = re.findall(r'\b([A-Z][a-z]+-[A-Z][a-z]+)\b', code)
+        if cmdlets and self.level == "full":
+            unique_cmdlets = sorted(set(cmdlets))
+            output += f"**Cmdlets Used** ({len(unique_cmdlets)}): {', '.join(unique_cmdlets[:15])}"
+            if len(unique_cmdlets) > 15:
+                output += f" (+{len(unique_cmdlets)-15} more)"
+            output += "\n\n"
+
+        # Extract parameters (param blocks)
+        param_blocks = len(re.findall(r'\[Parameter\(', code))
+        if param_blocks:
+            output += f"**Parameters**: {param_blocks} defined\n\n"
+
+        # Extract variables
+        variables = re.findall(r'\$(\w+)', code)
+        if variables and self.level == "full":
+            unique_vars = sorted(set(variables))[:20]
+            output += f"**Variables**: {', '.join(unique_vars)}"
+            if len(set(variables)) > 20:
+                output += f" (+{len(set(variables))-20} more)"
+            output += "\n"
+
+        return output
+
+    def _compress_shell(self, code: str, filename: str) -> str:
+        """Compress Bash/Shell scripts."""
+        output = f"# {filename}\n\n"
+
+        # Detect shebang
+        shebang_match = re.match(r'^#!(.+)$', code, re.MULTILINE)
+        if shebang_match:
+            output += f"**Shell**: {shebang_match.group(1)}\n\n"
+
+        # Extract functions (two patterns)
+        functions = []
+
+        # Pattern 1: function name() {
+        func_pattern1 = r'function\s+(\w+)\s*\(\)\s*\{'
+        functions.extend(re.findall(func_pattern1, code))
+
+        # Pattern 2: name() {
+        func_pattern2 = r'^(\w+)\s*\(\)\s*\{'
+        functions.extend(re.findall(func_pattern2, code, re.MULTILINE))
+
+        if functions:
+            output += f"**Functions** ({len(functions)}):\n"
+            for func in functions[:20]:
+                output += f"- `{func}()`\n"
+            if len(functions) > 20:
+                output += f"  _(+{len(functions)-20} more)_\n"
+            output += "\n"
+
+        # Extract sourced files
+        sources = re.findall(r'(?:source|\.)\s+([^\s;]+)', code)
+        if sources and self.level == "full":
+            output += f"**Sources**: {', '.join(sources[:10])}\n\n"
+
+        # Extract main commands (common utilities)
+        commands = re.findall(r'\b(grep|sed|awk|find|curl|wget|git|docker|kubectl|npm|yarn)\b', code)
+        if commands and self.level == "full":
+            unique_commands = sorted(set(commands))
+            output += f"**Commands Used**: {', '.join(unique_commands)}\n\n"
+
+        # Extract environment variables
+        env_vars = re.findall(r'\$\{?([A-Z_][A-Z0-9_]*)\}?', code)
+        if env_vars and self.level != "minimal":
+            unique_vars = sorted(set(env_vars))[:15]
+            output += f"**Environment Variables**: {', '.join(unique_vars)}"
+            if len(set(env_vars)) > 15:
+                output += f" (+{len(set(env_vars))-15} more)"
+            output += "\n"
+
+        return output
+
+    def _compress_generic(self, code: str, filename: str) -> str:
+        """Generic compression for non-Python files."""
+        lines = code.splitlines()
+
+        output = f"# {filename}\n\n"
+        output += f"**Type**: {self.language}\n"
+        output += f"**Lines**: {len(lines)}\n\n"
+
+        # Extract comments/docstrings (simple heuristic)
+        doc_lines = [l.strip() for l in lines if l.strip().startswith(("//", "#", "/*", "*", "'''", '"""'))]
+        if doc_lines and self.level == "full":
+            output += "**Description**:\n"
+            output += "\n".join(doc_lines[:5]) + "\n\n"
+
+        # Extract function signatures (very basic)
+        func_lines = [l for l in lines if any(kw in l for kw in ["function", "def ", "class ", "interface"])]
+        if func_lines:
+            output += "**Definitions**:\n"
+            for line in func_lines[:10]:
+                output += f"- {line.strip()}\n"
+
+        return output
+
+    def _extract_imports(self, tree: ast.AST) -> List[str]:
+        """Extract import statements."""
+        imports = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    imports.append(alias.name)
+            elif isinstance(node, ast.ImportFrom):
+                if node.module:
+                    imports.append(node.module)
+        return sorted(set(imports))
+
+    def _summarize_class(self, node: ast.ClassDef) -> str:
+        """Summarize class."""
+        output = f"## `{node.name}`"
+
+        if node.bases:
+            bases = [self._get_name(base) for base in node.bases]
+            output += f"({', '.join(bases)})"
+
+        output += "\n\n"
+
+        # Docstring
+        if self.level == "full":
+            docstring = ast.get_docstring(node)
+            if docstring:
+                output += f"{self._truncate_docstring(docstring)}\n\n"
+
+        # Methods
+        methods = [item for item in node.body if isinstance(item, ast.FunctionDef)]
+
+        if self.level == "minimal":
+            # Public methods only
+            methods = [m for m in methods if not m.name.startswith("_")]
+
+        if methods:
+            output += "**Methods**:\n"
+            for method in methods[:20]:  # Limit to 20 methods
+                sig = self._get_signature(method)
+                output += f"- `{sig}`\n"
+
+                if self.level == "full":
+                    doc = ast.get_docstring(method)
+                    if doc:
+                        first_line = doc.split('\n')[0]
+                        if len(first_line) > 80:
+                            first_line = first_line[:77] + "..."
+                        output += f"  {first_line}\n"
+
+            if len(methods) > 20:
+                output += f"  _(+{len(methods)-20} more methods)_\n"
+
+        return output + "\n"
+
+    def _summarize_function(self, node: ast.FunctionDef) -> str:
+        """Summarize function."""
+        sig = self._get_signature(node)
+        output = f"## `{sig}`\n\n"
+
+        if self.level == "full":
+            docstring = ast.get_docstring(node)
+            if docstring:
+                output += f"{self._truncate_docstring(docstring)}\n\n"
+
+        return output
+
+    def _get_signature(self, node: ast.FunctionDef) -> str:
+        """Extract function signature."""
+        args = []
+
+        for arg in node.args.args:
+            arg_str = arg.arg
+            if arg.annotation:
+                arg_str += f": {self._get_name(arg.annotation)}"
+            args.append(arg_str)
+
+        defaults = node.args.defaults
+        if defaults:
+            num_no_defaults = len(node.args.args) - len(defaults)
+            for i, default in enumerate(defaults):
+                arg_idx = num_no_defaults + i
+                if arg_idx < len(args):
+                    default_val = self._get_name(default)
+                    if len(default_val) > 20:
+                        default_val = "..."
+                    args[arg_idx] += f" = {default_val}"
+
+        return_type = ""
+        if node.returns:
+            return_type = f" -> {self._get_name(node.returns)}"
+
+        return f"{node.name}({', '.join(args)}){return_type}"
+
+    def _get_name(self, node: ast.AST) -> str:
+        """Get name from AST node."""
+        if isinstance(node, ast.Name):
+            return node.id
+        elif isinstance(node, ast.Constant):
+            val = repr(node.value)
+            return val if len(val) < 20 else "..."
+        elif isinstance(node, ast.Attribute):
+            return f"{self._get_name(node.value)}.{node.attr}"
+        elif isinstance(node, ast.Subscript):
+            return f"{self._get_name(node.value)}[{self._get_name(node.slice)}]"
+        else:
+            return "..."
+
+    def _truncate_docstring(self, doc: str) -> str:
+        """Truncate docstring based on compression level."""
+        if self.level == "signatures":
+            return doc.split('\n')[0]
+        elif self.level == "minimal":
+            return ""
+        else:
+            # Full: Keep first 3 lines
+            lines = doc.split('\n')[:3]
+            result = '\n'.join(lines)
+            if len(doc.split('\n')) > 3:
+                result += "\n..."
+            return result
+
+    def count_tokens(self, text: str) -> int:
+        """Count tokens in text."""
+        if self.encoder:
+            return len(self.encoder.encode(text))
+        else:
+            return len(text) // 4
+
+
+def compress_directory(path: Path, compressor: ContextCompressor,
+                      format: str = "text") -> List[CompressionResult]:
+    """Compress all files in directory."""
+    results = []
+
+    # Define file patterns for each language
+    if compressor.language == "python":
+        patterns = ["*.py"]
+    elif compressor.language == "javascript":
+        patterns = ["*.js", "*.jsx"]
+    elif compressor.language == "typescript":
+        patterns = ["*.ts", "*.tsx"]
+    elif compressor.language == "go":
+        patterns = ["*.go"]
+    elif compressor.language == "markdown":
+        patterns = ["*.md", "*.markdown"]
+    elif compressor.language == "json":
+        patterns = ["*.json"]
+    elif compressor.language == "yaml":
+        patterns = ["*.yaml", "*.yml"]
+    elif compressor.language == "html":
+        patterns = ["*.html", "*.htm"]
+    elif compressor.language == "css":
+        patterns = ["*.css", "*.scss", "*.sass"]
+    elif compressor.language == "java":
+        patterns = ["*.java"]
+    elif compressor.language == "rust":
+        patterns = ["*.rs"]
+    elif compressor.language == "ruby":
+        patterns = ["*.rb"]
+    elif compressor.language == "cpp":
+        patterns = ["*.cpp", "*.cc", "*.cxx", "*.hpp", "*.h", "*.hxx"]
+    elif compressor.language == "powershell":
+        patterns = ["*.ps1"]
+    elif compressor.language == "shell":
+        patterns = ["*.sh", "*.bash"]
+    else:
+        patterns = ["*"]
+
+    # Collect all matching files
+    files = []
+    for pattern in patterns:
+        files.extend(path.rglob(pattern))
+
+    for file in files:
+        # Skip common non-code files
+        if file.name in ["__init__.py", "node_modules"] or "test" in file.name.lower():
+            continue
+
+        # Skip hidden files and directories
+        if any(part.startswith('.') for part in file.parts):
+            continue
+
+        try:
+            code = file.read_text(encoding='utf-8')
+            result = compressor.compress_code(code, str(file.relative_to(path)))
+            results.append(result)
+        except Exception as e:
+            results.append(CompressionResult(
+                file=str(file.relative_to(path)),
+                original_tokens=0,
+                compressed_tokens=0,
+                savings_pct=0.0,
+                compressed_content="",
+                error=str(e)
+            ))
+
+    return results
+
+
+def format_output(results: List[CompressionResult], format: str, verbose: bool = False) -> str:
+    """Format output based on requested format."""
+
+    if format == "json":
+        # LLM-friendly JSON output
+        output = {
+            "version": VERSION,
+            "results": [r.to_dict() for r in results],
+            "summary": {
+                "total_files": len(results),
+                "total_original_tokens": sum(r.original_tokens for r in results),
+                "total_compressed_tokens": sum(r.compressed_tokens for r in results),
+                "average_savings_pct": sum(r.savings_pct for r in results) / len(results) if results else 0,
+                "errors": len([r for r in results if r.error])
+            }
+        }
+        return json.dumps(output, indent=2)
+
+    elif format == "summary":
+        # Summary table only
+        output = f"\n{'File':<40} {'Original':<12} {'Compressed':<12} {'Savings':<10}\n"
+        output += "=" * 80 + "\n"
+
+        total_orig = 0
+        total_comp = 0
+
+        for result in results:
+            if result.error:
+                output += f"{result.file:<40} ERROR: {result.error}\n"
+                continue
+
+            total_orig += result.original_tokens
+            total_comp += result.compressed_tokens
+
+            output += f"{result.file:<40} {result.original_tokens:<12} "
+            output += f"{result.compressed_tokens:<12} {result.savings_pct:>6.1f}%\n"
+
+        if total_orig > 0:
+            total_savings = ((total_orig - total_comp) / total_orig * 100)
+            output += "=" * 80 + "\n"
+            output += f"{'TOTAL':<40} {total_orig:<12} {total_comp:<12} {total_savings:>6.1f}%\n"
+
+        return output
+
+    else:  # text (default)
+        # Full compressed content
+        output = ""
+        for result in results:
+            if result.error:
+                output += f"# ERROR in {result.file}: {result.error}\n\n"
+                continue
+
+            output += result.compressed_content
+            output += "\n" + "-" * 80 + "\n\n"
+
+            if verbose:
+                output += f"# Stats: {result.original_tokens} → {result.compressed_tokens} tokens "
+                output += f"({result.savings_pct:.1f}% savings)\n\n"
+
+        return output
+
+
+def main():
+    """Main entry point."""
+    parser = argparse.ArgumentParser(
+        description="UCPL Context Compressor - Compress code context for LLMs",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Compress a file
+  ucpl-compress file.py
+
+  # Compress directory
+  ucpl-compress src/
+
+  # Pipe input
+  cat file.py | ucpl-compress
+
+  # JSON output for LLM tools
+  ucpl-compress file.py --format json
+
+  # Different compression levels
+  ucpl-compress file.py --level signatures
+  ucpl-compress file.py --level minimal
+
+LLM Tool Integration:
+  LLMs can invoke this tool via: @@compress:context[path=file.py, level=full]
+        """
+    )
+
+    parser.add_argument(
+        "path",
+        nargs="?",
+        help="File or directory to compress (use '-' or omit for stdin)"
+    )
+
+    parser.add_argument(
+        "-l", "--level",
+        choices=["full", "signatures", "minimal"],
+        default="full",
+        help="Compression level (default: full)"
+    )
+
+    parser.add_argument(
+        "-f", "--format",
+        choices=["text", "json", "summary"],
+        default="text",
+        help="Output format (default: text)"
+    )
+
+    parser.add_argument(
+        "--language",
+        choices=["python", "javascript", "typescript", "go", "markdown", "json", "yaml", "html", "css", "java", "rust", "ruby", "cpp", "powershell", "shell"],
+        default="python",
+        help="Programming language (default: python)"
+    )
+
+    parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="Include compression statistics"
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"ucpl-compress {VERSION}"
+    )
+
+    args = parser.parse_args()
+
+    # Auto-detect language from file extension if not explicitly set and path is provided
+    language = args.language
+    if args.path and args.path != "-" and args.language == "python":
+        path = Path(args.path)
+        if path.is_file():
+            ext = path.suffix.lower()
+            if ext in [".js", ".jsx"]:
+                language = "javascript"
+            elif ext in [".ts", ".tsx"]:
+                language = "typescript"
+            elif ext == ".go":
+                language = "go"
+            elif ext in [".md", ".markdown"]:
+                language = "markdown"
+            elif ext == ".json":
+                language = "json"
+            elif ext in [".yaml", ".yml"]:
+                language = "yaml"
+            elif ext in [".html", ".htm"]:
+                language = "html"
+            elif ext in [".css", ".scss", ".sass"]:
+                language = "css"
+            elif ext == ".java":
+                language = "java"
+            elif ext == ".rs":
+                language = "rust"
+            elif ext == ".rb":
+                language = "ruby"
+            elif ext in [".cpp", ".cc", ".cxx", ".hpp", ".h", ".hxx"]:
+                language = "cpp"
+            elif ext == ".ps1":
+                language = "powershell"
+            elif ext in [".sh", ".bash"]:
+                language = "shell"
+
+    compressor = ContextCompressor(level=args.level, language=language)
+
+    # Determine input source
+    if args.path is None or args.path == "-":
+        # Read from stdin
+        code = sys.stdin.read()
+        result = compressor.compress_code(code, "stdin")
+        results = [result]
+
+    else:
+        path = Path(args.path)
+
+        if not path.exists():
+            print(f"Error: {path} does not exist", file=sys.stderr)
+            sys.exit(1)
+
+        if path.is_file():
+            # Single file
+            code = path.read_text(encoding='utf-8')
+            result = compressor.compress_code(code, str(path))
+            results = [result]
+
+        elif path.is_dir():
+            # Directory
+            results = compress_directory(path, compressor, args.format)
+
+        else:
+            print(f"Error: {path} is neither file nor directory", file=sys.stderr)
+            sys.exit(1)
+
+    # Output
+    output = format_output(results, args.format, args.verbose)
+    print(output)
+
+
+if __name__ == "__main__":
+    main()
