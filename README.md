@@ -1,4 +1,5 @@
-# Ultra-Compact Prompt Language (UCPL): A New Approach to Token-Efficient LLM Communication
+# Ultra-Compact Prompt Language (UCPL)
+*A New Approach to Token-Efficient LLM Communication*
 
 ## The Token Problem Nobody's Talking About
 
