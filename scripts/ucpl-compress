@@ -27,6 +27,7 @@ License: MIT
 
 import argparse
 import ast
+import fnmatch
 import json
 import re
 import sys
@@ -1343,53 +1344,87 @@ class ContextCompressor:
 
 
 def compress_directory(path: Path, compressor: ContextCompressor,
-                      format: str = "text") -> List[CompressionResult]:
-    """Compress all files in directory."""
+                      format: str = "text",
+                      include: Optional[List[str]] = None,
+                      exclude: Optional[List[str]] = None) -> List[CompressionResult]:
+    """Compress all files in directory.
+
+    Args:
+        path: Directory path to compress
+        compressor: ContextCompressor instance
+        format: Output format (text/json/summary)
+        include: List of glob patterns to include (e.g., ["*.py", "src/**/*.js"])
+        exclude: List of glob patterns to exclude (e.g., ["**/test_*", "**/__pycache__"])
+    """
     results = []
 
-    # Define file patterns for each language
-    if compressor.language == "python":
-        patterns = ["*.py"]
-    elif compressor.language == "javascript":
-        patterns = ["*.js", "*.jsx"]
-    elif compressor.language == "typescript":
-        patterns = ["*.ts", "*.tsx"]
-    elif compressor.language == "go":
-        patterns = ["*.go"]
-    elif compressor.language == "markdown":
-        patterns = ["*.md", "*.markdown"]
-    elif compressor.language == "json":
-        patterns = ["*.json"]
-    elif compressor.language == "yaml":
-        patterns = ["*.yaml", "*.yml"]
-    elif compressor.language == "html":
-        patterns = ["*.html", "*.htm"]
-    elif compressor.language == "css":
-        patterns = ["*.css", "*.scss", "*.sass"]
-    elif compressor.language == "java":
-        patterns = ["*.java"]
-    elif compressor.language == "rust":
-        patterns = ["*.rs"]
-    elif compressor.language == "ruby":
-        patterns = ["*.rb"]
-    elif compressor.language == "cpp":
-        patterns = ["*.cpp", "*.cc", "*.cxx", "*.hpp", "*.h", "*.hxx"]
-    elif compressor.language == "powershell":
-        patterns = ["*.ps1"]
-    elif compressor.language == "shell":
-        patterns = ["*.sh", "*.bash"]
+    # Define default file patterns for each language if no include patterns specified
+    if include:
+        patterns = include
     else:
-        patterns = ["*"]
+        if compressor.language == "python":
+            patterns = ["*.py"]
+        elif compressor.language == "javascript":
+            patterns = ["*.js", "*.jsx"]
+        elif compressor.language == "typescript":
+            patterns = ["*.ts", "*.tsx"]
+        elif compressor.language == "go":
+            patterns = ["*.go"]
+        elif compressor.language == "markdown":
+            patterns = ["*.md", "*.markdown"]
+        elif compressor.language == "json":
+            patterns = ["*.json"]
+        elif compressor.language == "yaml":
+            patterns = ["*.yaml", "*.yml"]
+        elif compressor.language == "html":
+            patterns = ["*.html", "*.htm"]
+        elif compressor.language == "css":
+            patterns = ["*.css", "*.scss", "*.sass"]
+        elif compressor.language == "java":
+            patterns = ["*.java"]
+        elif compressor.language == "rust":
+            patterns = ["*.rs"]
+        elif compressor.language == "ruby":
+            patterns = ["*.rb"]
+        elif compressor.language == "cpp":
+            patterns = ["*.cpp", "*.cc", "*.cxx", "*.hpp", "*.h", "*.hxx"]
+        elif compressor.language == "powershell":
+            patterns = ["*.ps1"]
+        elif compressor.language == "shell":
+            patterns = ["*.sh", "*.bash"]
+        else:
+            patterns = ["*"]
 
     # Collect all matching files
     files = []
     for pattern in patterns:
-        files.extend(path.rglob(pattern))
+        # Support both simple patterns (*.py) and recursive patterns (**/*.py)
+        if "**/" in pattern:
+            files.extend(path.rglob(pattern.replace("**/", "")))
+        else:
+            files.extend(path.rglob(pattern))
 
     for file in files:
-        # Skip common non-code files
-        if file.name in ["__init__.py", "node_modules"] or "test" in file.name.lower():
-            continue
+        relative_path = str(file.relative_to(path))
+
+        # Apply exclude patterns
+        if exclude:
+            excluded = False
+            for pattern in exclude:
+                # Match against relative path
+                if fnmatch.fnmatch(relative_path, pattern) or \
+                   fnmatch.fnmatch(file.name, pattern) or \
+                   any(fnmatch.fnmatch(part, pattern.replace("**/", "").replace("/", ""))
+                       for part in file.parts):
+                    excluded = True
+                    break
+            if excluded:
+                continue
+
+        # Skip common non-code files (only if no custom patterns specified)
+        if not include and not exclude:
+            if file.name in ["__init__.py", "node_modules"] or "test" in file.name.lower():
+                continue
 
         # Skip hidden files and directories
         if any(part.startswith('.') for part in file.parts):
@@ -1397,11 +1432,11 @@ def compress_directory(path: Path, compressor: ContextCompressor,
 
         try:
             code = file.read_text(encoding='utf-8')
-            result = compressor.compress_code(code, str(file.relative_to(path)))
+            result = compressor.compress_code(code, relative_path)
             results.append(result)
         except Exception as e:
             results.append(CompressionResult(
-                file=str(file.relative_to(path)),
+                file=relative_path,
                 original_tokens=0,
                 compressed_tokens=0,
                 savings_pct=0.0,
@@ -1487,6 +1522,10 @@ Examples:
   # Compress directory
   ucpl-compress src/
 
+  # Compress with filtering
+  ucpl-compress src/ --exclude '**/test_*' --exclude '**/__pycache__'
+  ucpl-compress src/ --include '*.py' --include '*.js'
+
   # Pipe input
   cat file.py | ucpl-compress
 
@@ -1533,6 +1572,18 @@ LLM Tool Integration:
         "-v", "--verbose",
         action="store_true",
         help="Include compression statistics"
+    )
+
+    parser.add_argument(
+        "--include",
+        action="append",
+        help="Include files matching pattern (can be used multiple times, e.g., --include '*.py' --include 'src/**/*.js')"
+    )
+
+    parser.add_argument(
+        "--exclude",
+        action="append",
+        help="Exclude files matching pattern (can be used multiple times, e.g., --exclude '**/test_*' --exclude '**/__pycache__')"
     )
 
     parser.add_argument(
@@ -1602,7 +1653,13 @@ LLM Tool Integration:
 
         elif path.is_dir():
             # Directory
-            results = compress_directory(path, compressor, args.format)
+            results = compress_directory(
+                path,
+                compressor,
+                args.format,
+                include=args.include,
+                exclude=args.exclude
+            )
 
         else:
             print(f"Error: {path} is neither file nor directory", file=sys.stderr)
