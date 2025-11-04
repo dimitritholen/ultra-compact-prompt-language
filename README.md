@@ -1,5 +1,13 @@
 # Ultra-Compact Prompt Language (UCPL)
+
 *A New Approach to Token-Efficient LLM Communication*
+
+## First glance comparison
+
+These two prompts do exactly the same thing.
+
+- [natural language prompt - 1926 tokens](./examples/worktrees-parallel-full.md)
+- [UCPL prompt - 561 tokens](./examples/worktrees-parallel-ucpl.md)
 
 ## The Token Problem Nobody's Talking About
 
@@ -269,6 +277,7 @@ UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM
 ```
 
 **Key Design**:
+
 - `@@` prefix signals explicit tool invocation
 - Tool-agnostic: Use abstract capabilities, not specific tool names
 - LLM adapts: Maps capabilities to available tools in its environment
@@ -290,6 +299,7 @@ UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM
 ### Examples
 
 **Basic usage**:
+
 ```
 @@search:web[query="UCPL syntax"]
 @@think:deep[steps=10]
@@ -297,6 +307,7 @@ UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM
 ```
 
 **In context** (Research workflow):
+
 ```
 @role:researcher
 @task:investigate|comprehensive
@@ -311,6 +322,7 @@ UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM
 **Token efficiency**: ~35 tokens vs ~95+ in natural language (63% reduction)
 
 **Why `@@`?**
+
 - Makes tool usage explicit and mandatory
 - Portable across LLM providers (Claude, GPT, Gemini)
 - LLM decides which concrete tool to use based on availability
