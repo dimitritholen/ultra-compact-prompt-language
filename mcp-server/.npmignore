@@ -1,0 +1,11 @@
+# Don't publish these files to npm
+*.tgz
+node_modules/
+.DS_Store
+.env
+.env.*
+*.log
+test/
+tests/
+*.test.js
+*.spec.js

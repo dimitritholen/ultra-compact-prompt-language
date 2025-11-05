@@ -1,24 +1,50 @@
 {
   "name": "ucpl-compress-mcp",
   "version": "1.0.0",
-  "description": "MCP server for UCPL code context compression",
+  "description": "Model Context Protocol server for code context compression. Reduces LLM context by 70-98% while preserving semantic meaning.",
   "main": "server.js",
   "bin": {
     "ucpl-compress-mcp": "./server.js"
   },
+  "files": [
+    "server.js",
+    "scripts/",
+    "config-examples/",
+    "README.md"
+  ],
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "postinstall": "node -e \"try { require('fs').chmodSync(require('path').join(__dirname, 'scripts', 'ucpl-compress'), '755'); } catch(e) { console.warn('Could not set permissions on ucpl-compress:', e.message); }\""
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
     "compression",
     "context",
     "llm",
-    "code"
+    "code",
+    "claude",
+    "ai",
+    "tokens",
+    "ucpl"
   ],
-  "author": "",
+  "author": "UCPL Project",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ultra-compact-prompt-language.git",
+    "directory": "mcp-server"
+  },
+  "homepage": "https://github.com/yourusername/ultra-compact-prompt-language#readme",
+  "bugs": {
+    "url": "https://github.com/yourusername/ultra-compact-prompt-language/issues"
+  },
   "engines": {
     "node": ">=16.0.0"
-  }
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ]
 }

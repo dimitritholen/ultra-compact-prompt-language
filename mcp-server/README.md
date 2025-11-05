@@ -12,43 +12,37 @@ Model Context Protocol (MCP) server that provides code context compression as a 
 
 ## Installation
 
+### Quick Start (Recommended)
+
+Install globally via npm:
+
+```bash
+npm install -g ucpl-compress-mcp
+```
+
+That's it! The package includes both the MCP server and compression CLI.
+
 ### Prerequisites
 
-- Node.js 16+ installed
-- ucpl-compress script available (comes with this repository)
+- **Node.js 16+** installed
+- **Python 3.7+** (for the compression engine)
 
-### Setup
+### Alternative: Install from Source
 
-1. **Make scripts executable:**
-   ```bash
-   chmod +x mcp-server/server.js
-   chmod +x scripts/ucpl-compress
-   ```
+If you want to install from this repository:
 
-2. **Install for npm (optional):**
-   ```bash
-   cd mcp-server
-   npm install -g .
-   ```
+```bash
+cd mcp-server
+npm install -g .
+```
 
 ## Configuration
 
 ### Claude Desktop
 
-Add to `~/.config/claude/claude_desktop_config.json` (Linux/Mac) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-
-```json
-{
-  "mcpServers": {
-    "ucpl-compress": {
-      "command": "node",
-      "args": ["/absolute/path/to/ultra-compact-prompt-language/mcp-server/server.js"]
-    }
-  }
-}
-```
-
-**Alternative (if installed via npm):**
+Add to your config file:
+- Linux/Mac: `~/.config/claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 ```json
 {
@@ -60,6 +54,8 @@ Add to `~/.config/claude/claude_desktop_config.json` (Linux/Mac) or `%APPDATA%\C
 }
 ```
 
+**That's all!** No absolute paths, no manual setup.
+
 ### Claude Code
 
 Claude Code automatically detects MCP servers configured in Claude Desktop. No additional configuration needed.
@@ -70,8 +66,7 @@ Refer to your client's MCP server configuration documentation. Use the same patt
 
 ```json
 {
-  "command": "node",
-  "args": ["/path/to/mcp-server/server.js"]
+  "command": "ucpl-compress-mcp"
 }
 ```
 
@@ -149,42 +144,56 @@ Claude will invoke:
 
 ### Server not appearing in Claude Desktop
 
-1. **Check config file location:**
+1. **Verify installation:**
+   ```bash
+   which ucpl-compress-mcp  # Should show path
+   ucpl-compress-mcp --version  # Should not error
+   ```
+
+2. **Check config file location:**
    - Linux/Mac: `~/.config/claude/claude_desktop_config.json`
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-2. **Verify absolute paths:**
-   ```bash
-   # Get absolute path
-   cd /path/to/ultra-compact-prompt-language
-   pwd  # Copy this output
+3. **Verify config syntax:**
+   ```json
+   {
+     "mcpServers": {
+       "ucpl-compress": {
+         "command": "ucpl-compress-mcp"
+       }
+     }
+   }
    ```
 
-3. **Test server manually:**
-   ```bash
-   node mcp-server/server.js
-   # Should wait for input (stdin), press Ctrl+C to exit
-   ```
+4. **Restart Claude Desktop** after config changes
 
-4. **Check permissions:**
-   ```bash
-   ls -la mcp-server/server.js scripts/ucpl-compress
-   # Both should be executable (x permission)
-   ```
-
-5. **Restart Claude Desktop** after config changes
+5. **Check logs** (location varies by client):
+   - Claude Desktop: `~/.config/claude/logs/` or `%APPDATA%\Claude\logs\`
 
 ### Tool execution fails
 
-1. **Verify ucpl-compress works standalone:**
+1. **Verify Python is installed:**
    ```bash
-   scripts/ucpl-compress src/ --format summary
+   python3 --version  # Should be 3.7+
    ```
 
-2. **Check file paths are accessible** from the MCP server process
+2. **Test the compression CLI:**
+   ```bash
+   # Find where it's installed
+   npm list -g ucpl-compress-mcp
 
-3. **Check logs** (location varies by client):
-   - Claude Desktop: `~/.config/claude/logs/` or `%APPDATA%\Claude\logs\`
+   # Test manually
+   cd /your/project
+   ucpl-compress-mcp  # Should show it's waiting for input
+   ```
+
+3. **Reinstall if needed:**
+   ```bash
+   npm uninstall -g ucpl-compress-mcp
+   npm install -g ucpl-compress-mcp
+   ```
+
+4. **Check file paths are accessible** from the working directory
 
 ## Technical Details
 

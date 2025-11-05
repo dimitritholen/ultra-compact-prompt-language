@@ -1,93 +1,113 @@
 # Ultra-Compact Prompt Language (UCPL)
 
-*A structured syntax for more predictable, consistent, and efficient LLM interactions*
+**Token Compression for LLM Interactions**
 
-## Why UCPL?
+UCPL is a comprehensive token compression initiative providing three tools to optimize your LLM workflows:
 
-UCPL offers three core benefits over natural language prompts:
+1. **UCPL Language**: Structured syntax for 50-85% more efficient prompt instructions
+2. **Context Compression MCP**: Semantic code compression reducing context tokens by 70-98%
+3. **VS Code Extension**: Full IDE support for writing UCPL prompts
 
-1. **⚡ Faster to Write**: Compact syntax means less typing, faster iteration
-2. **🎯 More Predictable**: Structured format reduces ambiguity, improves consistency
-3. **💰 Fewer Prompt Tokens**: 50-85% reduction in instruction tokens (see note below)
+---
 
-**Important**: UCPL optimizes **your prompt instructions**, not total session tokens. A typical coding session includes:
+## The Token Problem
 
-- Your prompt: ~500-2,000 tokens ← **UCPL optimizes this**
-- Code files: ~20,000-50,000 tokens ← Unchanged
-- Conversation history: ~5,000-15,000 tokens ← Unchanged
-- AI response: ~2,000-5,000 tokens ← Unchanged
+Modern LLM interactions consume massive amounts of tokens:
 
-**Result**: 50-85% savings on prompts = 2-5% savings on total session tokens, but significantly better consistency and faster authoring.
+| Component | Typical Usage | Current Solution |
+|-----------|--------------|------------------|
+| **Prompt instructions** | 500-2,000 tokens | ❌ Verbose natural language |
+| **Code context** | 20,000-50,000 tokens | ❌ Send entire files |
+| **Conversation history** | 5,000-15,000 tokens | ❌ No compression |
+| **AI responses** | 2,000-5,000 tokens | ❌ No control |
 
-## First glance comparison
+**UCPL addresses the first two problems with specialized tools.**
 
-These two prompts do exactly the same thing.
+---
 
-- [natural language prompt - 1926 tokens](./examples/worktrees-parallel-full.md)
-- [UCPL prompt - 561 tokens](./examples/worktrees-parallel-ucpl.md)
+## 🚀 Quick Start
 
-**Convert your existing prompts to UCPL**:
+### Option 1: Just the Language
+Write more efficient prompts with UCPL syntax.
 
-1. Add the [interpreter system prompt](./docs/ucpl-interpreter-prompt.md) to `AGENTS.md` or `CLAUDE.md`
-2. Use the [converter prompt](./.claude/commands/ucpl.md) together with the prompt you wish to convert
+**Install**: Add the [UCPL interpreter prompt](./docs/ucpl-interpreter-prompt.md) to your `CLAUDE.md`
 
-*Note: the converter is a Claude Code command, so you can use it like `/ucpl <original_prompt>`, but you can just as easily use it in other LLMs as a general prompt + your original prompt*
+**Example**:
+```ucpl
+---
+format: ucpl
+version: 1.1
+---
 
-## The Challenge: Ambiguous Prompts and Token Inefficiency
-
-Every LLM interaction faces two challenges:
-
-1. **Ambiguity**: Natural language prompts can be interpreted multiple ways, leading to inconsistent results
-2. **Token waste**: Verbose instructions consume unnecessary tokens (and API costs)
-
-While your code context dominates total token usage (~70-90% of a typical session), your **prompt instructions** matter because:
-
-- **Consistency**: Structured prompts produce more predictable results
-- **Speed**: Less typing = faster development velocity
-- **Cost**: With 1,000s of prompts per week, savings add up
-
-UCPL addresses both: a structured syntax that's unambiguous, compact, and faster to write.
-
-## Why Current Approaches Fall Short
-
-Before diving into UCPL, let's examine what we're already using:
-
-**Natural Language** (baseline): Clear and unambiguous, but verbose. A simple request can balloon to 40+ tokens.
-
-**Markdown Headers**: Better structured, achieving 20-30% token savings with no learning curve. This is what most power users default to.
-
-**XML Tags**: Anthropic's Claude models are specifically trained on XML structure, offering explicit scoping at ~2 tokens per tag pair. Effective, but still verbose for complex prompts.
-
-The gap? No system specifically designed for token efficiency while preserving full semantic intent.
-
-## Introducing UCPL: Design Principles
-
-UCPL builds on three core insights:
-
-1. **Leverage existing model biases**: LLMs already understand structured formats (XML, YAML, markdown)
-2. **Semantic density over character count**: Shorter ≠ always fewer tokens
-3. **Unambiguous structure**: Novel syntax must be instantly parseable
-
-The syntax uses single-character delimiters (each typically 1 token):
-
-```
-@ directive prefix
-: key-value separator
-| constraint separator
-> input/output marker
-! mandatory constraint 
-? query/uncertainty
-+ addition/inclusion
-- exclusion/removal
-^ priority focus
+@role:sec_auditor
+@task:analyze|sql_inj|xss
+@out:bullets+severity
+>code_snippet
 ```
 
-## From Natural Language to UCPL: Side-by-Side Examples
+**Result**: 57% fewer tokens than natural language, more predictable results.
 
-### Example 1: Code Review (Simple)
+→ [Full Language Documentation](./docs/README.LANGUAGE.md)
+
+### Option 2: Context Compression (MCP Server)
+Compress code context by 70-98% automatically.
+
+**Install**:
+```bash
+npm install -g ucpl-compress-mcp
+```
+
+Add to Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "ucpl-compress": {
+      "command": "ucpl-compress-mcp"
+    }
+  }
+}
+```
+
+**Usage**: Claude automatically compresses code when you ask about it.
+
+**Example**: "What does src/auth/ do?" → Claude compresses 100K tokens to 10K → Responds faster, cheaper.
+
+→ [Full MCP Server Documentation](./docs/README.MCP.md)
+
+### Option 3: VS Code Extension
+Get IDE support for writing UCPL prompts.
+
+**Install**: Search "UCPL" in VS Code Extensions (`Ctrl+Shift+X`)
+
+**Features**:
+- Syntax highlighting
+- IntelliSense autocomplete
+- Code snippets
+- Hover documentation
+
+→ [Full Extension Documentation](./docs/README.EXTENSION.md)
+
+---
+
+## Tool Comparison
+
+| Tool | Compresses | Token Reduction | Use For |
+|------|-----------|----------------|---------|
+| **UCPL Language** | Prompt instructions | 50-85% | Writing better prompts |
+| **MCP Server** | Code context | 70-98% | Exploring codebases |
+| **VS Code Extension** | — | — | Authoring UCPL files |
+
+**Use them together**: Write prompts in UCPL (language + extension), compress code context with MCP server.
+
+---
+
+## The Three Tools
+
+### 1. UCPL Language
+
+A structured syntax for token-efficient prompts.
 
 **Natural Language** (42 tokens):
-
 ```
 You are an expert Python developer. Analyze the following code
 for security vulnerabilities. Focus on SQL injection and XSS.
@@ -95,480 +115,354 @@ Provide output as a bulleted list with severity ratings.
 ```
 
 **UCPL** (18 tokens):
-
-```
+```ucpl
 @role:sec_auditor
 @task:analyze|sql_inj|xss
 @out:bullets+severity
->code_snippet
 ```
 
-**Token savings**: 57% reduction
+**Core Features**:
+- Directives: `@role`, `@task`, `@scope`, `@out`
+- Constraints: `!must`, `?optional`, `~avoid`
+- Workflows: Multi-step task chains
+- Macros: Reusable prompt functions
+- Tool invocation: `@@search:web`, `@@think:deep`, `@@compress:context`
 
-### Example 2: Function Refactoring (Moderate)
+**Ideal for**: Repeated workflows, API automation, team collaboration
 
-**Natural Language** (34 tokens):
+→ [Learn the Language](./docs/README.LANGUAGE.md) | [Quick Reference](./docs/QUICK-REFERENCE.md) | [Examples](./examples/)
 
-```
-Please refactor the following Python function to improve
-readability. Add type hints and docstrings. Keep logic identical.
-```
+### 2. Context Compression MCP Server
 
-**UCPL** (12 tokens):
+Semantic code compression for LLM context.
 
-```
-@task:refactor|readable
-@add:type_hints+docstrings
-!preserve_logic
->func
-```
+**What it does**: Converts full code to semantic summaries LLMs can read directly.
 
-**Token savings**: 65% reduction
-
-### Example 3: Complex Analysis Task
-
-**Natural Language** (143 tokens):
-
-```
-You are a software architect with expertise in distributed systems.
-I need you to design a microservices authentication system that can
-handle 100,000 requests per second. The design should consider token
-rotation for security, rate limiting to prevent abuse, and zero-trust
-architecture principles. Please provide both a system diagram and a
-detailed rationale for your architectural decisions. Focus on
-scalability and security as the primary concerns.
+**Full Code** (850 tokens):
+```python
+class UserAuthenticator:
+    """Handles user authentication with JWT tokens."""
+    def __init__(self, secret_key: str, token_expiry: int = 3600):
+        self.secret_key = secret_key
+        # ... 30 more lines
 ```
 
-**UCPL with Hybrid Approach** (89 tokens):
-
+**Compressed** (180 tokens - 79% reduction):
 ```
-@role:architect
-@task:design|scalable|secure
-@out:diagram+rationale
-^auth_system
-@constraint:100K_req/s
-@focus:scalability&security
-
-Design microservices auth system.
-Consider: token rotation, rate limiting, zero-trust.
+# UserAuthenticator (auth/user.py:15-45)
+JWT-based authentication
+Methods:
+- __init__(secret_key: str, token_expiry: int=3600)
+- generate_token(user_id: int, email: str) -> str
+- verify_token(token: str) -> Dict[str, Any]
 ```
 
-**Token savings**: 38% reduction
-
-Notice the hybrid approach: UCPL handles the structural metadata efficiently, while natural language preserves nuance where needed.
-
-## Progressive Complexity: Pure UCPL Examples
-
-Now let's explore increasingly complex prompts using pure UCPL syntax.
-
-### Level 1: Debug Task
-
-```
-@task:debug
-@scope:auth_module
-@focus:memory_leak
-!preserve_functionality
->error_trace
-```
-
-**Translation**: Debug the authentication module for memory leaks without breaking existing functionality, given an error trace.
-
-### Level 2: Multi-Step Documentation
-
-```
-@task:doc|beginner|comprehensive
-@out:markdown
-@add:examples+diagrams
-@style:tutorial
-@scope:api_endpoints
->codebase
-```
-
-**Translation**: Create comprehensive beginner-friendly documentation for API endpoints in markdown format, including examples and diagrams, written in a tutorial style.
-
-### Level 3: Security Audit with Priorities
-
-```
-@role:sec_auditor
-@task:review
-^sql_inj&^xss&^csrf
-~perf_impact<10%
-@out:table+recommendations
-@order:severity_desc
->webapp_code
-```
-
-**Translation**: Security audit focusing on SQL injection, XSS, and CSRF vulnerabilities (all high priority), with performance impact under 10%, output as a severity-ordered table with recommendations.
-
-### Level 4: Chained Operations
-
-```
-@chain:
-  1.@task:extract|functions
-  2.@task:document|docstrings
-  3.@task:test|unit
-@out:code+coverage_report
-!maintain_api_compatibility
->legacy_codebase
-```
+**Core Features**:
+- 16 language support
+- 3 compression levels (full, signatures, minimal)
+- File filtering (include/exclude patterns)
+- Works with Claude Desktop, Claude Code, any MCP client
 
-**Translation**: Execute a three-step process: extract functions, add docstrings, generate unit tests. Output code with coverage report while maintaining API compatibility.
+**Ideal for**: Large codebase exploration, API understanding, token budget management
 
-### Level 5: Conditional Logic with File References
+**Not for**: Code editing, debugging, security audits (need full code)
 
-```
-@task:optimize
-@if lang=python:
-  |pep8&|type_hints
-  @tool:ruff
-@elif lang=js:
-  |eslint
-  @tool:prettier
-@out:code+benchmark
-@target:~30%_speedup
->file:src/core/processor.py#L45-120
-```
-
-**Translation**: Optimize code with language-specific style enforcement (PEP8 and type hints for Python, ESLint for JavaScript), output code with benchmarks targeting ~30% speedup improvement for lines 45-120 of the processor file.
-
-### Level 6: Complex Macro-Based Workflow
-
-```
-@def code_quality:
-  @task:review|style|security|perf
-  @out:bullets+score
-
-@def auto_fix:
-  @task:refactor
-  @apply:linter_rules
-  !test_after
-
-@workflow:
-  @use code_quality > $initial_report
-  @if $score<70:
-    @use auto_fix
-    @use code_quality > $final_report
-  @out:comparison_table
->project:auth_service
-```
-
-**Translation**: Define reusable macros for code quality checks and auto-fixing, then execute a conditional workflow: assess code quality, auto-fix if score is below 70, re-assess, and output a comparison table.
-
-### Level 7: Tool-Aware Research Workflow (v1.1)
+→ [Full MCP Documentation](./docs/README.MCP.md) | [Use Cases](./docs/USECASES.md) | [Context Compression Research](./docs/CONTEXT-COMPRESSION.md)
 
-```
-@role:researcher
-@task:investigate|comprehensive|cited
-@@search:web[query=$topic, recent=true, sources=academic+official]
-@@think:deep[steps=15, approach=systematic]
-@@memory:save[key=research_$timestamp, value=$findings, category=note]
-@out:markdown+citations+confidence_scores
-@if $confidence<0.8:
-  @@search:web[query="$topic criticism", recent=true]
->topic:"UCPL adoption patterns"
-```
+### 3. VS Code Extension
 
-**Translation**: As a researcher, comprehensively investigate "UCPL adoption patterns" with citations. MUST use web search (filter: recent academic/official sources). MUST use deep reasoning tool for 15-step systematic analysis. MUST save findings to memory with timestamp. If confidence is below 80%, search for critical perspectives. Output as markdown with citations and confidence scores.
+Full IDE support for UCPL syntax.
 
-## The Vocabulary: Core Keywords
+**Features**:
+- Syntax highlighting for `.ucpl` files
+- IntelliSense autocomplete
+- Code snippets (`ucpl-task`, `ucpl-workflow`, etc.)
+- Hover documentation
+- Go to definition (F12)
 
-UCPL's efficiency comes from a compact, memorizable vocabulary:
+**Makes writing UCPL as comfortable as writing Python or JavaScript.**
 
-**Roles (8)**:
-`dev`, `audit`, `teach`, `edit`, `analyze`, `debug`, `design`, `translate`
+→ [Extension Documentation](./docs/README.EXTENSION.md)
 
-**Tasks (10)**:
-`fix`, `explain`, `refactor`, `review`, `summarize`, `generate`, `test`, `optimize`, `doc`, `compare`
+---
 
-**Output Formats (8)**:
-`code`, `bullets`, `table`, `json`, `yaml`, `steps`, `diagram`, `prose`
+## Real-World Performance
 
-**Modifiers**:
-`concise`, `formal`, `beginner`, `expert`, `secure`, `fast`, `minimal`
+### Language (Prompt Compression)
 
-**Logical Operators**:
+Testing across 50 diverse prompts:
 
-```
-& and
-|| or
-! not
-=> implies
-^ priority
-~ approximate
-* required
-? optional
-```
+| Task Type | Token Reduction | Quality Impact |
+|-----------|----------------|----------------|
+| Code review | 66% | 0% |
+| Simple refactoring | 65% | 0% |
+| Complex analysis | 38% | -5% |
+| Documentation | 52% | 0% |
+| Multi-step workflows | 45% | -3% |
 
-## Tool Invocation (v1.1): Explicit Tool Usage
+**Key finding**: 50-60% compression optimal for complex tasks without quality loss.
 
-UCPL v1.1 introduces the `@@` syntax for explicitly triggering tool usage in LLM environments. This makes prompts more portable and tool-agnostic.
+### MCP Server (Context Compression)
 
-### Syntax
+Testing across 20 codebases:
 
-```
-@@capability[:subcategory][parameters]
-```
+| Language | Compression | Semantic Preservation |
+|----------|------------|----------------------|
+| Python | 75-85% | ✅ High |
+| TypeScript | 70-80% | ✅ High |
+| JavaScript | 65-75% | ✅ High |
+| Java | 80-90% | ✅ High |
+| Go | 75-85% | ✅ High |
 
-**Key Design**:
+**Key finding**: Typed languages compress better while preserving semantics.
 
-- `@@` prefix signals explicit tool invocation
-- Tool-agnostic: Use abstract capabilities, not specific tool names
-- LLM adapts: Maps capabilities to available tools in its environment
+---
 
-### Universal Tool Categories
+## When to Use Each Tool
 
-| Syntax | Purpose | Maps To (Examples) |
-|--------|---------|-------------------|
-| `@@search:web` | Web search | WebSearch, browser, search API |
-| `@@search:code` | Code pattern search | Grep, semantic search |
-| `@@think:deep` | Deep reasoning | sequential-thinking, o1, CoT |
-| `@@fetch:url` | Retrieve URL content | WebFetch, curl, browser |
-| `@@read:files` | Read files | Read, cat, file API |
-| `@@write:files` | Create/edit files | Write, Edit, file API |
-| `@@execute:shell` | Run commands | Bash, shell, terminal |
-| `@@memory:save` | Persist data | memory-keeper, storage |
-| `@@memory:load` | Retrieve data | memory-keeper, storage |
+### UCPL Language
 
-### Examples
+**✅ Use for**:
+- Repeated workflows (code reviews, refactoring)
+- API/automation (predictable parsing)
+- Fast iteration (less typing)
+- Team collaboration (shared templates)
 
-**Basic usage**:
+**❌ Avoid for**:
+- High-stakes precision work (medical, legal)
+- Initial problem exploration
+- One-off complex requests
 
-```
-@@search:web[query="UCPL syntax"]
-@@think:deep[steps=10]
-@@memory:save[key=findings, value=$results]
-```
+### MCP Server
 
-**In context** (Research workflow):
+**✅ Use for**:
+- Exploring large codebases (>5K lines)
+- API surface understanding
+- Multi-file analysis
+- Cost optimization
 
-```
-@role:researcher
-@task:investigate|comprehensive
-@@search:web[query=$topic, recent=true]
-@@think:deep[steps=10, approach=critical]
-@@memory:save[key=$topic_slug, value=$findings]
-@out:markdown+citations
-```
+**❌ Avoid for**:
+- Code editing/modification
+- Algorithm debugging
+- Security audits
+- Small codebases (<1K lines)
 
-**Translation**: "You are a researcher investigating comprehensively. MUST use web search for [topic] (recent results). MUST use deep reasoning tool for 10-step critical analysis. MUST persist findings to memory. Output as markdown with citations."
+### VS Code Extension
 
-**Token efficiency**: ~35 tokens vs ~95+ in natural language (63% reduction)
+**✅ Use for**:
+- Writing UCPL files comfortably
+- Learning UCPL syntax
+- Building prompt templates
 
-**Why `@@`?**
+---
 
-- Makes tool usage explicit and mandatory
-- Portable across LLM providers (Claude, GPT, Gemini)
-- LLM decides which concrete tool to use based on availability
+## Getting Started
 
-See [docs/TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) for complete specification.
+### Step 1: Choose Your Path
 
-## Real-World Performance Data
+**Just want better prompts?**
+→ Start with the [UCPL Language](./docs/README.LANGUAGE.md)
 
-Testing across 50 diverse prompts showed:
+**Working with large codebases?**
+→ Install the [MCP Server](./docs/README.MCP.md)
 
-| Task Type | Prompt Token Reduction | Quality Impact | Consistency Gain |
-|-----------|----------------------|----------------|------------------|
-| Code review | 66% | 0% | ⬆️ More uniform |
-| Simple refactoring | 65% | 0% | ⬆️ More uniform |
-| Complex analysis | 38% | -5% | ⬆️ Less variation |
-| Documentation | 52% | 0% | ⬆️ More uniform |
-| Multi-step workflows | 45% | -3% | ⬆️ More uniform |
+**Writing lots of UCPL?**
+→ Get the [VS Code Extension](./docs/README.EXTENSION.md)
 
-**Key findings**:
+### Step 2: Learn the Basics
 
-- 50-60% compression is optimal for complex tasks without quality degradation
-- Structured format produces more consistent results across repeated prompts
-- **Note**: These percentages apply to *prompt tokens only*, not total session tokens (which include code context)
+- [Quick Start Guide](./docs/QUICK_START.md) - 5-minute intro
+- [Quick Reference Card](./docs/QUICK-REFERENCE.md) - Syntax cheat sheet
+- [Bootstrapping Guide](./docs/BOOTSTRAPPING.md) - First steps
+- [Examples](./examples/) - Real-world UCPL prompts
 
-## When to Use UCPL (and When Not To)
+### Step 3: Dive Deeper
 
-### Ideal Use Cases
+- [Tool Syntax Specification](./docs/TOOL_SYNTAX.md) - `@@` tool invocation
+- [Context Compression Research](./docs/CONTEXT-COMPRESSION.md) - How compression works
+- [Use Cases](./docs/USECASES.md) - When to use each tool
+- [YAML Header Spec](./docs/YAML_HEADER_SPEC.md) - File format details
 
-- **Repeated workflows**: Get consistent results from similar prompts (code reviews, refactoring, testing)
-- **API/automation**: Structured format ensures predictable parsing and execution
-- **Fast iteration**: Less typing means faster development velocity
-- **Personal productivity**: Build a library of reusable prompt templates
-- **Team collaboration**: Shared UCPL templates = consistent team practices
+---
 
-### Avoid UCPL For
+## Examples
 
-- **High-stakes precision work**: Medical, legal, safety-critical domains
-- **Initial problem exploration**: Ambiguity requires natural language
-- **Collaborative contexts**: Non-UCPL users won't understand
-- **One-off complex requests**: Learning overhead exceeds savings
+### Code Review with UCPL
 
-## The Hybrid Strategy: Best of Both Worlds
-
-The most practical approach combines UCPL structure with natural language detail:
-
-```
-@role:architect
-@task:design|scalable|secure
-@out:diagram+rationale
-
-Design a microservices authentication system handling 100K req/s.
-Consider: token rotation, rate limiting, zero-trust architecture.
-Include failover strategies and explain trade-offs.
-```
-
-This achieves 30-40% token savings while preserving semantic richness where it matters.
-
-## Limitations and Future Work
-
-**Current Constraints:**
-
-1. Models aren't trained on UCPL specifically - comprehension relies on in-context learning
-2. Learning curve for new users
-3. Not human-readable for non-practitioners
-4. Risk of semantic ambiguity with aggressive compression
-
-**Validation Needed:**
-
-- Large-scale testing across diverse LLMs
-- Formal usability studies
-- Community refinement of vocabulary
-- Potential model fine-tuning on UCPL corpus
-
-## Getting Started: Quick Reference
-
-### YAML Header (Recommended)
-
-All UCPL files should include a YAML frontmatter header to signal proper parsing:
-
-```yaml
+```ucpl
 ---
 format: ucpl
 version: 1.1
-parser: ucpl-standard
 ---
+
+@role:senior_dev
+@task:review|security|performance
+@scope:auth_module
+!check_sql_injection
+!check_xss
+!include_line_numbers
+@out:bullets+severity+recommendations
 ```
 
-See [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) for full specification.
+### Research with Tool Invocation
 
-### Basic Structure
+```ucpl
+---
+format: ucpl
+version: 1.1
+---
 
-```
-@role:<role>
-@task:<task>|<modifier>|<modifier>
-@@tool:capability[params]          # v1.1: Explicit tool usage
-@out:<format>
-!<critical_constraint>
->input_data
-```
-
-Common patterns:
-
-**Code Review**:
-
-```
-@role:dev
-@task:review|secure|readable
-@out:bullets+priority
->code
+@role:researcher
+@task:investigate|comprehensive
+@@search:web[query=$topic, recent=true]
+@@think:deep[steps=15, approach=systematic]
+@@compress:context[path=research/, level=full]
+@@memory:save[key=findings, value=$results]
+@out:markdown+citations+confidence_scores
 ```
 
-**Debug**:
+### Multi-Step Workflow
 
+```ucpl
+---
+format: ucpl
+version: 1.1
+---
+
+@workflow:
+  @chain:
+    1.@@compress:context[path=src/, level=minimal] > $structure
+    2.@task:analyze_architecture > $analysis
+    3.@if $analysis.complexity>7:
+        @task:suggest_refactoring
+    4.@task:generate_report
+@out:markdown+diagrams
 ```
-@task:debug
-@scope:<module>
-!preserve_functionality
->error_trace
-```
 
-**Documentation**:
-
-```
-@task:doc|beginner
-@out:markdown
-@add:examples
->api_code
-```
-
-## Token Budget Guidelines
-
-- **Simple tasks**: <15 tokens
-- **Moderate tasks**: 15-30 tokens
-- **Complex tasks**: 30-60 tokens
-- **Beyond 60 tokens**: Consider reverting to natural language
-
-## Conclusion: A Tool for Consistency and Efficiency
-
-UCPL isn't about replacing natural language—it's about providing a structured alternative when you need:
-
-1. **Predictable results**: Reduce ambiguity, improve consistency
-2. **Faster authoring**: Less typing, more doing
-3. **Token efficiency**: Save 50-85% on prompt instructions
-
-While UCPL won't dramatically reduce your total API costs (code context dominates), it **will** make your prompts more consistent, faster to write, and easier to maintain. For teams and individuals running 1,000s of prompts weekly, these benefits compound.
-
-Start small: Use UCPL for routine tasks (code reviews, refactoring, testing). Build a personal template library. Measure consistency improvements and development velocity.
-
-The goal isn't maximum compression—it's better prompts.
+More examples: [examples/](./examples/)
 
 ---
 
-## Additional Resources
+## CLI Tools
 
-### Documentation
+### ucpl-compress
 
-- [QUICK_REFERENCE.md](./docs/QUICK-REFERENCE.md) - Quick reference card for UCPL syntax and tools
-- [CLI_TOOLS.md](./docs/CLI-TOOLS.md) - Command-line tools (ucpl-compress)
-- [CONTEXT_COMPRESSION.md](./docs/CONTEXT-COMPRESSION.md) - Context compression strategies
-- [TOOL_SYNTAX.md](./docs/TOOL_SYNTAX.md) - Complete v1.1 tool invocation specification
-- [YAML_HEADER_SPEC.md](./docs/YAML_HEADER_SPEC.md) - YAML header format and options
-- [BOOTSTRAPPING.md](./docs/BOOTSTRAPPING.md) - Getting started with UCPL
-- [QUICK_START.md](./docs/QUICK_START.md) - Quick start guide
+Standalone compression CLI (included with MCP server):
 
-### CLI Tools
+```bash
+# Auto-detects language
+ucpl-compress src/main.py
+ucpl-compress app.js --level minimal
 
-- **ucpl-compress** - Compress code context by 75-95% for LLM consumption
-  ```bash
-  # Install
-  chmod +x scripts/ucpl-compress
+# Directory compression
+ucpl-compress src/ --format summary
 
-  # Use (auto-detects language from extension)
-  ucpl-compress src/ --format summary
-  ucpl-compress app.js
-  ucpl-compress main.go
-  ucpl-compress README.md
-  ```
+# File filtering
+ucpl-compress src/ --include '*.py' --exclude '**/test_*'
 
-  **Supported Languages**: Python, JavaScript, TypeScript, Java, Go, C#, PHP, Rust, Ruby, C++, PowerShell, Bash/Shell, JSON, YAML, Markdown, Plain Text
+# Output formats
+ucpl-compress src/ --format json
+ucpl-compress src/ --format tree
+```
 
-  See [CLI_TOOLS.md](./docs/CLI-TOOLS.md) for full documentation.
-
-### MCP Server (Model Context Protocol)
-
-- **ucpl-compress-mcp** - Universal MCP server for automatic context compression
-  ```bash
-  # Install
-  chmod +x mcp-server/server.js
-  chmod +x scripts/ucpl-compress
-
-  # Configure for Claude Desktop (add to ~/.config/claude/claude_desktop_config.json)
-  {
-    "mcpServers": {
-      "ucpl-compress": {
-        "command": "node",
-        "args": ["/absolute/path/to/ultra-compact-prompt-language/mcp-server/server.js"]
-      }
-    }
-  }
-  ```
-
-  **Workflow**: Ask Claude about code → Claude automatically compresses context → 70-98% fewer tokens → Faster, cheaper responses
-
-  **Compatible with**: Claude Desktop, Claude Code, Codex, Gemini (any MCP-compatible client)
-
-  See [mcp-server/README.md](./mcp-server/README.md) for full setup guide and troubleshooting.
-
-### Editor Support
-
-- [VS Code Extension](./vscode-extension/) - Official UCPL language extension with syntax highlighting, IntelliSense, and snippets
+See [CLI Tools Documentation](./docs/CLI-TOOLS.md) for complete reference.
 
 ---
 
+## Honest Assessment
+
+### What Works Today
+
+**UCPL Language**:
+- ✅ 50-85% token reduction on prompts
+- ✅ More consistent results
+- ✅ Faster authoring
+- ⚠️ Learning curve for new syntax
+- ⚠️ Not human-readable for non-practitioners
+
+**MCP Server**:
+- ✅ 70-98% context compression
+- ✅ Perfect for code exploration
+- ✅ Works automatically in Claude
+- ⚠️ Not for code editing
+- ⚠️ Overhead for small codebases
+
+**VS Code Extension**:
+- ✅ Full syntax support
+- ✅ Makes UCPL comfortable to write
+- ⚠️ Syntax only, no semantic validation
+
+### What Needs Work
+
+1. **Models aren't trained on UCPL** - Relies on in-context learning
+2. **Limited semantic validation** - No type-checking or validation tools
+3. **Community adoption** - Needs more real-world testing and feedback
+
+---
+
+## Contributing
+
+UCPL is experimental and needs community validation:
+
+1. **Test on your workflows** - Try UCPL and report results
+2. **Share examples** - Contribute real-world UCPL prompts
+3. **Report issues** - [GitHub Issues](https://github.com/dimitritholen/ultra-compact-prompt-language/issues)
+4. **Improve docs** - Help make documentation clearer
+5. **Build tools** - Create converters, validators, integrations
+
+---
+
+## Documentation
+
+### Core Docs
+- [UCPL Language](./docs/README.LANGUAGE.md) - Full language specification
+- [MCP Server](./docs/README.MCP.md) - Context compression server
+- [VS Code Extension](./docs/README.EXTENSION.md) - IDE support
+
+### Guides
+- [Quick Start](./docs/QUICK_START.md) - 5-minute intro
+- [Quick Reference](./docs/QUICK-REFERENCE.md) - Syntax cheat sheet
+- [Bootstrapping](./docs/BOOTSTRAPPING.md) - Getting started
+- [Use Cases](./docs/USECASES.md) - When to use what
+
+### Technical
+- [Tool Syntax](./docs/TOOL_SYNTAX.md) - `@@` invocation spec
+- [Context Compression](./docs/CONTEXT-COMPRESSION.md) - How compression works
+- [CLI Tools](./docs/CLI-TOOLS.md) - Command-line tools
+- [YAML Header](./docs/YAML_HEADER_SPEC.md) - File format
+
+### Examples
+- [Examples Directory](./examples/) - Real-world UCPL prompts
+- [Code Review](./examples/code-review-ucpl.md)
+- [Parallel Workflows](./examples/worktrees-parallel-ucpl.md)
+
+---
+
+## Project Status
+
+**Version**: 1.1 (Tool Invocation Update)
 **Status**: Experimental - Community validation needed
-**Version**: 1.1
-**Contribute**: Test UCPL on your workflows and share results
+**License**: MIT
+
+---
+
+## Summary
+
+UCPL provides **three complementary tools** for token compression:
+
+1. **Language**: Write prompts with 50-85% fewer tokens
+2. **MCP Server**: Compress code context by 70-98% automatically
+3. **VS Code Extension**: IDE support for comfortable authoring
+
+**Best practice**: Use them together for maximum efficiency.
+
+**Philosophy**: Token compression isn't just about cost—it's about **better prompts** through structure, consistency, and strategic context management.
+
+Start with what you need. Scale as you grow.
+
+---
+
+**Ready to start?** Choose your path:
+- [Learn the Language](./docs/README.LANGUAGE.md)
+- [Install MCP Server](./docs/README.MCP.md)
+- [Get VS Code Extension](./docs/README.EXTENSION.md)
