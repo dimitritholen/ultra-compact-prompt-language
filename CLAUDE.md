@@ -180,3 +180,4 @@ Do NOT just explain what you would do - DO IT.
 | User provides specification | **Execute it** (default mode) |
 
 **Default behavior**: Execute specifications immediately, don't just describe them.
+- Whenever the user asks for information about the codebase, do not read entire files, but use the ucpl-compress MCP to analyze the compressed files

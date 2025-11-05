@@ -11,8 +11,8 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs').promises;
 
-// Path to ucpl-compress script
-const COMPRESS_SCRIPT = path.join(__dirname, '../scripts/ucpl-compress');
+// Path to ucpl-compress script (bundled with package)
+const COMPRESS_SCRIPT = path.join(__dirname, 'scripts', 'ucpl-compress');
 
 /**
  * Execute ucpl-compress and return results
