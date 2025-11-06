@@ -18,158 +18,96 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
-// Constants from server.js
-const MODEL_PRICING = {
-  'claude-sonnet-4': { pricePerMTok: 3.00, name: 'Claude Sonnet 4' },
-  'claude-opus-4': { pricePerMTok: 15.00, name: 'Claude Opus 4' },
-  'gpt-4o': { pricePerMTok: 2.50, name: 'GPT-4o' },
-  'gpt-4o-mini': { pricePerMTok: 0.15, name: 'GPT-4o Mini' },
-  'gemini-2.0-flash': { pricePerMTok: 0.10, name: 'Gemini 2.0 Flash' },
-  'o1': { pricePerMTok: 15.00, name: 'OpenAI o1' },
-  'o1-mini': { pricePerMTok: 3.00, name: 'OpenAI o1-mini' }
-};
+// Import production functions and constants from server.js (CommonJS module)
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_PATH = path.join(__dirname, 'server.js');
+
+// Helper to get fresh imports (clears cache)
+function getServerModule() {
+  delete require.cache[SERVER_PATH];
+  return require('./server.js');
+}
+
+const {
+  parseFlexibleDate,
+  MODEL_PRICING
+} = require('./server.js');
+
 const DEFAULT_MODEL = 'claude-sonnet-4';
+
+// Production config file path (used by detectLLMClient)
+const PRODUCTION_CONFIG_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'config.json');
 
 describe('MCP Statistics Enhancement - Integration Tests', () => {
   // Test directory configuration
   let TEST_DIR;
   let TEST_STATS_FILE;
-  let TEST_CONFIG_FILE;
+  let BACKUP_CONFIG_FILE; // Backup of production config during tests
 
   before(async () => {
     TEST_DIR = path.join(os.tmpdir(), `.ucpl-test-integration-${Date.now()}`);
     TEST_STATS_FILE = path.join(TEST_DIR, 'compression-stats.json');
-    TEST_CONFIG_FILE = path.join(TEST_DIR, 'config.json');
     await fs.mkdir(TEST_DIR, { recursive: true });
+
+    // Backup production config if it exists
+    try {
+      const configContent = await fs.readFile(PRODUCTION_CONFIG_FILE, 'utf-8');
+      BACKUP_CONFIG_FILE = path.join(TEST_DIR, 'backup-config.json');
+      await fs.writeFile(BACKUP_CONFIG_FILE, configContent);
+    } catch (err) {
+      // Config doesn't exist, no backup needed
+    }
   });
 
   after(async () => {
+    // Restore production config if we backed it up
+    if (BACKUP_CONFIG_FILE) {
+      try {
+        const backupContent = await fs.readFile(BACKUP_CONFIG_FILE, 'utf-8');
+        await fs.mkdir(path.dirname(PRODUCTION_CONFIG_FILE), { recursive: true });
+        await fs.writeFile(PRODUCTION_CONFIG_FILE, backupContent);
+      } catch (err) {
+        // Ignore restore errors
+      }
+    } else {
+      // Remove test config if we created one
+      try {
+        await fs.unlink(PRODUCTION_CONFIG_FILE);
+      } catch (err) {
+        // Ignore if doesn't exist
+      }
+    }
+
     await fs.rm(TEST_DIR, { recursive: true, force: true });
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Clear environment variables before each test
     delete process.env.CLAUDE_DESKTOP_VERSION;
     delete process.env.VSCODE_PID;
     delete process.env.CLINE_VERSION;
     delete process.env.ANTHROPIC_MODEL;
     delete process.env.OPENAI_MODEL;
+
+    // Remove production config file to ensure clean state
+    try {
+      await fs.unlink(PRODUCTION_CONFIG_FILE);
+    } catch (err) {
+      // Ignore if doesn't exist
+    }
   });
 
   /**
    * Helper functions
+   *
+   * Note: Most tests use production functions directly from server.js.
+   * The tests for config file behavior write to the production CONFIG_FILE
+   * location and use the production detectLLMClient function.
    */
-  function parseFlexibleDate(value) {
-    if (!value || value === 'now') {
-      return new Date();
-    }
-
-    if (value === 'today') {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return today;
-    }
-
-    const relativeMatch = value.match(/^-(\d+)(d|w|m|y)$/);
-    if (relativeMatch) {
-      const [, amount, unit] = relativeMatch;
-      const multipliers = { d: 1, w: 7, m: 30, y: 365 };
-      const days = parseInt(amount, 10) * multipliers[unit];
-      return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    }
-
-    const date = new Date(value);
-    if (!isNaN(date.getTime())) {
-      return date;
-    }
-
-    throw new Error(`Invalid date format: ${value}. Expected ISO date (YYYY-MM-DD), relative time (-7d, -2w), or special keyword (now, today)`);
-  }
-
-  async function detectLLMClient(configFile = TEST_CONFIG_FILE) {
-    try {
-      // Try config file first
-      try {
-        const configData = await fs.readFile(configFile, 'utf-8');
-        const config = JSON.parse(configData);
-        if (typeof config !== 'object' || config === null) {
-          throw new Error('Config must be a valid JSON object');
-        }
-        if (config.model && MODEL_PRICING[config.model]) {
-          return { client: 'config-override', model: config.model };
-        }
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          throw err;
-        }
-      }
-
-      // Check environment variables
-      if (process.env.CLAUDE_DESKTOP_VERSION) {
-        return { client: 'claude-desktop', model: 'claude-sonnet-4' };
-      }
-
-      if (process.env.VSCODE_PID || process.env.CLINE_VERSION) {
-        return { client: 'claude-code', model: 'claude-sonnet-4' };
-      }
-
-      if (process.env.ANTHROPIC_MODEL && MODEL_PRICING[process.env.ANTHROPIC_MODEL]) {
-        return { client: 'anthropic-sdk', model: process.env.ANTHROPIC_MODEL };
-      }
-
-      if (process.env.OPENAI_MODEL && MODEL_PRICING[process.env.OPENAI_MODEL]) {
-        return { client: 'openai-sdk', model: process.env.OPENAI_MODEL };
-      }
-
-      return { client: 'unknown', model: DEFAULT_MODEL };
-    } catch (error) {
-      return { client: 'error', model: DEFAULT_MODEL };
-    }
-  }
-
-  async function calculateCostSavings(tokensSaved, model = null, configFile = TEST_CONFIG_FILE) {
-    try {
-      // Validate input
-      if (typeof tokensSaved !== 'number' || isNaN(tokensSaved) || tokensSaved < 0) {
-        throw new Error(`Invalid tokensSaved: ${tokensSaved}`);
-      }
-
-      // Cap at reasonable maximum
-      if (tokensSaved > 1_000_000_000) {
-        tokensSaved = 1_000_000_000;
-      }
-
-      let client = 'unknown';
-      if (!model) {
-        const detection = await detectLLMClient(configFile);
-        model = detection.model;
-        client = detection.client;
-      }
-
-      const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
-      const pricePerMTok = pricing.pricePerMTok;
-      const costSavingsUSD = (tokensSaved / 1_000_000) * pricePerMTok;
-      const costSavingsRounded = Math.round(costSavingsUSD * 100) / 100;
-
-      return {
-        costSavingsUSD: costSavingsRounded,
-        model: model,
-        client: client,
-        modelName: pricing.name,
-        pricePerMTok: pricePerMTok
-      };
-    } catch (error) {
-      return {
-        costSavingsUSD: 0,
-        model: DEFAULT_MODEL,
-        client: 'unknown',
-        modelName: MODEL_PRICING[DEFAULT_MODEL].name,
-        pricePerMTok: MODEL_PRICING[DEFAULT_MODEL].pricePerMTok
-      };
-    }
-  }
-
   function generateStatsWithCost() {
     const now = new Date();
     const daysAgo = (days) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
@@ -359,6 +297,7 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
    */
   describe('LLM Detection (Task 005)', () => {
     test('should default to unknown client when no env vars set', async () => {
+      const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, 'unknown');
       assert.strictEqual(result.model, 'claude-sonnet-4');
@@ -366,6 +305,7 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
 
     test('should detect Claude Desktop from env var', async () => {
       process.env.CLAUDE_DESKTOP_VERSION = '1.0.0';
+      const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, 'claude-desktop');
       assert.strictEqual(result.model, 'claude-sonnet-4');
@@ -373,6 +313,7 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
 
     test('should detect Claude Code from VSCODE_PID', async () => {
       process.env.VSCODE_PID = '12345';
+      const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, 'claude-code');
       assert.strictEqual(result.model, 'claude-sonnet-4');
@@ -380,22 +321,29 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
 
     test('should use config file override', async () => {
       process.env.CLAUDE_DESKTOP_VERSION = '1.0.0';
-      await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify({ model: 'gpt-4o' }));
-      const result = await detectLLMClient(TEST_CONFIG_FILE);
+      // Write to production config file location
+      await fs.mkdir(path.dirname(PRODUCTION_CONFIG_FILE), { recursive: true });
+      await fs.writeFile(PRODUCTION_CONFIG_FILE, JSON.stringify({ model: 'gpt-4o' }));
+      const { detectLLMClient } = getServerModule();
+      const result = await detectLLMClient();
       assert.strictEqual(result.client, 'config-override');
       assert.strictEqual(result.model, 'gpt-4o');
     });
 
     test('should fallback to env detection when config has invalid model', async () => {
       process.env.ANTHROPIC_MODEL = 'claude-opus-4';
-      await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify({ model: 'invalid-model' }));
-      const result = await detectLLMClient(TEST_CONFIG_FILE);
+      // Write to production config file location
+      await fs.mkdir(path.dirname(PRODUCTION_CONFIG_FILE), { recursive: true });
+      await fs.writeFile(PRODUCTION_CONFIG_FILE, JSON.stringify({ model: 'invalid-model' }));
+      const { detectLLMClient } = getServerModule();
+      const result = await detectLLMClient();
       assert.strictEqual(result.model, 'claude-opus-4');
     });
   });
 
   describe('Cost Calculation (Task 005)', () => {
     test('should calculate cost for Claude Sonnet 4 (1M tokens)', async () => {
+      const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(1_000_000, 'claude-sonnet-4');
       assert.strictEqual(result.costSavingsUSD, 3.00);
       assert.strictEqual(result.model, 'claude-sonnet-4');
@@ -403,6 +351,7 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
     });
 
     test('should calculate cost for Claude Opus 4 (500K tokens)', async () => {
+      const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(500_000, 'claude-opus-4');
       assert.strictEqual(result.costSavingsUSD, 7.50);
       assert.strictEqual(result.model, 'claude-opus-4');
@@ -410,16 +359,19 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
     });
 
     test('should round small amounts to nearest cent', async () => {
+      const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(12_345, 'claude-sonnet-4');
       assert.strictEqual(result.costSavingsUSD, 0.04);
     });
 
     test('should handle zero tokens', async () => {
+      const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(0, 'claude-sonnet-4');
       assert.strictEqual(result.costSavingsUSD, 0.00);
     });
 
     test('should fallback to 0 for negative tokens', async () => {
+      const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(-1000, 'claude-sonnet-4');
       assert.strictEqual(result.costSavingsUSD, 0);
     });
@@ -524,14 +476,19 @@ describe('MCP Statistics Enhancement - Integration Tests', () => {
 
     test('should parse config file correctly', async () => {
       const validConfig = { model: 'claude-opus-4' };
-      await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify(validConfig));
-      const loaded = JSON.parse(await fs.readFile(TEST_CONFIG_FILE, 'utf-8'));
+      // Write to production config file location
+      await fs.mkdir(path.dirname(PRODUCTION_CONFIG_FILE), { recursive: true });
+      await fs.writeFile(PRODUCTION_CONFIG_FILE, JSON.stringify(validConfig));
+      const loaded = JSON.parse(await fs.readFile(PRODUCTION_CONFIG_FILE, 'utf-8'));
       assert.strictEqual(loaded.model, 'claude-opus-4');
     });
 
     test('should handle invalid config schema', async () => {
-      await fs.writeFile(TEST_CONFIG_FILE, '{"invalid": "schema"}');
-      const detection = await detectLLMClient(TEST_CONFIG_FILE);
+      // Write to production config file location
+      await fs.mkdir(path.dirname(PRODUCTION_CONFIG_FILE), { recursive: true });
+      await fs.writeFile(PRODUCTION_CONFIG_FILE, '{"invalid": "schema"}');
+      const { detectLLMClient } = getServerModule();
+      const detection = await detectLLMClient();
       // Should fall back to env/default detection
       assert.ok(detection.client !== 'config-override' || detection.model === DEFAULT_MODEL);
     });
