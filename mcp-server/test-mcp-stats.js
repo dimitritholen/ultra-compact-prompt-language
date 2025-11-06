@@ -76,32 +76,71 @@ async function testMCPStatsRecording() {
   await new Promise((resolve) => setTimeout(resolve, 1000));
 
   // Check if stats file was created
-  try {
-    const statsData = await fs.readFile(STATS_FILE, 'utf-8');
-    const stats = JSON.parse(statsData);
+  const assert = require('assert');
 
-    console.log('\n✅ SUCCESS! Statistics file was created!\n');
-    console.log('Stats summary:');
-    console.log(`  Total compressions: ${stats.summary.totalCompressions}`);
-    console.log(`  Total original tokens: ${stats.summary.totalOriginalTokens}`);
-    console.log(`  Total compressed tokens: ${stats.summary.totalCompressedTokens}`);
-    console.log(`  Total tokens saved: ${stats.summary.totalTokensSaved}`);
+  const statsData = await fs.readFile(STATS_FILE, 'utf-8');
+  const stats = JSON.parse(statsData);
 
-    if (stats.compressions.length > 0) {
-      console.log(`\nLatest compression:`);
-      const latest = stats.compressions[stats.compressions.length - 1];
-      console.log(`  Path: ${latest.path}`);
-      console.log(`  Level: ${latest.level}`);
-      console.log(`  Savings: ${latest.savingsPercentage}%`);
-    }
+  console.log('\nStatistics file was created successfully!\n');
 
-    return true;
-  } catch (error) {
-    console.log(`\n❌ FAILED: Statistics file was NOT created`);
-    console.log(`   Expected location: ${STATS_FILE}`);
-    console.log(`   Error: ${error.message}`);
-    return false;
-  }
+  // Validate stats structure
+  assert.ok(stats.summary, 'Stats file must have a summary object');
+  assert.ok(stats.compressions, 'Stats file must have a compressions array');
+
+  // Validate summary fields
+  assert.strictEqual(
+    typeof stats.summary.totalCompressions,
+    'number',
+    'totalCompressions must be a number'
+  );
+  assert.strictEqual(
+    typeof stats.summary.totalOriginalTokens,
+    'number',
+    'totalOriginalTokens must be a number'
+  );
+  assert.strictEqual(
+    typeof stats.summary.totalCompressedTokens,
+    'number',
+    'totalCompressedTokens must be a number'
+  );
+  assert.strictEqual(
+    typeof stats.summary.totalTokensSaved,
+    'number',
+    'totalTokensSaved must be a number'
+  );
+
+  // Validate there is at least one compression recorded
+  assert.ok(
+    stats.compressions.length > 0,
+    'At least one compression should be recorded'
+  );
+
+  // Validate compression record structure
+  const latest = stats.compressions[stats.compressions.length - 1];
+  assert.ok(latest.path, 'Compression record must have a path');
+  assert.ok(latest.level, 'Compression record must have a level');
+  assert.strictEqual(
+    typeof latest.savingsPercentage,
+    'number',
+    'savingsPercentage must be a number'
+  );
+  assert.ok(
+    latest.savingsPercentage >= 0 && latest.savingsPercentage <= 100,
+    'savingsPercentage must be between 0 and 100'
+  );
+
+  console.log('Stats summary:');
+  console.log(`  Total compressions: ${stats.summary.totalCompressions}`);
+  console.log(`  Total original tokens: ${stats.summary.totalOriginalTokens}`);
+  console.log(`  Total compressed tokens: ${stats.summary.totalCompressedTokens}`);
+  console.log(`  Total tokens saved: ${stats.summary.totalTokensSaved}`);
+  console.log(`\nLatest compression:`);
+  console.log(`  Path: ${latest.path}`);
+  console.log(`  Level: ${latest.level}`);
+  console.log(`  Savings: ${latest.savingsPercentage}%`);
+
+  console.log('\n✅ All assertions passed!');
+  return true;
 }
 
 testMCPStatsRecording()
