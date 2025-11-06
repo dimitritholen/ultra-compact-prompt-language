@@ -205,25 +205,69 @@ async function testGrowthBounds() {
   return pass;
 }
 
-// Run all tests
+/**
+ * Run all test cases with error isolation
+ *
+ * Uses Promise.allSettled to ensure all tests execute to completion
+ * regardless of individual test failures. This prevents one failing
+ * test from canceling other tests in the suite.
+ *
+ * @returns {Promise<void>}
+ *
+ * @throws {Error} Only if the test suite itself fails catastrophically
+ *
+ * Exit codes:
+ * - 0: All tests passed
+ * - 1: One or more tests failed
+ */
 async function runTests() {
   console.log('='.repeat(60));
   console.log('Multi-tier Statistics Retention Test Suite');
   console.log('='.repeat(60));
   console.log('');
 
-  const results = await Promise.all([
-    testMigration(),
-    testAggregation(),
-    testRetentionPolicy(),
-    testGrowthBounds()
-  ]);
+  // Define tests with their names for error reporting
+  const tests = [
+    { name: 'testMigration', fn: testMigration },
+    { name: 'testAggregation', fn: testAggregation },
+    { name: 'testRetentionPolicy', fn: testRetentionPolicy },
+    { name: 'testGrowthBounds', fn: testGrowthBounds }
+  ];
+
+  // Use Promise.allSettled to ensure all tests complete regardless of individual failures
+  const settledResults = await Promise.allSettled(tests.map(t => t.fn()));
+
+  // Extract test results and check for rejections
+  const results = [];
+  const failures = [];
+
+  settledResults.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      results.push(result.value);
+    } else {
+      // Test threw an exception instead of returning false
+      results.push(false);
+      failures.push({
+        test: tests[index].name,
+        error: result.reason
+      });
+      console.error(`\n❌ ${tests[index].name} threw an exception:`, result.reason);
+    }
+  });
 
   console.log('='.repeat(60));
   console.log('Test Results:');
   console.log('='.repeat(60));
   console.log(`Passed: ${results.filter(r => r).length}/${results.length}`);
   console.log(`Failed: ${results.filter(r => !r).length}/${results.length}`);
+
+  // Report any exceptions that were caught
+  if (failures.length > 0) {
+    console.log('\nTests with exceptions:');
+    failures.forEach(f => {
+      console.error(`- ${f.test}: ${f.error.message || f.error}`);
+    });
+  }
 
   if (results.every(r => r)) {
     console.log('\n✅ All tests PASSED!');
