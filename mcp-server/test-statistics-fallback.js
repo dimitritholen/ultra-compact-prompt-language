@@ -18,6 +18,7 @@ const os = require('os');
 // Test statistics file (separate from production)
 const TEST_STATS_DIR = path.join(os.tmpdir(), 'ucpl-test');
 const TEST_STATS_FILE = path.join(TEST_STATS_DIR, 'compression-stats.json');
+const FIXTURES_DIR = path.join(__dirname, 'test', 'fixtures');
 
 // Import functions from server.js by requiring and extracting
 const serverPath = path.join(__dirname, 'server.js');
@@ -143,29 +144,17 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
 }
 
 /**
- * Simulate readOriginalContent that works
+ * Simulate readOriginalContent that works (reads real fixture file)
+ * Uses server-sample.js fixture for realistic compression testing
+ * @returns {Promise<string>} Original file content
+ * @throws {Error} If fixture file is missing (expected test failure)
  */
 async function readOriginalContentSuccess() {
-  return `
-function calculateTotal(items) {
-  let total = 0;
-  for (const item of items) {
-    total += item.price * item.quantity;
-  }
-  return total;
-}
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount);
-}
-
-function applyDiscount(total, discountPercent) {
-  return total * (1 - discountPercent / 100);
-}
-  `.trim();
+  // Read real fixture file - will throw if file missing (expected test failure)
+  return await fs.readFile(
+    path.join(FIXTURES_DIR, 'server-sample.js'),
+    'utf-8'
+  );
 }
 
 /**
@@ -198,11 +187,16 @@ async function recordCompressionWithFallback(
   }
 }
 
-// Test data
-const TEST_COMPRESSED_MINIMAL = 'fn calculateTotal(items): sum | fn formatCurrency(amount): USD | fn applyDiscount(t,d): t*(1-d/100)';
-const TEST_COMPRESSED_FULL = `calculateTotal(items): Sums price*quantity for items
-formatCurrency(amount): Formats as USD currency
-applyDiscount(total, discountPercent): Applies percentage discount`;
+// Test data (compressed representations of server-sample.js content)
+const TEST_COMPRESSED_MINIMAL = 'COMPRESS_SCRIPT | STATS_DIR | STATS_FILE | TOKEN_MODEL | RETENTION_POLICY | MODEL_PRICING | DEFAULT_MODEL | CONFIG_FILE | cachedLLMClient | detectLLMClient()';
+const TEST_COMPRESSED_FULL = `MCP Server for ucpl-compress - Provides code context compression
+Constants: COMPRESS_SCRIPT, STATS_DIR, STATS_FILE, TOKEN_MODEL='gpt-4o'
+Retention: 30d recent, 365d daily, 5y monthly
+Model pricing (7 models): Claude Sonnet/Opus, GPT-4o/mini, Gemini, o1/mini
+detectLLMClient(): Cached detection from config file > env vars > default
+  - Checks CONFIG_FILE for model override
+  - Detects Claude Desktop, Claude Code, Anthropic/OpenAI SDKs
+  - Returns {client, model}`;
 
 async function testAccurateRecording() {
   console.log('Test 1: Accurate recording when readOriginalContent succeeds...');

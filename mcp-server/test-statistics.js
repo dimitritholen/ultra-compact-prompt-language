@@ -19,27 +19,42 @@ const {
 } = require('./test-validation-helpers');
 
 const STATS_FILE = path.join(__dirname, '.compression-stats.json');
-const TEST_CONTENT_ORIGINAL = `
-function calculateTotal(items) {
-  let total = 0;
-  for (const item of items) {
-    total += item.price * item.quantity;
+const FIXTURES_DIR = path.join(__dirname, 'test', 'fixtures');
+
+// Load test content from real fixtures
+let TEST_CONTENT_ORIGINAL = null;
+let TEST_CONTENT_COMPRESSED = null;
+
+/**
+ * Load fixture files before running tests
+ * Ensures test data is loaded from real project files instead of synthetic content
+ * @returns {Promise<void>}
+ * @throws {Error} If fixture files are missing or empty
+ */
+async function loadFixtures() {
+  try {
+    TEST_CONTENT_ORIGINAL = await fs.readFile(
+      path.join(FIXTURES_DIR, 'test-utils.js'),
+      'utf-8'
+    );
+    TEST_CONTENT_COMPRESSED = await fs.readFile(
+      path.join(FIXTURES_DIR, 'test-utils-compressed.txt'),
+      'utf-8'
+    );
+
+    // Validate fixture content is non-empty
+    if (!TEST_CONTENT_ORIGINAL || TEST_CONTENT_ORIGINAL.length === 0) {
+      throw new Error('test-utils.js fixture is empty');
+    }
+    if (!TEST_CONTENT_COMPRESSED || TEST_CONTENT_COMPRESSED.length === 0) {
+      throw new Error('test-utils-compressed.txt fixture is empty');
+    }
+  } catch (error) {
+    console.error('Failed to load test fixtures:', error.message);
+    console.error('Make sure test/fixtures/ directory exists with required files');
+    throw error;
   }
-  return total;
 }
-
-function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount);
-}
-`.trim();
-
-const TEST_CONTENT_COMPRESSED = `
-fn calculateTotal(items): sum(item.price * item.quantity)
-fn formatCurrency(amount): USD format
-`.trim();
 
 async function testTokenCounting() {
   console.log('Testing token counting...');
@@ -206,6 +221,15 @@ async function cleanup() {
 
 async function runTests() {
   console.log('=== Token Statistics Integration Tests ===\n');
+
+  // Load test fixtures before running tests
+  try {
+    await loadFixtures();
+    console.log('✅ Test fixtures loaded successfully\n');
+  } catch (error) {
+    console.error('❌ Failed to load test fixtures:', error.message);
+    process.exit(1);
+  }
 
   const results = [];
 

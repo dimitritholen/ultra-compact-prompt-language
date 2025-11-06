@@ -32,6 +32,7 @@ const { startOfCurrentYear, dateWithOffset } = require('./test-date-helpers');
 const TEST_DIR = path.join(os.tmpdir(), `.ucpl-test-integration-${Date.now()}`);
 const TEST_STATS_FILE = path.join(TEST_DIR, 'compression-stats.json');
 const TEST_CONFIG_FILE = path.join(TEST_DIR, 'config.json');
+const FIXTURES_DIR = path.join(__dirname, 'test', 'fixtures');
 
 // Timeout for async operations (5 seconds max)
 const ASYNC_TIMEOUT = 5000;
@@ -403,17 +404,24 @@ async function testCostCalculation() {
 
 /**
  * TASK 006: Cost Recording in Compression Records
+ * Generate mock statistics with cost data using real fixture paths
+ * Updated to use real fixture file paths for realistic testing
+ * @returns {Object} Stats object with recent compressions, daily/monthly aggregates, and summary
  */
 function generateStatsWithCost() {
   const now = new Date();
   const daysAgo = (days) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+  // Real file paths from test fixtures
+  const fixtureTestUtils = path.join(FIXTURES_DIR, 'test-utils.js');
+  const fixtureServerSample = path.join(FIXTURES_DIR, 'server-sample.js');
 
   return {
     version: '2.0',
     recent: [
       {
         timestamp: daysAgo(1).toISOString(),
-        path: 'test1.js',
+        path: fixtureTestUtils,
         originalTokens: 1000,
         compressedTokens: 250,
         tokensSaved: 750,
@@ -429,7 +437,7 @@ function generateStatsWithCost() {
       },
       {
         timestamp: daysAgo(3).toISOString(),
-        path: 'test2.js',
+        path: fixtureServerSample,
         originalTokens: 2000,
         compressedTokens: 500,
         tokensSaved: 1500,
