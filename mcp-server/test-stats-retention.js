@@ -5,6 +5,7 @@
  */
 
 const { aggregateStats, migrateStatsFormat } = require('./server.js');
+const { loadFixture, cloneFixture } = require('./test/fixtures/fixture-loader');
 
 // Test utilities
 function createMockCompression(daysAgo, path = 'test.js') {
@@ -26,21 +27,8 @@ function createMockCompression(daysAgo, path = 'test.js') {
 async function testMigration() {
   console.log('Test 1: Migration from old format to new format');
 
-  const oldStats = {
-    compressions: [
-      createMockCompression(1, 'recent1.js'),    // Recent (1 day ago)
-      createMockCompression(15, 'recent2.js'),   // Recent (15 days ago)
-      createMockCompression(50, 'old1.js'),      // Daily (50 days ago)
-      createMockCompression(200, 'old2.js'),     // Daily (200 days ago)
-      createMockCompression(400, 'veryold1.js')  // Monthly (400 days ago)
-    ],
-    summary: {
-      totalCompressions: 5,
-      totalOriginalTokens: 50000,
-      totalCompressedTokens: 12500,
-      totalTokensSaved: 37500
-    }
-  };
+  // Load production fixture with old format data
+  const oldStats = await loadFixture('retention-old-format.json');
 
   const newStats = migrateStatsFormat(oldStats);
 
@@ -61,33 +49,20 @@ async function testMigration() {
 async function testAggregation() {
   console.log('Test 2: Auto-aggregation on save');
 
-  const stats = {
-    version: '2.0',
-    recent: [
-      createMockCompression(1, 'recent1.js'),    // Keep in recent
-      createMockCompression(15, 'recent2.js'),   // Keep in recent
-      createMockCompression(45, 'old1.js'),      // Move to daily
-      createMockCompression(400, 'veryold1.js')  // Move to monthly
-    ],
-    daily: {},
-    monthly: {},
-    summary: {
-      totalCompressions: 4,
-      totalOriginalTokens: 40000,
-      totalCompressedTokens: 10000,
-      totalTokensSaved: 30000
-    }
-  };
+  // Load production fixture with mixed timeframes
+  const fixtureData = await loadFixture('retention-mixed.json');
+  const stats = cloneFixture(fixtureData);
 
   const aggregated = aggregateStats(stats);
 
+  // Fixture has: 2 recent (0-11 days), 3 daily (46, 61, 294 days), 2 monthly (452, 900 days)
   console.log('✓ Recent after aggregation:', aggregated.recent.length, '(expected: 2)');
-  console.log('✓ Daily after aggregation:', Object.keys(aggregated.daily).length, '(expected: 1)');
-  console.log('✓ Monthly after aggregation:', Object.keys(aggregated.monthly).length, '(expected: 1)');
+  console.log('✓ Daily after aggregation:', Object.keys(aggregated.daily).length, '(expected: 3)');
+  console.log('✓ Monthly after aggregation:', Object.keys(aggregated.monthly).length, '(expected: 2)');
 
   const pass = aggregated.recent.length === 2 &&
-               Object.keys(aggregated.daily).length === 1 &&
-               Object.keys(aggregated.monthly).length === 1;
+               Object.keys(aggregated.daily).length === 3 &&
+               Object.keys(aggregated.monthly).length === 2;
 
   console.log(pass ? '✅ Test 2 PASSED\n' : '❌ Test 2 FAILED\n');
   return pass;
