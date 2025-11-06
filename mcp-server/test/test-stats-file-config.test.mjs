@@ -25,7 +25,7 @@ async function testHardcodedPaths() {
 
   try {
     // Read server.js source code
-    const serverSource = await fs.readFile(path.join(__dirname, 'server.js'), 'utf-8');
+    const serverSource = await fs.readFile(path.join(__dirname, '../server.js'), 'utf-8');
 
     // Verify hardcoded STATS_DIR
     const statsDirMatch = serverSource.match(/const STATS_DIR = path\.join\(os\.homedir\(\), '\.ucpl', 'compress'\);/);
@@ -55,7 +55,7 @@ async function testEnvironmentVariableNotUsed() {
 
   try {
     // Read server.js source code
-    const serverSource = await fs.readFile(path.join(__dirname, 'server.js'), 'utf-8');
+    const serverSource = await fs.readFile(path.join(__dirname, '../server.js'), 'utf-8');
 
     // Search for any reference to UCPL_STATS_FILE
     const envVarMatch = serverSource.match(/UCPL_STATS_FILE|process\.env\..*STATS/);
@@ -83,7 +83,7 @@ async function testStatsFileUsedDirectly() {
 
   try {
     // Read server.js source code
-    const serverSource = await fs.readFile(path.join(__dirname, 'server.js'), 'utf-8');
+    const serverSource = await fs.readFile(path.join(__dirname, '../server.js'), 'utf-8');
 
     // Verify STATS_FILE is used in loadStats and saveStats functions
     const loadStatsMatch = serverSource.match(/await fs\.readFile\(STATS_FILE,/);

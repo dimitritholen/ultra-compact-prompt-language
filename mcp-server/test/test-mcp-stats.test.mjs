@@ -112,7 +112,7 @@ describe('MCP Server Statistics Recording', () => {
 
     t.diagnostic('Sending test request to MCP server...');
 
-    const serverPath = path.join(__dirname, 'server.js');
+    const serverPath = path.join(__dirname, '../server.js');
     const proc = spawn('node', [serverPath], {
       stdio: ['pipe', 'pipe', 'pipe']
     });

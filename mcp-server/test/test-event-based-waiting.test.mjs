@@ -77,7 +77,7 @@ async function testEventBasedWaiting() {
   };
 
   console.log('Starting MCP server subprocess...');
-  const serverPath = path.join(__dirname, 'server.js');
+  const serverPath = path.join(__dirname, '../server.js');
   const proc = spawn('node', [serverPath], {
     stdio: ['pipe', 'pipe', 'pipe']
   });

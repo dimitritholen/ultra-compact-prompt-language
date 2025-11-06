@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Load and parse server.js to extract tool definition
-const serverCode = fs.readFileSync(path.join(__dirname, 'server.js'), 'utf8');
+const serverCode = fs.readFileSync(path.join(__dirname, '../server.js'), 'utf8');
 
 // Extract tool definition from server.js
 const constructorMatch = serverCode.match(/constructor\(\) \{[\s\S]*?this\.tools = \[([\s\S]*?)\];/);

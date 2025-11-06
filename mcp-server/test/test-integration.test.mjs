@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
 // Import production functions and constants from server.js (CommonJS module)
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SERVER_PATH = path.join(__dirname, 'server.js');
+const SERVER_PATH = path.join(__dirname, '../server.js');
 const { generateStatsWithCost } = require('./test-utils/fixtures.js');
 
 // Helper to get fresh imports (clears cache)

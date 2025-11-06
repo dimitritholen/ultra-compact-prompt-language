@@ -20,7 +20,7 @@ import { callMCPTool } from './test-utils/mcp-client.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SERVER_PATH = path.join(__dirname, 'server.js');
+const SERVER_PATH = path.join(__dirname, '../server.js');
 
 describe('Integration Coverage - Full Workflows', () => {
   let TEST_DIR;
@@ -36,7 +36,7 @@ describe('Integration Coverage - Full Workflows', () => {
 
   describe('Compression Format Options', () => {
     test('compress with all format options', async () => {
-      const testFile = path.join(__dirname, 'server.js');
+      const testFile = path.join(__dirname, '../server.js');
 
       // Test each format option
       for (const format of ['text', 'summary', 'json']) {
@@ -61,7 +61,7 @@ describe('Integration Coverage - Full Workflows', () => {
 
   describe('Compression Level Options', () => {
     test('compress with all compression levels', async () => {
-      const testFile = path.join(__dirname, 'server.js');
+      const testFile = path.join(__dirname, '../server.js');
 
       // Test each level
       for (const level of ['minimal', 'signatures', 'full']) {
@@ -147,7 +147,7 @@ describe('Integration Coverage - Full Workflows', () => {
     });
 
     test('compress with invalid level falls back gracefully', async () => {
-      const testFile = path.join(__dirname, 'server.js');
+      const testFile = path.join(__dirname, '../server.js');
 
       const { response } = await callMCPTool(SERVER_PATH, 'compress_code_context', {
         path: testFile,

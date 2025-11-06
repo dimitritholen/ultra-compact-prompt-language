@@ -97,7 +97,7 @@ describe('Config Path Resolution - Integration Tests', () => {
    */
   async function detectLLMClientViaServer(envVars = {}) {
     return new Promise((resolve, reject) => {
-      const serverPath = path.join(__dirname, 'server.js');
+      const serverPath = path.join(__dirname, '../server.js');
 
       // Create a test script that imports and calls detectLLMClient
       const testScript = `

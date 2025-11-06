@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 // Import production functions and constants from server.js
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SERVER_PATH = path.join(__dirname, 'server.js');
+const SERVER_PATH = path.join(__dirname, '../server.js');
 
 // Helper to get fresh imports (clears cache)
 function getServerModule() {

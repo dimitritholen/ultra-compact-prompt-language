@@ -29,7 +29,7 @@ const __dirname = path.dirname(__filename);
 const STATS_DIR = path.join(os.homedir(), '.ucpl', 'compress');
 const STATS_FILE = path.join(STATS_DIR, 'compression-stats.json');
 const BACKUP_FILE = path.join(STATS_DIR, 'compression-stats.json.backup');
-const SERVER_PATH = path.join(__dirname, 'server.js');
+const SERVER_PATH = path.join(__dirname, '../server.js');
 
 describe('Real Compression Statistics Recording', () => {
   /**
@@ -143,7 +143,7 @@ describe('Real Compression Statistics Recording', () => {
    */
   describe('Single file compression', () => {
     test('should record compression for single file with valid data', async () => {
-      const testFile = path.join(__dirname, 'server.js');
+      const testFile = path.join(__dirname, '../server.js');
       const initialStats = await loadStats();
       const initialCount = initialStats.recent ? initialStats.recent.length : 0;
 
@@ -217,7 +217,7 @@ describe('Real Compression Statistics Recording', () => {
       const initialCount = initialStats.recent ? initialStats.recent.length : 0;
 
       const testFiles = [
-        path.join(__dirname, 'server.js'),
+        path.join(__dirname, '../server.js'),
         path.join(__dirname, 'test-statistics.js'),
         path.join(__dirname, 'test-schema.js')
       ];
