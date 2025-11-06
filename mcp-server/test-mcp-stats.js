@@ -16,6 +16,38 @@ const {
 
 const STATS_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'compression-stats.json');
 
+/**
+ * Poll for stats file to exist and have expected records with exponential backoff
+ * @param {number} expectedCount - Expected number of records
+ * @param {number} maxWaitMs - Maximum wait time in milliseconds (default: 5000)
+ * @returns {Promise<object>} Stats object when condition is met
+ */
+async function pollForStatsFile(expectedCount, maxWaitMs = 5000) {
+  const startTime = Date.now();
+  let delay = 100; // Start with 100ms
+
+  while (Date.now() - startTime < maxWaitMs) {
+    try {
+      const data = await fs.readFile(STATS_FILE, 'utf-8');
+      const stats = JSON.parse(data);
+      const currentCount = stats.recent ? stats.recent.length : 0;
+
+      if (currentCount >= expectedCount) {
+        return stats;
+      }
+    } catch (error) {
+      // Stats file doesn't exist yet, keep polling
+    }
+
+    await new Promise(resolve => setTimeout(resolve, delay));
+    delay = Math.min(delay * 1.5, 1000); // Exponential backoff, max 1s
+  }
+
+  // Timeout - try one more time and throw if still not found
+  const data = await fs.readFile(STATS_FILE, 'utf-8');
+  return JSON.parse(data);
+}
+
 async function testMCPStatsRecording() {
   console.log('Testing MCP server statistics recording...\n');
 
@@ -27,6 +59,85 @@ async function testMCPStatsRecording() {
     console.log('  (No existing stats file to clean)');
   }
 
+  // Create temporary test file for compression
+  const testFile = path.join(os.tmpdir(), `test-mcp-${Date.now()}.js`);
+  const testContent = `
+/**
+ * Test file for MCP statistics recording
+ * This file contains example functions to test compression.
+ */
+
+const config = {
+  enabled: true,
+  timeout: 5000,
+  retries: 3,
+  endpoints: ['api.example.com', 'backup.example.com']
+};
+
+function example() {
+  const data = {
+    foo: 'bar',
+    baz: 42,
+    nested: {
+      key1: 'value1',
+      key2: 'value2',
+      key3: 'value3'
+    }
+  };
+  return data;
+}
+
+function processData(input) {
+  if (!input) {
+    throw new Error('Input is required');
+  }
+
+  const processed = input.trim().toUpperCase();
+  console.log('Processing:', processed);
+  return processed;
+}
+
+function validateInput(data) {
+  if (typeof data !== 'object') {
+    throw new TypeError('Data must be an object');
+  }
+
+  if (!data.id || !data.name) {
+    throw new Error('Missing required fields: id, name');
+  }
+
+  return true;
+}
+
+async function fetchData(url, options = {}) {
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers
+    },
+    ...options
+  });
+
+  if (!response.ok) {
+    throw new Error(\`HTTP error! status: \${response.status}\`);
+  }
+
+  return response.json();
+}
+
+module.exports = {
+  example,
+  processData,
+  validateInput,
+  fetchData,
+  config
+};
+`.trim();
+
+  await fs.writeFile(testFile, testContent);
+  console.log(`✓ Created temporary test file: ${testFile}`);
+
   // Create a test request (simulate MCP client calling compress_code_context)
   const testRequest = {
     jsonrpc: '2.0',
@@ -35,7 +146,7 @@ async function testMCPStatsRecording() {
     params: {
       name: 'compress_code_context',
       arguments: {
-        path: './scripts/validate_ucpl.py',
+        path: testFile,
         level: 'minimal',
         format: 'summary'
       }
@@ -58,17 +169,33 @@ async function testMCPStatsRecording() {
     stderr += data.toString();
   });
 
-  // Send the request
+  // Initialize server first (required by MCP protocol)
+  const initRequest = {
+    jsonrpc: '2.0',
+    id: 0,
+    method: 'initialize',
+    params: {
+      protocolVersion: '2024-11-05',
+      capabilities: {},
+      clientInfo: { name: 'test-client', version: '1.0.0' }
+    }
+  };
+
+  proc.stdin.write(JSON.stringify(initRequest) + '\n');
+
+  // Give server time to initialize before sending tool request
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // Send the tool request
   proc.stdin.write(JSON.stringify(testRequest) + '\n');
 
-  // Wait for response
-  await new Promise((resolve) => {
-    setTimeout(resolve, 2000); // Give it 2 seconds to process
-  });
+  console.log('✓ Request sent\n');
+
+  // Poll for stats file with exponential backoff
+  console.log('Polling for stats file creation...');
+  const stats = await pollForStatsFile(1, 5000);
 
   proc.kill();
-
-  console.log('✓ Request sent\n');
 
   if (stderr) {
     console.log('STDERR output:');
@@ -76,15 +203,14 @@ async function testMCPStatsRecording() {
     console.log();
   }
 
-  // Wait a bit more for async stats recording
-  console.log('Waiting for async stats recording...');
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  if (response) {
+    console.log('Response received (first 500 chars):');
+    console.log(response.substring(0, 500));
+    console.log();
+  }
 
   // Check if stats file was created
   const assert = require('assert');
-
-  const statsData = await fs.readFile(STATS_FILE, 'utf-8');
-  const stats = JSON.parse(statsData);
 
   console.log('\nStatistics file was created successfully!\n');
 
@@ -190,6 +316,15 @@ async function testMCPStatsRecording() {
   console.log('\n✅ All field validations passed!');
   console.log('✅ All calculations verified!');
   console.log('✅ All assertions passed!');
+
+  // Cleanup temporary test file
+  try {
+    await fs.unlink(testFile);
+    console.log('✓ Cleaned up temporary test file');
+  } catch (err) {
+    console.warn('⚠️  Failed to clean up temporary test file:', err.message);
+  }
+
   return true;
 }
 
