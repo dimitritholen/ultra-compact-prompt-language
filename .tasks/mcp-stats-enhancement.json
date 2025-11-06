@@ -1,0 +1,205 @@
+{
+  "project": {
+    "name": "MCP Statistics Enhancement - Natural Language Queries + Cost Tracking",
+    "description": "Add flexible time filtering and LLM cost tracking to the ucpl-compress MCP server to enable natural language queries like 'What did I save this week?' with dollar cost savings"
+  },
+  "tasks": [
+    {
+      "id": "001",
+      "title": "Implement Flexible Date Parser",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [],
+      "tags": ["backend", "date-parsing", "utility"],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "MCP server currently supports only 4 fixed time periods ('today', 'week', 'month', 'all'). Users want natural language queries like 'last 3 days' or 'January 2025'. Tech stack: Node.js, existing server.js. No date parsing library exists.",
+        "objective": "Implement parseFlexibleDate() helper function that parses ISO dates ('2025-01-01'), relative formats ('-7d', '-2w', '-1m', '-1y'), and special keywords ('now', 'today').",
+        "style": "Follow existing server.js conventions. Pure JavaScript implementation without external date libraries. Export as module function. Use regex for pattern matching. Include comprehensive error handling.",
+        "tone": "Conservative approach - validate all inputs rigorously. Use proven date calculation patterns. Medium priority - foundational for stats query enhancement.",
+        "audience": "Mid-level backend engineer familiar with JavaScript Date API, regex, and Node.js module patterns.",
+        "response": "Deliverables:\n1. parseFlexibleDate() function in server.js\n2. Unit test file test-flexible-dates.js with 10+ test cases\n3. JSDoc documentation for the function\n\nConstraints:\n- No external date parsing libraries (use native Date)\n- Support formats: ISO, relative (-Nd/-Nw/-Nm/-Ny), keywords (now/today)\n- Throw descriptive errors for invalid formats\n- Return Date objects (not strings)\n\nAcceptance Criteria:\n- [ ] Parses ISO dates: '2025-01-01' → Date object\n- [ ] Parses relative: '-7d' → 7 days ago, '-2w' → 14 days ago\n- [ ] Parses keywords: 'now' → current time, 'today' → midnight today\n- [ ] Throws error for invalid formats with helpful message\n- [ ] All unit tests pass (10+ test cases)\n- [ ] JSDoc complete with examples\n\nOut of Scope:\n- Timezone handling (use UTC)\n- Complex date math (quarters, fiscal years)\n- Natural language parsing ('next Tuesday')"
+      }
+    },
+    {
+      "id": "002",
+      "title": "Update Tool Schema for Flexible Dates",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "001", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "mcp", "schema"],
+      "estimatedTokens": 250,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "MCP server tool get_compression_stats has fixed period parameter. Need to add startDate, endDate, relativeDays parameters while maintaining backward compatibility. Tech stack: MCP protocol 2024-11-05, existing tool schema in server.js MCPServer class constructor.",
+        "objective": "Update get_compression_stats tool schema to add three new optional parameters: startDate (string), endDate (string), relativeDays (number) with proper descriptions and validation constraints.",
+        "style": "Follow MCP protocol schema conventions. Use oneOf for enums, proper type definitions, descriptive text for LLM interpretation. Maintain existing period parameter for backward compatibility.",
+        "tone": "Standard - follow MCP best practices. Document thoroughly for LLM comprehension. Medium priority.",
+        "audience": "Mid-level backend engineer familiar with JSON schema, MCP protocol, and API design patterns.",
+        "response": "Deliverables:\n1. Updated tool schema in MCPServer constructor\n2. Updated tool description mentioning flexible queries\n3. Schema validation for new parameters\n\nConstraints:\n- MCP protocol 2024-11-05 specification\n- Backward compatible (period parameter still works)\n- startDate/endDate accept ISO or relative formats\n- relativeDays: minimum 1, maximum 365\n\nAcceptance Criteria:\n- [ ] startDate parameter added with format description\n- [ ] endDate parameter added with format description\n- [ ] relativeDays parameter added with min/max validation\n- [ ] Tool description updated to mention flexible queries\n- [ ] Existing period parameter unchanged\n- [ ] Schema validates correctly\n\nOut of Scope:\n- Implementation of date parsing logic (task 001)\n- Changes to handleGetStats function (task 003)\n- Client-side validation"
+      }
+    },
+    {
+      "id": "003",
+      "title": "Refactor handleGetStats for Custom Date Ranges",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "001", "type": "finish-to-start"},
+        {"taskId": "002", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "stats", "refactoring"],
+      "estimatedTokens": 400,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "handleGetStats() currently uses switch statement for 4 fixed periods. Need to support custom date ranges via startDate/endDate/relativeDays parameters while maintaining backward compatibility. Tech stack: Node.js async/await, existing multi-tier stats storage (recent/daily/monthly).",
+        "objective": "Refactor handleGetStats() to calculate date ranges from new parameters (startDate, endDate, relativeDays) using parseFlexibleDate(), while preserving existing period parameter behavior for backward compatibility.",
+        "style": "Use conditional branching: check for new parameters first, fall back to legacy period switch. Maintain existing code structure and patterns. Add comments explaining date range calculation logic.",
+        "tone": "Pragmatic - prioritize backward compatibility. Use proven date filtering patterns. High priority - core functionality change.",
+        "audience": "Senior backend engineer familiar with refactoring, date calculations, and maintaining backward compatibility in production code.",
+        "response": "Deliverables:\n1. Refactored handleGetStats() method in server.js\n2. Date range calculation logic using parseFlexibleDate()\n3. Integration test file test-stats-query.js\n\nConstraints:\n- Backward compatible (existing period parameter still works)\n- New parameters take precedence over period\n- Filter compressions from all tiers (recent/daily/monthly)\n- Use parseFlexibleDate() from task 001\n\nAcceptance Criteria:\n- [ ] relativeDays parameter works: {relativeDays: 3} → last 3 days\n- [ ] startDate/endDate work: {startDate: '2025-01-01', endDate: '2025-01-31'}\n- [ ] Relative dates work: {startDate: '-7d', endDate: 'now'}\n- [ ] Legacy period parameter still works unchanged\n- [ ] Filters across all stats tiers correctly\n- [ ] Integration tests pass (10+ scenarios)\n\nOut of Scope:\n- Cost tracking (task 005)\n- Price fetching (task 004)\n- Performance optimization for large date ranges"
+      }
+    },
+    {
+      "id": "004",
+      "title": "Implement Pricing File System with Weekly Auto-Update",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [],
+      "tags": ["backend", "pricing", "file-system", "web-scraping"],
+      "estimatedTokens": 600,
+      "estimatedHours": 4,
+      "prompt": {
+        "context": "Need to track LLM pricing for cost calculation. No pricing data exists. Pricing changes weekly. Tech stack: Node.js, fetch API for web requests, file system API. Target: ~/.ucpl/providers/prices.json with auto-update on 7-day interval.",
+        "objective": "Implement pricing file system with initializeDefaultPricing(), loadPricing(), updatePricing(), savePricing(), and HTML parsers (parseAnthropicPricing, parseOpenAIPricing) with 7-day auto-update check.",
+        "style": "Follow existing server.js patterns. Use async/await consistently. Create directory structure with fs.mkdir recursive. Implement graceful fallbacks (keep old prices if fetch fails). Log price changes to console.error for visibility.",
+        "tone": "Resilient design - network failures must not crash server. Conservative HTML parsing with error handling. High priority - enables cost tracking feature.",
+        "audience": "Senior backend engineer familiar with web scraping, file I/O, error handling, and resilient system design.",
+        "response": "Deliverables:\n1. Five pricing functions in server.js (initialize, load, update, save, getModelPricing)\n2. Two HTML parsers (parseAnthropicPricing, parseOpenAIPricing)\n3. Default pricing structure with Anthropic and OpenAI models\n4. Test file test-pricing-system.js\n\nConstraints:\n- File location: ~/.ucpl/providers/prices.json\n- Update interval: 7 days (604800000ms)\n- Fallback: keep old prices if fetch fails\n- Log price changes when detected\n- Create directory recursively if missing\n\nAcceptance Criteria:\n- [ ] initializeDefaultPricing() creates file with Claude/GPT models\n- [ ] loadPricing() checks lastUpdate and triggers update if > 7 days\n- [ ] updatePricing() fetches from URLs in prices.json\n- [ ] HTML parsers extract input_price and output_price\n- [ ] Fetch failures keep existing prices (no crash)\n- [ ] Price changes logged to console\n- [ ] Tests cover init, load, update, parse, failures\n\nOut of Scope:\n- LLM detection (task 005)\n- Cost calculation (task 006)\n- Multiple currency support\n- API-based pricing (only HTML scraping)"
+      }
+    },
+    {
+      "id": "005",
+      "title": "Implement LLM Detection and Cost Tracking",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "004", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "llm-detection", "cost-tracking"],
+      "estimatedTokens": 500,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "MCP protocol doesn't expose client info. Need to detect which LLM (Claude Sonnet 4, Opus 4, GPT-4o) is calling the server to calculate accurate cost savings. Tech stack: Node.js process.env, pricing system from task 004.",
+        "objective": "Implement detectLLMClient() using environment variables (CLAUDE_DESKTOP_VERSION, VSCODE_PID, CLINE_VERSION) with fallback to config file, and calculateCostSavings() function using pricing data.",
+        "style": "Multi-method detection with graceful fallbacks. Use process.env for primary detection. Support optional config file override. Calculate costs in USD per million tokens. Round to cents for display.",
+        "tone": "Pragmatic - acknowledge MCP limitation, use available signals. Conservative defaults (claude-sonnet-4). Medium priority.",
+        "audience": "Mid-level backend engineer familiar with Node.js environment variables, config files, and cost calculation logic.",
+        "response": "Deliverables:\n1. detectLLMClient() function in server.js\n2. calculateCostSavings() function in server.js\n3. Optional config file support (~/.ucpl/compress/config.json)\n4. Test file test-llm-detection.js\n\nConstraints:\n- Detect from env vars: CLAUDE_DESKTOP_VERSION, VSCODE_PID, CLINE_VERSION\n- Fallback to config file if env detection fails\n- Default model: 'claude-sonnet-4' if unknown\n- Calculate input token savings only (not output)\n- Round cost to 2 decimal places (cents)\n\nAcceptance Criteria:\n- [ ] detectLLMClient() returns {client, model}\n- [ ] Detects Claude Desktop from CLAUDE_DESKTOP_VERSION\n- [ ] Detects Claude Code from VSCODE_PID\n- [ ] Falls back to config file\n- [ ] calculateCostSavings() returns {costSavingsUSD, model, pricePerMTok}\n- [ ] Cost calculation correct: (tokensSaved / 1M) * pricePerMTok\n- [ ] Tests cover all detection methods and calculation\n\nOut of Scope:\n- User-Agent parsing (future MCP feature)\n- Output token tracking\n- Real-time price API calls (use cached prices)"
+      }
+    },
+    {
+      "id": "006",
+      "title": "Update recordCompression to Track Cost Data",
+      "category": "backend",
+      "priority": "high",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "004", "type": "finish-to-start"},
+        {"taskId": "005", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "stats", "cost-tracking"],
+      "estimatedTokens": 350,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "recordCompression() saves compression stats but doesn't track LLM model or cost savings. Need to add model, client, pricePerMTok, costSavingsUSD, currency fields. Tech stack: existing stats storage with multi-tier retention, detectLLMClient() and calculateCostSavings() from task 005.",
+        "objective": "Update recordCompression() and recordCompressionWithEstimation() to detect LLM, load pricing, calculate costs, and add cost fields to compression records before saving to stats file.",
+        "style": "Call detectLLMClient() once per server start (cache result). Load pricing on first compression. Calculate cost per compression using calculateCostSavings(). Add fields to existing record object non-intrusively.",
+        "tone": "Conservative - don't break existing stats format. Graceful handling if pricing unavailable (skip cost fields). High priority - core feature integration.",
+        "audience": "Senior backend engineer familiar with data migrations, backward compatibility, and integrating new features into existing systems.",
+        "response": "Deliverables:\n1. Updated recordCompression() in server.js\n2. Updated recordCompressionWithEstimation() in server.js\n3. Migration logic for existing stats (add default model)\n4. Test file test-cost-tracking.js\n\nConstraints:\n- Add 5 new fields: model, client, pricePerMTok, costSavingsUSD, currency\n- Detect LLM once per server lifecycle (cache result)\n- Load pricing once (reuse for all compressions)\n- Backward compatible with existing stats\n- Handle pricing load failures gracefully\n\nAcceptance Criteria:\n- [ ] recordCompression() calls detectLLMClient()\n- [ ] recordCompression() calls loadPricing()\n- [ ] recordCompression() calls calculateCostSavings()\n- [ ] New fields added to record object\n- [ ] Existing stats can be read (no breaking changes)\n- [ ] Tests verify cost tracking in records\n- [ ] Handles pricing unavailable gracefully\n\nOut of Scope:\n- Stats migration tool (manual edit acceptable)\n- Recalculating costs for historical data\n- Real-time price updates during server run"
+      }
+    },
+    {
+      "id": "007",
+      "title": "Enhance handleGetStats Output with Cost Breakdown",
+      "category": "backend",
+      "priority": "medium",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "006", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "stats", "reporting"],
+      "estimatedTokens": 450,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "handleGetStats() returns token savings summary. Need to add cost savings (totalCostSavingsUSD, averageCostSavingsPerCompression, modelBreakdown by model). Tech stack: existing handleGetStats() with summary calculation, compression records now have cost fields from task 006.",
+        "objective": "Enhance handleGetStats() response to aggregate cost savings across compressions, calculate total/average cost savings, and provide breakdown by model with costs per model.",
+        "style": "Add to existing summary object non-destructively. Calculate cost aggregates similar to token aggregates. Group compressions by model for breakdown. Format currency with 2 decimal places.",
+        "tone": "Standard - straightforward aggregation logic. Medium priority - reporting enhancement.",
+        "audience": "Mid-level backend engineer familiar with data aggregation, grouping operations, and financial calculations.",
+        "response": "Deliverables:\n1. Enhanced summary object in handleGetStats()\n2. Model breakdown calculation logic\n3. Updated response text formatting\n4. Test file test-cost-reporting.js\n\nConstraints:\n- Add totalCostSavingsUSD to summary\n- Add averageCostSavingsPerCompression to summary\n- Add modelBreakdown object with per-model stats\n- Format USD to 2 decimal places\n- Handle missing cost fields gracefully (old records)\n\nAcceptance Criteria:\n- [ ] summary.totalCostSavingsUSD calculated correctly\n- [ ] summary.averageCostSavingsPerCompression calculated\n- [ ] summary.modelBreakdown groups by model name\n- [ ] Each model shows: compressions, tokensSaved, costSavingsUSD\n- [ ] Response text includes cost savings section\n- [ ] Tests verify cost aggregation accuracy\n- [ ] Handles records without cost fields (backward compat)\n\nOut of Scope:\n- Currency conversion (USD only)\n- Cost projections/forecasting\n- Trend analysis"
+      }
+    },
+    {
+      "id": "008",
+      "title": "Write Comprehensive Test Suite",
+      "category": "backend",
+      "priority": "medium",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "003", "type": "finish-to-start"},
+        {"taskId": "007", "type": "finish-to-start"}
+      ],
+      "tags": ["backend", "testing", "quality"],
+      "estimatedTokens": 500,
+      "estimatedHours": 4,
+      "prompt": {
+        "context": "Individual unit tests exist from previous tasks. Need comprehensive integration test suite covering end-to-end scenarios: flexible date queries, cost tracking, pricing updates, failure handling. Tech stack: Node.js native assert, existing test files.",
+        "objective": "Create test-integration.js with 20+ test cases covering: date parsing, stats queries with custom ranges, pricing system (init/load/update/parse), LLM detection, cost calculation, and enhanced stats output.",
+        "style": "Use Node.js native test runner or simple assert-based tests. Group tests by feature. Test happy paths and error cases. Mock network requests for pricing tests. Use descriptive test names.",
+        "tone": "Thorough - aim for 80%+ code coverage. Test edge cases and failure modes. Medium priority.",
+        "audience": "Senior backend engineer familiar with testing strategies, mocking, and test-driven development.",
+        "response": "Deliverables:\n1. test-integration.js with 20+ test cases\n2. Mock data for pricing responses\n3. Test fixtures for stats files\n4. Test runner script (npm test)\n\nConstraints:\n- Cover all 8 implementation tasks\n- Test happy paths and error cases\n- Mock network requests (no real web fetches)\n- Tests must be deterministic (no random data)\n- Run in < 5 seconds total\n\nAcceptance Criteria:\n- [ ] Date parsing: 5 test cases (ISO, relative, keywords, invalid)\n- [ ] Stats query: 5 test cases (legacy period, custom ranges, relativeDays)\n- [ ] Pricing: 5 test cases (init, load, update, parse, failures)\n- [ ] Cost tracking: 5 test cases (detection, calculation, aggregation)\n- [ ] All tests pass\n- [ ] Code coverage > 80%\n- [ ] Tests complete in < 5 seconds\n\nOut of Scope:\n- Performance testing\n- Load testing\n- Manual QA testing\n- Browser-based testing"
+      }
+    },
+    {
+      "id": "009",
+      "title": "Update Documentation and README",
+      "category": "general",
+      "priority": "low",
+      "status": "PENDING",
+      "framework": "COSTAR",
+      "dependencies": [
+        {"taskId": "008", "type": "finish-to-start"}
+      ],
+      "tags": ["documentation", "readme"],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "New features implemented: flexible date queries, LLM detection, cost tracking. Need to document: natural language query examples, pricing system, cost reporting, configuration options. Tech stack: Markdown, existing README.md.",
+        "objective": "Update README.md with feature descriptions, usage examples, pricing.json structure, configuration options, and troubleshooting guide. Add inline examples to tool schema descriptions.",
+        "style": "User-friendly documentation style. Use concrete examples. Provide copy-paste code snippets. Follow existing README structure and tone.",
+        "tone": "Helpful and practical. Focus on user benefits. Include screenshots/examples. Low priority but important for adoption.",
+        "audience": "End users (developers) who will use the MCP server, ranging from junior to senior level. Assume minimal context.",
+        "response": "Deliverables:\n1. Updated README.md with new features section\n2. Natural language query examples\n3. Pricing.json structure documentation\n4. Configuration guide\n5. Troubleshooting section\n\nConstraints:\n- Follow existing README structure\n- Use concrete examples (not abstract)\n- Include code snippets for configuration\n- Keep language simple and direct\n\nAcceptance Criteria:\n- [ ] Features section updated with flexible queries and cost tracking\n- [ ] 10+ natural language query examples provided\n- [ ] Pricing.json structure documented with schema\n- [ ] Configuration options explained (config.json, manual edits)\n- [ ] Troubleshooting covers: pricing fetch fails, model detection fails\n- [ ] Links to relevant files/functions\n\nOut of Scope:\n- Video tutorials\n- API reference documentation\n- Architecture diagrams\n- Performance benchmarks"
+      }
+    }
+  ]
+}

@@ -4,11 +4,16 @@ Model Context Protocol (MCP) server that provides code context compression as a 
 
 ## Features
 
-- **70-98% token reduction** for code context
-- **Semantic compression** - LLM reads directly without decompression
-- **16 language support**: Python, JavaScript, TypeScript, Java, Go, C#, PHP, Rust, Ruby, C++, PowerShell, Bash/Shell, JSON, YAML, Markdown, Plain Text
-- **3 compression levels**: full, signatures, minimal
-- **Universal MCP compatibility**: Works with any MCP client
+- **🎉 Self-Documenting**: No system prompt configuration needed - LLMs automatically understand how to use it
+- **🛡️ Intelligent Error Handling**: Proactive checks and instructive error messages prevent common mistakes
+- **✨ MCP 2025 Compliant**: 100% discoverability score with enhanced schema validation
+- **📊 Token Savings Statistics**: Track REAL token savings with accurate token counting (not estimates)
+- **📄 70-98% token reduction** for code context
+- **🧠 Semantic compression** - LLM reads directly without decompression
+- **📈 Pagination support** - Handle directories of any size with automatic batching
+- **🌍 16 language support**: Python, JavaScript, TypeScript, Java, Go, C#, PHP, Rust, Ruby, C++, PowerShell, Bash/Shell, JSON, YAML, Markdown, Plain Text
+- **⚙️ 3 compression levels**: full, signatures, minimal
+- **🔌 Universal MCP compatibility**: Works with any MCP client
 
 ## Installation
 
@@ -60,6 +65,32 @@ Add to your config file:
 
 Claude Code automatically detects MCP servers configured in Claude Desktop. No additional configuration needed.
 
+---
+
+## 🎉 No System Prompt Configuration Needed
+
+The MCP server is **fully self-documenting** with enhanced schema discoverability. When an LLM queries available tools, it receives:
+- Comprehensive usage instructions with validation constraints
+- Rich enum options with titles and descriptions
+- Output schema documentation
+- Tool annotations (read-only hints, priority, etc.)
+- Pagination guidelines and token limit warnings
+- Best practices and common examples
+
+**You don't need to add anything to your system prompt!** See [docs/MCP-SELF-DOCUMENTING.md](../docs/MCP-SELF-DOCUMENTING.md) for details.
+
+### What's New in v1.2 (2025-11-05)
+
+**Enhanced Discoverability** - Achieved 100% discoverability score through:
+- Tool description compressed from 676 → 216 chars (within MCP limit)
+- All enums converted to `oneOf` pattern with rich descriptions
+- Added comprehensive JSON Schema validation constraints
+- Defined output schema for structured responses
+- Added tool annotations (audience, priority, behavioral hints)
+- All parameter descriptions compressed while maintaining clarity
+
+See [docs/MCP-DISCOVERABILITY-IMPROVEMENTS.md](../docs/MCP-DISCOVERABILITY-IMPROVEMENTS.md) for technical details.
+
 ### Codex / Other MCP Clients
 
 Refer to your client's MCP server configuration documentation. Use the same pattern:
@@ -72,9 +103,12 @@ Refer to your client's MCP server configuration documentation. Use the same patt
 
 ## Usage
 
-Once configured, the MCP tool `compress_code_context` becomes available to your LLM client.
+Once configured, two MCP tools become available to your LLM client:
 
-### Tool Parameters
+1. **`compress_code_context`** - Compress code files/directories
+2. **`get_compression_stats`** - View token savings statistics
+
+### Compression Tool Parameters
 
 - **path** (required): File or directory path to compress
 - **level** (optional): Compression level
@@ -122,6 +156,89 @@ Claude will invoke:
     "level": "minimal"
   }
 }
+```
+
+### Token Savings Statistics
+
+The server automatically tracks token savings for every compression with **100% accurate token counting** (not estimates) using the `js-tiktoken` library.
+
+#### Viewing Statistics
+
+Ask Claude:
+```
+Show me my compression statistics
+```
+
+Or be specific:
+```
+Show me compression stats for the last week with details
+```
+
+Claude will invoke:
+```json
+{
+  "tool": "get_compression_stats",
+  "arguments": {
+    "period": "week",
+    "includeDetails": true,
+    "limit": 10
+  }
+}
+```
+
+#### Statistics Tool Parameters
+
+- **period** (optional): Time period to filter
+  - `all` (default): All time statistics
+  - `today`: Last 24 hours
+  - `week`: Last 7 days
+  - `month`: Last 30 days
+- **includeDetails** (optional): Include individual compression records (default: false)
+- **limit** (optional): Maximum records to show when includeDetails=true (default: 10, max: 100)
+
+#### What Gets Tracked
+
+For each compression, the following is recorded:
+- **Timestamp**: When the compression occurred
+- **Path**: File or directory that was compressed
+- **Original tokens**: ACTUAL token count before compression (using tiktoken)
+- **Compressed tokens**: ACTUAL token count after compression
+- **Tokens saved**: Difference (original - compressed)
+- **Compression ratio**: Compressed / Original (e.g., 0.25 = 75% reduction)
+- **Savings percentage**: (Tokens saved / Original) × 100
+- **Compression level**: full, signatures, or minimal
+- **Format**: text, summary, or json
+
+Statistics are stored in `~/.ucpl/compress/compression-stats.json` (cross-platform user home directory) and persist across sessions.
+
+#### Example Output
+
+```markdown
+## Compression Statistics (Last 7 Days)
+
+**Summary:**
+- Total Compressions: 15
+- Original Tokens: 125,450
+- Compressed Tokens: 28,320
+- Tokens Saved: 97,130
+- Average Compression Ratio: 0.226x
+- Average Savings: 77.4%
+
+**Recent Compressions (showing 5 of 15):**
+
+### /home/user/project/src/auth.py
+- Date: 11/5/2025, 2:30:15 PM
+- Level: full, Format: text
+- Original: 8,450 tokens
+- Compressed: 2,010 tokens
+- Saved: 6,440 tokens (76.2%)
+
+### /home/user/project/src/database/
+- Date: 11/5/2025, 1:15:42 PM
+- Level: minimal, Format: summary
+- Original: 42,300 tokens
+- Compressed: 5,120 tokens
+- Saved: 37,180 tokens (87.9%)
 ```
 
 ## Workflow Integration

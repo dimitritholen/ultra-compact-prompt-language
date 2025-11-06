@@ -42,7 +42,7 @@ except ImportError:
     HAS_TIKTOKEN = False
 
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 
 @dataclass
@@ -1343,10 +1343,50 @@ class ContextCompressor:
             return len(text) // 4
 
 
+def detect_language_from_extension(filepath: Path) -> str:
+    """Detect programming language from file extension."""
+    ext = filepath.suffix.lower()
+
+    if ext == ".py":
+        return "python"
+    elif ext in [".js", ".jsx"]:
+        return "javascript"
+    elif ext in [".ts", ".tsx"]:
+        return "typescript"
+    elif ext == ".go":
+        return "go"
+    elif ext in [".md", ".markdown"]:
+        return "markdown"
+    elif ext == ".json":
+        return "json"
+    elif ext in [".yaml", ".yml"]:
+        return "yaml"
+    elif ext in [".html", ".htm"]:
+        return "html"
+    elif ext in [".css", ".scss", ".sass"]:
+        return "css"
+    elif ext == ".java":
+        return "java"
+    elif ext == ".rs":
+        return "rust"
+    elif ext == ".rb":
+        return "ruby"
+    elif ext in [".cpp", ".cc", ".cxx", ".hpp", ".h", ".hxx"]:
+        return "cpp"
+    elif ext == ".ps1":
+        return "powershell"
+    elif ext in [".sh", ".bash"]:
+        return "shell"
+    else:
+        return "text"
+
+
 def compress_directory(path: Path, compressor: ContextCompressor,
                       format: str = "text",
                       include: Optional[List[str]] = None,
-                      exclude: Optional[List[str]] = None) -> List[CompressionResult]:
+                      exclude: Optional[List[str]] = None,
+                      limit: Optional[int] = None,
+                      offset: int = 0) -> Tuple[List[CompressionResult], int]:
     """Compress all files in directory.
 
     Args:
@@ -1355,15 +1395,33 @@ def compress_directory(path: Path, compressor: ContextCompressor,
         format: Output format (text/json/summary)
         include: List of glob patterns to include (e.g., ["*.py", "src/**/*.js"])
         exclude: List of glob patterns to exclude (e.g., ["**/test_*", "**/__pycache__"])
+        limit: Maximum number of files to process (for pagination)
+        offset: Number of files to skip (for pagination)
+
+    Returns:
+        Tuple of (results, total_files_found)
     """
     results = []
+
+    # Determine if we should auto-detect language per file
+    # (when using default python language, meaning no specific language was requested)
+    auto_detect = (compressor.language == "python" and not include)
 
     # Define default file patterns for each language if no include patterns specified
     if include:
         patterns = include
     else:
+        # For Python language (the default), search for all supported file types
+        # This enables auto-detection when processing directories
         if compressor.language == "python":
-            patterns = ["*.py"]
+            patterns = [
+                "*.py", "*.js", "*.jsx", "*.ts", "*.tsx", "*.go",
+                "*.md", "*.markdown", "*.json", "*.yaml", "*.yml",
+                "*.html", "*.htm", "*.css", "*.scss", "*.sass",
+                "*.java", "*.rs", "*.rb",
+                "*.cpp", "*.cc", "*.cxx", "*.hpp", "*.h", "*.hxx",
+                "*.ps1", "*.sh", "*.bash"
+            ]
         elif compressor.language == "javascript":
             patterns = ["*.js", "*.jsx"]
         elif compressor.language == "typescript":
@@ -1404,6 +1462,8 @@ def compress_directory(path: Path, compressor: ContextCompressor,
         else:
             files.extend(path.rglob(pattern))
 
+    # Filter files
+    filtered_files = []
     for file in files:
         relative_path = str(file.relative_to(path))
 
@@ -1430,9 +1490,31 @@ def compress_directory(path: Path, compressor: ContextCompressor,
         if any(part.startswith('.') for part in file.parts):
             continue
 
+        filtered_files.append(file)
+
+    total_files = len(filtered_files)
+
+    # Apply pagination
+    if offset > 0:
+        filtered_files = filtered_files[offset:]
+    if limit is not None:
+        filtered_files = filtered_files[:limit]
+
+    # Compress files
+    for file in filtered_files:
+        relative_path = str(file.relative_to(path))
+
         try:
             code = file.read_text(encoding='utf-8')
-            result = compressor.compress_code(code, relative_path)
+
+            # Auto-detect language per file if needed
+            if auto_detect:
+                file_language = detect_language_from_extension(file)
+                file_compressor = ContextCompressor(level=compressor.level, language=file_language)
+                result = file_compressor.compress_code(code, relative_path)
+            else:
+                result = compressor.compress_code(code, relative_path)
+
             results.append(result)
         except Exception as e:
             results.append(CompressionResult(
@@ -1444,10 +1526,11 @@ def compress_directory(path: Path, compressor: ContextCompressor,
                 error=str(e)
             ))
 
-    return results
+    return results, total_files
 
 
-def format_output(results: List[CompressionResult], format: str, verbose: bool = False) -> str:
+def format_output(results: List[CompressionResult], format: str, verbose: bool = False,
+                 total_files: Optional[int] = None, offset: int = 0) -> str:
     """Format output based on requested format."""
 
     if format == "json":
@@ -1456,7 +1539,10 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
             "version": VERSION,
             "results": [r.to_dict() for r in results],
             "summary": {
-                "total_files": len(results),
+                "files_in_response": len(results),
+                "total_files_available": total_files if total_files is not None else len(results),
+                "offset": offset,
+                "has_more": (total_files is not None and offset + len(results) < total_files),
                 "total_original_tokens": sum(r.original_tokens for r in results),
                 "total_compressed_tokens": sum(r.compressed_tokens for r in results),
                 "average_savings_pct": sum(r.savings_pct for r in results) / len(results) if results else 0,
@@ -1466,34 +1552,73 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
         return json.dumps(output, indent=2)
 
     elif format == "summary":
-        # Summary table only
-        output = f"\n{'File':<40} {'Original':<12} {'Compressed':<12} {'Savings':<10}\n"
-        output += "=" * 80 + "\n"
+        # Lightweight summary - designed to stay under token limits
+        output = ""
 
+        # Show overview
+        if total_files is not None:
+            output += f"📊 SUMMARY: {total_files} files found\n\n"
+
+            if total_files != len(results):
+                output += f"Showing stats for files {offset+1}-{offset+len(results)}\n\n"
+        else:
+            output += f"📊 SUMMARY: {len(results)} files\n\n"
+
+        # Calculate totals
         total_orig = 0
         total_comp = 0
+        error_count = 0
 
         for result in results:
             if result.error:
-                output += f"{result.file:<40} ERROR: {result.error}\n"
+                error_count += 1
                 continue
-
             total_orig += result.original_tokens
             total_comp += result.compressed_tokens
 
-            output += f"{result.file:<40} {result.original_tokens:<12} "
-            output += f"{result.compressed_tokens:<12} {result.savings_pct:>6.1f}%\n"
-
+        # Overall stats
         if total_orig > 0:
             total_savings = ((total_orig - total_comp) / total_orig * 100)
-            output += "=" * 80 + "\n"
-            output += f"{'TOTAL':<40} {total_orig:<12} {total_comp:<12} {total_savings:>6.1f}%\n"
+            output += f"📈 COMPRESSION STATS:\n"
+            output += f"  Original tokens:    {total_orig:,}\n"
+            output += f"  Compressed tokens:  {total_comp:,}\n"
+            output += f"  Savings:            {total_savings:.1f}%\n"
+            if error_count > 0:
+                output += f"  Errors:             {error_count}\n"
+            output += "\n"
+
+        # Show first 10 files as sample
+        if len(results) > 0:
+            output += f"📄 SAMPLE FILES (first {min(10, len(results))}):\n"
+            for i, result in enumerate(results[:10]):
+                if result.error:
+                    output += f"  {i+1}. {result.file} - ERROR\n"
+                else:
+                    output += f"  {i+1}. {result.file} ({result.original_tokens} → {result.compressed_tokens} tokens, {result.savings_pct:.0f}% savings)\n"
+
+            if len(results) > 10:
+                output += f"  ... and {len(results) - 10} more files\n"
+            output += "\n"
+
+        # Pagination hint
+        if total_files is not None and offset + len(results) < total_files:
+            remaining = total_files - offset - len(results)
+            output += f"💡 TIP: {remaining} more files available. Use compress_code_context with:\n"
+            output += f"  - offset={offset + len(results)}, limit={min(remaining, len(results))}\n"
+        elif total_files is not None and total_files > len(results):
+            output += f"💡 TIP: To compress files, use compress_code_context with:\n"
+            output += f"  - level='minimal', limit=30 (for quick overview)\n"
+            output += f"  - level='full', limit=20 (for detailed analysis)\n"
 
         return output
 
     else:  # text (default)
         # Full compressed content
         output = ""
+
+        if total_files is not None and total_files != len(results):
+            output += f"# Showing files {offset+1}-{offset+len(results)} of {total_files} total\n\n"
+
         for result in results:
             if result.error:
                 output += f"# ERROR in {result.file}: {result.error}\n\n"
@@ -1505,6 +1630,9 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
             if verbose:
                 output += f"# Stats: {result.original_tokens} → {result.compressed_tokens} tokens "
                 output += f"({result.savings_pct:.1f}% savings)\n\n"
+
+        if total_files is not None and offset + len(results) < total_files:
+            output += f"\n# (Use --offset {offset + len(results)} --limit {len(results)} to see more files)\n"
 
         return output
 
@@ -1587,6 +1715,19 @@ LLM Tool Integration:
     )
 
     parser.add_argument(
+        "--limit",
+        type=int,
+        help="Maximum number of files to process (for pagination, default: no limit)"
+    )
+
+    parser.add_argument(
+        "--offset",
+        type=int,
+        default=0,
+        help="Number of files to skip before processing (for pagination, default: 0)"
+    )
+
+    parser.add_argument(
         "--version",
         action="version",
         version=f"ucpl-compress {VERSION}"
@@ -1632,6 +1773,7 @@ LLM Tool Integration:
     compressor = ContextCompressor(level=args.level, language=language)
 
     # Determine input source
+    total_files = None
     if args.path is None or args.path == "-":
         # Read from stdin
         code = sys.stdin.read()
@@ -1653,12 +1795,14 @@ LLM Tool Integration:
 
         elif path.is_dir():
             # Directory
-            results = compress_directory(
+            results, total_files = compress_directory(
                 path,
                 compressor,
                 args.format,
                 include=args.include,
-                exclude=args.exclude
+                exclude=args.exclude,
+                limit=args.limit,
+                offset=args.offset
             )
 
         else:
@@ -1666,7 +1810,7 @@ LLM Tool Integration:
             sys.exit(1)
 
     # Output
-    output = format_output(results, args.format, args.verbose)
+    output = format_output(results, args.format, args.verbose, total_files, args.offset)
     print(output)
 
 
