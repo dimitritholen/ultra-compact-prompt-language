@@ -9,7 +9,7 @@
  * 5. Backward compatibility with existing stats
  *
  * Migrated to node:test from custom test runner
- * Uses test-cache module for automatic cache reset between tests
+ * Tests import production code directly from server.js for real behavior validation
  */
 
 import { describe, test, before, after, beforeEach, afterEach } from 'node:test';
