@@ -74,59 +74,215 @@ async function clearStats() {
 }
 
 /**
- * Call MCP tool via JSON-RPC
+ * JSON-RPC client with proper newline-delimited message framing
+ *
+ * Implements robust protocol handling:
+ * - Sequential line-by-line parsing (not backwards search)
+ * - Request/response ID matching via Map
+ * - Proper error handling for malformed JSON (fail-fast)
+ * - Newline-delimited JSON framing per JSON-RPC/MCP spec
+ *
+ * @class JSONRPCClient
+ */
+class JSONRPCClient {
+  /**
+   * Create a JSON-RPC client that parses newline-delimited JSON from a stream
+   *
+   * @param {import('stream').Readable} processStdout - Readable stream (e.g., child_process.stdout)
+   */
+  constructor(processStdout) {
+    this.pendingRequests = new Map(); // Maps request ID to Promise resolver/rejecter
+    this.nextId = 1;
+    this.closed = false;
+
+    // Set up newline-delimited JSON parser using readline
+    const readline = require('readline');
+    this.lineReader = readline.createInterface({
+      input: processStdout,
+      crlfDelay: Infinity // Treat \r\n as single line break
+    });
+
+    this.lineReader.on('line', (line) => {
+      if (!this.closed) {
+        this.handleLine(line);
+      }
+    });
+  }
+
+  /**
+   * Handle a single line of newline-delimited JSON
+   * @param {string} line - Single line from stdout
+   */
+  handleLine(line) {
+    // Ignore empty lines
+    if (line.trim().length === 0) {
+      return;
+    }
+
+    let message;
+    try {
+      message = JSON.parse(line);
+    } catch (parseError) {
+      // Fail fast on malformed JSON - this indicates a protocol error
+      const error = new Error(`Malformed JSON-RPC message: ${parseError.message}\nLine: ${line}`);
+      error.line = line;
+      error.cause = parseError;
+
+      // Reject all pending requests with this error
+      for (const { reject } of this.pendingRequests.values()) {
+        reject(error);
+      }
+      this.pendingRequests.clear();
+      return;
+    }
+
+    // Validate JSON-RPC 2.0 structure
+    if (message.jsonrpc !== '2.0') {
+      const error = new Error(`Invalid JSON-RPC version: ${message.jsonrpc}`);
+      error.responseMessage = message;
+
+      // Reject all pending requests
+      for (const { reject } of this.pendingRequests.values()) {
+        reject(error);
+      }
+      this.pendingRequests.clear();
+      return;
+    }
+
+    // Handle response (must have 'id' and either 'result' or 'error')
+    if ('id' in message && ('result' in message || 'error' in message)) {
+      this.handleResponse(message);
+    }
+    // Ignore notifications and other message types
+  }
+
+  /**
+   * Handle a JSON-RPC response message
+   *
+   * @param {object} response - Parsed JSON-RPC response
+   * @param {number|string} response.id - Request ID
+   * @param {object} [response.result] - Result (if successful)
+   * @param {object} [response.error] - Error (if failed)
+   */
+  handleResponse(response) {
+    const { id } = response;
+
+    // Validate response ID is present
+    if (id === null || id === undefined) {
+      console.warn('Received response without ID, ignoring');
+      return;
+    }
+
+    const pending = this.pendingRequests.get(id);
+
+    if (!pending) {
+      // Response for unknown request ID - log but don't crash
+      console.warn(`Received response for unknown request ID: ${id}`);
+      return;
+    }
+
+    this.pendingRequests.delete(id);
+
+    if ('error' in response) {
+      const error = new Error(response.error.message || 'JSON-RPC error');
+      error.code = response.error.code;
+      error.data = response.error.data;
+      error.rpcError = response.error;
+      pending.reject(error);
+    } else {
+      pending.resolve(response);
+    }
+  }
+
+  /**
+   * Send a JSON-RPC request
+   *
+   * @param {object} request - JSON-RPC request object (without id)
+   * @param {string} request.method - JSON-RPC method name
+   * @param {object} [request.params] - Method parameters
+   * @param {function(string): void} writeToStdin - Function to write to process stdin
+   * @returns {Promise<object>} Promise that resolves with the JSON-RPC response
+   */
+  sendRequest(request, writeToStdin) {
+    if (this.closed) {
+      return Promise.reject(new Error('JSON-RPC client is closed'));
+    }
+
+    const id = this.nextId++;
+    const fullRequest = { ...request, jsonrpc: '2.0', id };
+
+    return new Promise((resolve, reject) => {
+      this.pendingRequests.set(id, { resolve, reject });
+
+      try {
+        // Write newline-delimited JSON to stdin
+        writeToStdin(JSON.stringify(fullRequest) + '\n');
+      } catch (writeError) {
+        this.pendingRequests.delete(id);
+        reject(new Error(`Failed to write request: ${writeError.message}`));
+      }
+    });
+  }
+
+  /**
+   * Clean up resources and reject all pending requests
+   */
+  close() {
+    if (this.closed) {
+      return;
+    }
+
+    this.closed = true;
+    this.lineReader.close();
+
+    // Reject all pending requests
+    const error = new Error('JSON-RPC client closed');
+    for (const { reject } of this.pendingRequests.values()) {
+      reject(error);
+    }
+    this.pendingRequests.clear();
+  }
+}
+
+/**
+ * Call MCP tool via JSON-RPC with robust newline-delimited parsing
+ *
+ * @param {string} toolName - MCP tool name (e.g., 'compress_code_context')
+ * @param {object} args - Tool arguments
+ * @returns {Promise<{response: object, stderr: string}>} Promise resolving to tool response and stderr output
  */
 function callMCPTool(toolName, args) {
   return new Promise((resolve, reject) => {
     const proc = spawn('node', [SERVER_PATH]);
-    let stdout = '';
     let stderr = '';
-    let requestId = Date.now();
 
-    proc.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
+    // Create JSON-RPC client with newline-delimited JSON parsing
+    const rpcClient = new JSONRPCClient(proc.stdout);
 
     proc.stderr.on('data', (data) => {
       stderr += data.toString();
     });
 
     proc.on('close', (code) => {
-      if (code === 0) {
-        try {
-          const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+      rpcClient.close();
 
-          // Find the tool call response (should be the last line or second to last)
-          let toolResponse = null;
-          for (let i = lines.length - 1; i >= 0; i--) {
-            try {
-              const parsed = JSON.parse(lines[i]);
-              if (parsed.id === requestId + 1) {
-                toolResponse = parsed;
-                break;
-              }
-            } catch (_e) {
-              // Skip non-JSON lines
-            }
-          }
-
-          if (toolResponse) {
-            resolve({ response: toolResponse, stderr });
-          } else {
-            reject(new Error('No tool response found in output'));
-          }
-        } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}\nOutput: ${stdout}`));
-        }
-      } else {
+      if (code !== 0) {
         reject(new Error(`Process exited with code ${code}: ${stderr}`));
       }
     });
 
-    // Initialize server first
+    proc.on('error', (error) => {
+      rpcClient.close();
+      reject(new Error(`Process error: ${error.message}`));
+    });
+
+    // Helper to write to stdin
+    const writeToStdin = (data) => {
+      proc.stdin.write(data);
+    };
+
+    // Send initialize request
     const initRequest = {
-      jsonrpc: '2.0',
-      id: requestId,
       method: 'initialize',
       params: {
         protocolVersion: '2024-11-05',
@@ -135,10 +291,8 @@ function callMCPTool(toolName, args) {
       }
     };
 
-    // Then call the tool
+    // Send tool call request
     const toolRequest = {
-      jsonrpc: '2.0',
-      id: requestId + 1,
       method: 'tools/call',
       params: {
         name: toolName,
@@ -146,9 +300,18 @@ function callMCPTool(toolName, args) {
       }
     };
 
-    proc.stdin.write(JSON.stringify(initRequest) + '\n');
-    proc.stdin.write(JSON.stringify(toolRequest) + '\n');
-    proc.stdin.end();
+    // Execute requests sequentially
+    rpcClient.sendRequest(initRequest, writeToStdin)
+      .then(() => rpcClient.sendRequest(toolRequest, writeToStdin))
+      .then((response) => {
+        proc.stdin.end();
+        resolve({ response, stderr });
+      })
+      .catch((error) => {
+        proc.stdin.end();
+        rpcClient.close();
+        reject(error);
+      });
   });
 }
 
