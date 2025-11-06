@@ -1502,6 +1502,10 @@ SOLUTION - Use pagination:
 
 // Export functions for testing
 module.exports = {
+  parseFlexibleDate,
+  detectLLMClient,
+  calculateCostSavings,
+  MODEL_PRICING,
   aggregateStats,
   migrateStatsFormat,
   RETENTION_POLICY
