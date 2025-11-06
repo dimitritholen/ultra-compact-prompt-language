@@ -26,6 +26,7 @@ const { describe, it, beforeEach, afterEach } = require('node:test');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
+const { startOfCurrentYear, dateWithOffset } = require('./test-date-helpers');
 
 // Test configuration
 const TEST_DIR = path.join(os.tmpdir(), `.ucpl-test-integration-${Date.now()}`);
@@ -124,13 +125,15 @@ async function testDateParsing() {
 
   // Test 1: ISO date format
   try {
-    const result = parseFlexibleDate('2025-01-01');
-    assert.strictEqual(result.getFullYear(), 2025);
-    assert.strictEqual(result.getMonth(), 0);
-    assert.strictEqual(result.getDate(), 1);
-    recordTest('Date parsing: ISO format "2025-01-01"', true);
+    const testDate = startOfCurrentYear();
+    const testDateStr = testDate.toISOString().split('T')[0];
+    const result = parseFlexibleDate(testDateStr);
+    assert.strictEqual(result.getFullYear(), testDate.getFullYear());
+    assert.strictEqual(result.getMonth(), testDate.getMonth());
+    assert.strictEqual(result.getDate(), testDate.getDate());
+    recordTest(`Date parsing: ISO format "${testDateStr}"`, true);
   } catch (error) {
-    recordTest('Date parsing: ISO format "2025-01-01"', false, error);
+    recordTest('Date parsing: ISO format (start of current year)', false, error);
   }
 
   // Test 2: Relative time "-7d"
@@ -169,8 +172,11 @@ async function testDateParsing() {
 
   // Test 5: Full ISO timestamp
   try {
-    const result = parseFlexibleDate('2025-01-15T12:30:00.000Z');
-    assert.strictEqual(result.getFullYear(), 2025);
+    const testDate = dateWithOffset({ days: 15, startOfDay: false });
+    testDate.setUTCHours(12, 30, 0, 0);
+    const testTimestamp = testDate.toISOString();
+    const result = parseFlexibleDate(testTimestamp);
+    assert.strictEqual(result.getFullYear(), testDate.getFullYear());
     assert.strictEqual(result.getUTCHours(), 12);
     assert.strictEqual(result.getUTCMinutes(), 30);
     recordTest('Date parsing: Full ISO timestamp', true);

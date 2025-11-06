@@ -328,9 +328,9 @@ To test this feature manually with MCP Inspector:
       {"relativeDays": 30}
 
    B. Custom Date Ranges (ISO):
-      {"startDate": "2025-01-01", "endDate": "2025-01-31"}
-      {"startDate": "2025-01-15"}
-      {"endDate": "2025-01-31"}
+      {"startDate": "YYYY-01-01", "endDate": "YYYY-01-31"}  (use current year)
+      {"startDate": "YYYY-01-15"}  (use current year)
+      {"endDate": "YYYY-01-31"}  (use current year)
 
    C. Relative Time Strings:
       {"startDate": "-7d", "endDate": "now"}
@@ -350,7 +350,7 @@ To test this feature manually with MCP Inspector:
    F. Error Cases:
       {"relativeDays": 400}  → Error: out of range
       {"startDate": "invalid"} → Error: invalid format
-      {"startDate": "2025-02-01", "endDate": "2025-01-01"} → Error
+      {"startDate": "YYYY-02-01", "endDate": "YYYY-01-01"} → Error (end before start)
 
    G. Multi-tier Filtering:
       {"relativeDays": 90}  → Includes recent + daily tiers
