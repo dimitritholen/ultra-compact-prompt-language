@@ -12,12 +12,17 @@
  * - Task 006: Cost recording in compression records
  * - Task 007: Cost breakdown in stats output
  *
- * Test Framework: Node.js native assert module
+ * Test Framework: Node.js native test module with lifecycle hooks
  * Target Coverage: >80% for all features
  * Expected Runtime: < 5 seconds
+ *
+ * Lifecycle Hooks:
+ * - beforeEach: Clears environment variables before each test for isolation
+ * - afterEach: Ensures cleanup even on test failure
  */
 
 const assert = require('assert');
+const { describe, it, beforeEach, afterEach } = require('node:test');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -59,7 +64,23 @@ function recordTest(name, passed, error = null) {
   }
 }
 
-function clearEnvVars() {
+/**
+ * Lifecycle hook: Clear environment variables before each test
+ * Ensures test isolation by removing LLM-related env vars
+ */
+function setupTest() {
+  delete process.env.CLAUDE_DESKTOP_VERSION;
+  delete process.env.VSCODE_PID;
+  delete process.env.CLINE_VERSION;
+  delete process.env.ANTHROPIC_MODEL;
+  delete process.env.OPENAI_MODEL;
+}
+
+/**
+ * Lifecycle hook: Cleanup after each test
+ * Guarantees cleanup even on test failure
+ */
+function teardownTest() {
   delete process.env.CLAUDE_DESKTOP_VERSION;
   delete process.env.VSCODE_PID;
   delete process.env.CLINE_VERSION;
@@ -250,18 +271,20 @@ async function testLLMDetection() {
 
   // Test 6: Default detection (no env vars)
   try {
-    clearEnvVars();
+    setupTest(); // beforeEach hook
     const result = await detectLLMClient();
     assert.strictEqual(result.client, 'unknown');
     assert.strictEqual(result.model, 'claude-sonnet-4');
     recordTest('LLM detection: Default fallback', true);
   } catch (error) {
     recordTest('LLM detection: Default fallback', false, error);
+  } finally {
+    teardownTest(); // afterEach hook - runs even on failure
   }
 
   // Test 7: Claude Desktop env var
   try {
-    clearEnvVars();
+    setupTest(); // beforeEach hook
     process.env.CLAUDE_DESKTOP_VERSION = '1.0.0';
     const result = await detectLLMClient();
     assert.strictEqual(result.client, 'claude-desktop');
@@ -269,11 +292,13 @@ async function testLLMDetection() {
     recordTest('LLM detection: Claude Desktop', true);
   } catch (error) {
     recordTest('LLM detection: Claude Desktop', false, error);
+  } finally {
+    teardownTest(); // afterEach hook - runs even on failure
   }
 
   // Test 8: Claude Code env var (VSCODE_PID)
   try {
-    clearEnvVars();
+    setupTest(); // beforeEach hook
     process.env.VSCODE_PID = '12345';
     const result = await detectLLMClient();
     assert.strictEqual(result.client, 'claude-code');
@@ -281,11 +306,13 @@ async function testLLMDetection() {
     recordTest('LLM detection: Claude Code (VSCODE_PID)', true);
   } catch (error) {
     recordTest('LLM detection: Claude Code (VSCODE_PID)', false, error);
+  } finally {
+    teardownTest(); // afterEach hook - runs even on failure
   }
 
   // Test 9: Config file override
   try {
-    clearEnvVars();
+    setupTest(); // beforeEach hook
     process.env.CLAUDE_DESKTOP_VERSION = '1.0.0'; // Should be overridden
     await fs.mkdir(TEST_DIR, { recursive: true });
     await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify({ model: 'gpt-4o' }));
@@ -295,11 +322,13 @@ async function testLLMDetection() {
     recordTest('LLM detection: Config file override', true);
   } catch (error) {
     recordTest('LLM detection: Config file override', false, error);
+  } finally {
+    teardownTest(); // afterEach hook - runs even on failure
   }
 
   // Test 10: Invalid config falls back to env detection
   try {
-    clearEnvVars();
+    setupTest(); // beforeEach hook
     process.env.ANTHROPIC_MODEL = 'claude-opus-4';
     await fs.writeFile(TEST_CONFIG_FILE, JSON.stringify({ model: 'invalid-model' }));
     const result = await detectLLMClient(TEST_CONFIG_FILE);
@@ -307,9 +336,9 @@ async function testLLMDetection() {
     recordTest('LLM detection: Invalid config fallback', true);
   } catch (error) {
     recordTest('LLM detection: Invalid config fallback', false, error);
+  } finally {
+    teardownTest(); // afterEach hook - runs even on failure
   }
-
-  clearEnvVars();
 }
 
 async function testCostCalculation() {

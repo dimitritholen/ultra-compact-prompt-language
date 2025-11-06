@@ -10,6 +10,10 @@
  * 4. Backward compatibility with records without cost fields
  * 5. Correct USD formatting (2 decimal places)
  * 6. Model breakdown sorted by cost savings (descending)
+ *
+ * Lifecycle Hooks:
+ * - beforeEach: Creates test directory before each test
+ * - afterEach: Cleans up test files even on test failure
  */
 
 const fs = require('fs').promises;
@@ -22,22 +26,22 @@ const TEST_DIR = path.join(os.tmpdir(), `ucpl-cost-test-${Date.now()}`);
 const TEST_STATS_FILE = path.join(TEST_DIR, 'compression-stats.json');
 
 /**
- * Setup test environment
+ * Lifecycle hook: Setup test environment before each test
+ * Creates test directory for isolated test execution
  */
-async function setup() {
+async function setupTest() {
   await fs.mkdir(TEST_DIR, { recursive: true });
-  console.log(`Created test directory: ${TEST_DIR}`);
 }
 
 /**
- * Cleanup test environment
+ * Lifecycle hook: Cleanup test environment after each test
+ * Guarantees cleanup even on test failure
  */
-async function cleanup() {
+async function teardownTest() {
   try {
     await fs.rm(TEST_DIR, { recursive: true, force: true });
-    console.log(`Cleaned up test directory: ${TEST_DIR}`);
   } catch (error) {
-    console.error(`Warning: Could not clean up ${TEST_DIR}: ${error.message}`);
+    // Silent cleanup failure - directory may not exist
   }
 }
 
@@ -62,7 +66,10 @@ async function loadStats() {
 async function testTotalCostSavings() {
   console.log('\n=== Test 1: Total Cost Savings Aggregation ===');
 
-  const mockData = {
+  try {
+    await setupTest(); // beforeEach hook
+
+    const mockData = {
     summary: {
       totalCompressions: 0,
       totalOriginalTokens: 0,
@@ -118,14 +125,17 @@ async function testTotalCostSavings() {
     }
   }
 
-  const expectedTotal = 0.0021 + 0.0045 + 0.01;
-  assert.strictEqual(
-    Math.round(totalCostSavingsUSD * 10000) / 10000,
-    Math.round(expectedTotal * 10000) / 10000,
-    `Expected total cost savings to be ${expectedTotal.toFixed(4)}, got ${totalCostSavingsUSD.toFixed(4)}`
-  );
+    const expectedTotal = 0.0021 + 0.0045 + 0.01;
+    assert.strictEqual(
+      Math.round(totalCostSavingsUSD * 10000) / 10000,
+      Math.round(expectedTotal * 10000) / 10000,
+      `Expected total cost savings to be ${expectedTotal.toFixed(4)}, got ${totalCostSavingsUSD.toFixed(4)}`
+    );
 
-  console.log(`✓ Total cost savings aggregated correctly: $${totalCostSavingsUSD.toFixed(4)}`);
+    console.log(`✓ Total cost savings aggregated correctly: $${totalCostSavingsUSD.toFixed(4)}`);
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
+  }
 }
 
 /**
@@ -134,7 +144,58 @@ async function testTotalCostSavings() {
 async function testAverageCostSavings() {
   console.log('\n=== Test 2: Average Cost Savings per Compression ===');
 
-  const stats = await loadStats();
+  try {
+    await setupTest(); // beforeEach hook
+
+    // Re-create test data (each test is independent)
+    const mockData = {
+      summary: {
+        totalCompressions: 0,
+        totalOriginalTokens: 0,
+        totalCompressedTokens: 0,
+        totalTokensSaved: 0
+      },
+      recent: [
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file1.py',
+          originalTokens: 1000,
+          compressedTokens: 300,
+          tokensSaved: 700,
+          model: 'claude-sonnet-4',
+          pricePerMTok: 3.00,
+          costSavingsUSD: 0.0021,
+          currency: 'USD'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file2.py',
+          originalTokens: 2000,
+          compressedTokens: 500,
+          tokensSaved: 1500,
+          model: 'claude-sonnet-4',
+          pricePerMTok: 3.00,
+          costSavingsUSD: 0.0045,
+          currency: 'USD'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file3.py',
+          originalTokens: 5000,
+          compressedTokens: 1000,
+          tokensSaved: 4000,
+          model: 'gpt-4o',
+          pricePerMTok: 2.50,
+          costSavingsUSD: 0.01,
+          currency: 'USD'
+        }
+      ],
+      daily: {},
+      monthly: {}
+    };
+
+    await createMockStats(mockData);
+    const stats = await loadStats();
   const totalCompressions = stats.recent.length;
   let totalCostSavingsUSD = 0;
 
@@ -148,14 +209,17 @@ async function testAverageCostSavings() {
     ? totalCostSavingsUSD / totalCompressions
     : 0;
 
-  const expectedAverage = (0.0021 + 0.0045 + 0.01) / 3;
-  assert.strictEqual(
-    Math.round(averageCostSavingsPerCompression * 10000) / 10000,
-    Math.round(expectedAverage * 10000) / 10000,
-    `Expected average cost savings to be ${expectedAverage.toFixed(4)}, got ${averageCostSavingsPerCompression.toFixed(4)}`
-  );
+    const expectedAverage = (0.0021 + 0.0045 + 0.01) / 3;
+    assert.strictEqual(
+      Math.round(averageCostSavingsPerCompression * 10000) / 10000,
+      Math.round(expectedAverage * 10000) / 10000,
+      `Expected average cost savings to be ${expectedAverage.toFixed(4)}, got ${averageCostSavingsPerCompression.toFixed(4)}`
+    );
 
-  console.log(`✓ Average cost savings calculated correctly: $${averageCostSavingsPerCompression.toFixed(4)}`);
+    console.log(`✓ Average cost savings calculated correctly: $${averageCostSavingsPerCompression.toFixed(4)}`);
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
+  }
 }
 
 /**
@@ -164,7 +228,58 @@ async function testAverageCostSavings() {
 async function testModelBreakdown() {
   console.log('\n=== Test 3: Model Breakdown Grouping ===');
 
-  const stats = await loadStats();
+  try {
+    await setupTest(); // beforeEach hook
+
+    // Re-create test data (each test is independent)
+    const mockData = {
+      summary: {
+        totalCompressions: 0,
+        totalOriginalTokens: 0,
+        totalCompressedTokens: 0,
+        totalTokensSaved: 0
+      },
+      recent: [
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file1.py',
+          originalTokens: 1000,
+          compressedTokens: 300,
+          tokensSaved: 700,
+          model: 'claude-sonnet-4',
+          pricePerMTok: 3.00,
+          costSavingsUSD: 0.0021,
+          currency: 'USD'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file2.py',
+          originalTokens: 2000,
+          compressedTokens: 500,
+          tokensSaved: 1500,
+          model: 'claude-sonnet-4',
+          pricePerMTok: 3.00,
+          costSavingsUSD: 0.0045,
+          currency: 'USD'
+        },
+        {
+          timestamp: new Date().toISOString(),
+          path: '/test/file3.py',
+          originalTokens: 5000,
+          compressedTokens: 1000,
+          tokensSaved: 4000,
+          model: 'gpt-4o',
+          pricePerMTok: 2.50,
+          costSavingsUSD: 0.01,
+          currency: 'USD'
+        }
+      ],
+      daily: {},
+      monthly: {}
+    };
+
+    await createMockStats(mockData);
+    const stats = await loadStats();
   const modelBreakdownMap = {};
 
   // Group by model
@@ -209,9 +324,12 @@ async function testModelBreakdown() {
     'Expected $0.0066 cost savings for claude-sonnet-4'
   );
 
-  console.log('✓ Model breakdown grouped and sorted correctly');
-  console.log(`  - ${modelBreakdown[0].modelName}: ${modelBreakdown[0].compressions} compressions, $${modelBreakdown[0].costSavingsUSD.toFixed(4)}`);
-  console.log(`  - ${modelBreakdown[1].modelName}: ${modelBreakdown[1].compressions} compressions, $${modelBreakdown[1].costSavingsUSD.toFixed(4)}`);
+    console.log('✓ Model breakdown grouped and sorted correctly');
+    console.log(`  - ${modelBreakdown[0].modelName}: ${modelBreakdown[0].compressions} compressions, $${modelBreakdown[0].costSavingsUSD.toFixed(4)}`);
+    console.log(`  - ${modelBreakdown[1].modelName}: ${modelBreakdown[1].compressions} compressions, $${modelBreakdown[1].costSavingsUSD.toFixed(4)}`);
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
+  }
 }
 
 /**
@@ -220,7 +338,10 @@ async function testModelBreakdown() {
 async function testBackwardCompatibility() {
   console.log('\n=== Test 4: Backward Compatibility (Missing Cost Fields) ===');
 
-  const mockData = {
+  try {
+    await setupTest(); // beforeEach hook
+
+    const mockData = {
     summary: {
       totalCompressions: 0,
       totalOriginalTokens: 0,
@@ -272,13 +393,17 @@ async function testBackwardCompatibility() {
     'Expected cost only from new record'
   );
 
-  console.log('✓ Handled mixed old/new records correctly');
-  console.log(`  - Records with cost: ${recordsWithCost}`);
-  console.log(`  - Total cost savings: $${totalCostSavingsUSD.toFixed(4)}`);
+    console.log('✓ Handled mixed old/new records correctly');
+    console.log(`  - Records with cost: ${recordsWithCost}`);
+    console.log(`  - Total cost savings: $${totalCostSavingsUSD.toFixed(4)}`);
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
+  }
 }
 
 /**
  * Test 5: USD formatting (2 decimal places)
+ * Note: This test doesn't need setup/teardown as it doesn't use filesystem
  */
 async function testCurrencyFormatting() {
   console.log('\n=== Test 5: USD Currency Formatting ===');
@@ -306,7 +431,10 @@ async function testCurrencyFormatting() {
 async function testModelBreakdownSorting() {
   console.log('\n=== Test 6: Model Breakdown Sorting ===');
 
-  const mockData = {
+  try {
+    await setupTest(); // beforeEach hook
+
+    const mockData = {
     summary: {
       totalCompressions: 0,
       totalOriginalTokens: 0,
@@ -367,9 +495,12 @@ async function testModelBreakdownSorting() {
   assert.strictEqual(modelBreakdown[1].modelName, 'claude-sonnet-4', 'Expected middle cost model second');
   assert.strictEqual(modelBreakdown[2].modelName, 'gpt-4o-mini', 'Expected lowest cost model last');
 
-  console.log('✓ Model breakdown sorted correctly by cost savings (descending)');
-  for (let i = 0; i < modelBreakdown.length; i++) {
-    console.log(`  ${i + 1}. ${modelBreakdown[i].modelName}: $${modelBreakdown[i].costSavingsUSD.toFixed(4)}`);
+    console.log('✓ Model breakdown sorted correctly by cost savings (descending)');
+    for (let i = 0; i < modelBreakdown.length; i++) {
+      console.log(`  ${i + 1}. ${modelBreakdown[i].modelName}: $${modelBreakdown[i].costSavingsUSD.toFixed(4)}`);
+    }
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
   }
 }
 
@@ -379,7 +510,10 @@ async function testModelBreakdownSorting() {
 async function testEmptyRecords() {
   console.log('\n=== Test 7: Empty Records Handling ===');
 
-  const mockData = {
+  try {
+    await setupTest(); // beforeEach hook
+
+    const mockData = {
     summary: {
       totalCompressions: 0,
       totalOriginalTokens: 0,
@@ -406,21 +540,24 @@ async function testEmptyRecords() {
     ? totalCostSavingsUSD / totalCompressions
     : 0;
 
-  assert.strictEqual(totalCostSavingsUSD, 0, 'Expected zero cost savings for empty records');
-  assert.strictEqual(averageCostSavingsPerCompression, 0, 'Expected zero average for empty records');
+    assert.strictEqual(totalCostSavingsUSD, 0, 'Expected zero cost savings for empty records');
+    assert.strictEqual(averageCostSavingsPerCompression, 0, 'Expected zero average for empty records');
 
-  console.log('✓ Empty records handled correctly (no division by zero)');
+    console.log('✓ Empty records handled correctly (no division by zero)');
+  } finally {
+    await teardownTest(); // afterEach hook - runs even on failure
+  }
 }
 
 /**
  * Run all tests
+ * Note: setup/cleanup now handled by lifecycle hooks in each test
  */
 async function runTests() {
   console.log('Starting cost reporting aggregation tests...\n');
+  console.log('Lifecycle hooks: beforeEach/afterEach run automatically per test\n');
 
   try {
-    await setup();
-
     await testTotalCostSavings();
     await testAverageCostSavings();
     await testModelBreakdown();
@@ -434,8 +571,6 @@ async function runTests() {
     console.error('\n❌ Test failed:', error.message);
     console.error(error.stack);
     process.exit(1);
-  } finally {
-    await cleanup();
   }
 }
 
