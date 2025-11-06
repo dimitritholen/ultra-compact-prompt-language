@@ -30,6 +30,168 @@ const RETENTION_POLICY = {
   MONTHLY_YEARS: 5      // Keep monthly aggregates for 5 years
 };
 
+// LLM Model Pricing (USD per million input tokens)
+// Prices as of 2025-11-06
+const MODEL_PRICING = {
+  'claude-sonnet-4': { pricePerMTok: 3.00, name: 'Claude Sonnet 4' },
+  'claude-opus-4': { pricePerMTok: 15.00, name: 'Claude Opus 4' },
+  'gpt-4o': { pricePerMTok: 2.50, name: 'GPT-4o' },
+  'gpt-4o-mini': { pricePerMTok: 0.15, name: 'GPT-4o Mini' },
+  'gemini-2.0-flash': { pricePerMTok: 0.10, name: 'Gemini 2.0 Flash' },
+  'o1': { pricePerMTok: 15.00, name: 'OpenAI o1' },
+  'o1-mini': { pricePerMTok: 3.00, name: 'OpenAI o1-mini' }
+};
+
+// Default model if detection fails
+const DEFAULT_MODEL = 'claude-sonnet-4';
+
+// Path to optional config file for model override
+const CONFIG_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'config.json');
+
+// Cache for LLM client detection (one-time per server lifecycle)
+let cachedLLMClient = null;
+
+/**
+ * Detect LLM client and model from environment variables (cached per server lifecycle)
+ * @returns {Promise<{client: string, model: string}>} Detected client and model
+ */
+async function detectLLMClient() {
+  // Return cached result if available
+  if (cachedLLMClient) {
+    return cachedLLMClient;
+  }
+
+  try {
+    // Try config file first (highest priority)
+    try {
+      const configData = await fs.readFile(CONFIG_FILE, 'utf-8');
+      const config = JSON.parse(configData);
+
+      // Validate config schema
+      if (typeof config !== 'object' || config === null) {
+        throw new Error('Config must be a valid JSON object');
+      }
+
+      if (config.model && MODEL_PRICING[config.model]) {
+        console.error(`[INFO] Using model from config file: ${config.model}`);
+        cachedLLMClient = { client: 'config-override', model: config.model };
+        return cachedLLMClient;
+      } else if (config.model) {
+        console.error(`[WARN] Unknown model in config: ${config.model}, falling back to env detection`);
+      }
+    } catch (err) {
+      // Config file doesn't exist or is invalid - continue with env detection
+      if (err.code !== 'ENOENT') {
+        console.error(`[WARN] Config file error: ${err.message}`);
+      }
+    }
+
+    // Check for Claude Desktop (CLAUDE_DESKTOP_VERSION environment variable)
+    if (process.env.CLAUDE_DESKTOP_VERSION) {
+      console.error(`[INFO] Detected Claude Desktop (version: ${process.env.CLAUDE_DESKTOP_VERSION})`);
+      // Claude Desktop typically uses Sonnet as default
+      cachedLLMClient = { client: 'claude-desktop', model: 'claude-sonnet-4' };
+      return cachedLLMClient;
+    }
+
+    // Check for Claude Code / VSCode (VSCODE_PID or CLINE_VERSION)
+    if (process.env.VSCODE_PID || process.env.CLINE_VERSION) {
+      const version = process.env.CLINE_VERSION || 'unknown';
+      console.error(`[INFO] Detected Claude Code/VSCode (version: ${version})`);
+      cachedLLMClient = { client: 'claude-code', model: 'claude-sonnet-4' };
+      return cachedLLMClient;
+    }
+
+    // Check for other common environment variables
+    if (process.env.ANTHROPIC_MODEL) {
+      const model = process.env.ANTHROPIC_MODEL;
+      if (MODEL_PRICING[model]) {
+        console.error(`[INFO] Using ANTHROPIC_MODEL env var: ${model}`);
+        cachedLLMClient = { client: 'anthropic-sdk', model };
+        return cachedLLMClient;
+      }
+    }
+
+    if (process.env.OPENAI_MODEL) {
+      const model = process.env.OPENAI_MODEL;
+      if (MODEL_PRICING[model]) {
+        console.error(`[INFO] Using OPENAI_MODEL env var: ${model}`);
+        cachedLLMClient = { client: 'openai-sdk', model };
+        return cachedLLMClient;
+      }
+    }
+
+    // Default fallback (conservative choice)
+    console.error(`[INFO] No client detected, defaulting to ${DEFAULT_MODEL}`);
+    cachedLLMClient = { client: 'unknown', model: DEFAULT_MODEL };
+    return cachedLLMClient;
+  } catch (error) {
+    console.error(`[WARN] LLM detection failed: ${error.message}, using default ${DEFAULT_MODEL}`);
+    cachedLLMClient = { client: 'error', model: DEFAULT_MODEL };
+    return cachedLLMClient;
+  }
+}
+
+/**
+ * Calculate cost savings based on token reduction and detected model pricing
+ * @param {number} tokensSaved - Number of tokens saved by compression
+ * @param {string|null} model - Model to use for pricing (null = auto-detect)
+ * @returns {Promise<{costSavingsUSD: number, model: string, client: string, modelName: string, pricePerMTok: number}>}
+ */
+async function calculateCostSavings(tokensSaved, model = null) {
+  try {
+    // Validate input
+    if (typeof tokensSaved !== 'number' || isNaN(tokensSaved) || tokensSaved < 0) {
+      throw new Error(`Invalid tokensSaved: ${tokensSaved} (must be non-negative number)`);
+    }
+
+    // Cap at reasonable maximum to prevent precision issues
+    if (tokensSaved > 1_000_000_000) {
+      console.error(`[WARN] Token count capped at 1 billion (was: ${tokensSaved})`);
+      tokensSaved = 1_000_000_000;
+    }
+
+    // Auto-detect model if not provided
+    let client = 'unknown';
+    if (!model) {
+      const detection = await detectLLMClient();
+      model = detection.model;
+      client = detection.client;
+    }
+
+    // Get pricing for detected/specified model (with fallback)
+    const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
+    if (!MODEL_PRICING[model]) {
+      console.error(`[WARN] Unknown model '${model}', using default ${DEFAULT_MODEL}`);
+    }
+    const pricePerMTok = pricing.pricePerMTok;
+
+    // Calculate cost savings: (tokens saved / 1 million) * price per million tokens
+    const costSavingsUSD = (tokensSaved / 1_000_000) * pricePerMTok;
+
+    // Round to 2 decimal places (cents)
+    const costSavingsRounded = Math.round(costSavingsUSD * 100) / 100;
+
+    return {
+      costSavingsUSD: costSavingsRounded,
+      model: model,
+      client: client,
+      modelName: pricing.name,
+      pricePerMTok: pricePerMTok
+    };
+  } catch (error) {
+    console.error(`[ERROR] Cost calculation failed: ${error.message}`);
+    // Return zero cost on error
+    return {
+      costSavingsUSD: 0,
+      model: DEFAULT_MODEL,
+      client: 'unknown',
+      modelName: MODEL_PRICING[DEFAULT_MODEL].name,
+      pricePerMTok: MODEL_PRICING[DEFAULT_MODEL].pricePerMTok
+    };
+  }
+}
+
 /**
  * Count tokens in text using tiktoken
  * @param {string} text - Text to count tokens for
@@ -274,6 +436,48 @@ async function saveStats(stats) {
 }
 
 /**
+ * Parse flexible date input to Date object
+ * Supports:
+ * - ISO dates: "2025-01-01", "2025-01-01T12:00:00Z"
+ * - Relative: "-7d", "-2w", "-1m", "-1y"
+ * - Special: "now", "today"
+ * @param {string|null|undefined} value - Date value to parse
+ * @returns {Date} Parsed date object
+ * @throws {Error} If date format is invalid
+ */
+function parseFlexibleDate(value) {
+  // Handle null/undefined/empty
+  if (!value || value === 'now') {
+    return new Date();
+  }
+
+  // Special case: "today" = today at midnight (start of day)
+  if (value === 'today') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+  }
+
+  // Relative time: "-7d", "-2w", "-1m", "-1y"
+  const relativeMatch = value.match(/^-(\d+)(d|w|m|y)$/);
+  if (relativeMatch) {
+    const [, amount, unit] = relativeMatch;
+    const multipliers = { d: 1, w: 7, m: 30, y: 365 };
+    const days = parseInt(amount, 10) * multipliers[unit];
+    return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  }
+
+  // Try parsing as ISO date (YYYY-MM-DD or full ISO timestamp)
+  const date = new Date(value);
+  if (!isNaN(date.getTime())) {
+    return date;
+  }
+
+  // Invalid format
+  throw new Error(`Invalid date format: ${value}. Expected ISO date (YYYY-MM-DD), relative time (-7d, -2w), or special keyword (now, today)`);
+}
+
+/**
  * Record a compression operation in statistics
  * @param {string} path - Path that was compressed
  * @param {string} originalContent - Original file content(s)
@@ -291,6 +495,15 @@ async function recordCompression(path, originalContent, compressedContent, level
     const compressionRatio = originalTokens > 0 ? (compressedTokens / originalTokens) : 0;
     const savingsPercentage = originalTokens > 0 ? ((tokensSaved / originalTokens) * 100) : 0;
 
+    // Calculate cost savings with LLM detection
+    let costInfo = null;
+    try {
+      costInfo = await calculateCostSavings(tokensSaved);
+    } catch (error) {
+      console.error(`[WARN] Cost calculation failed: ${error.message}`);
+      // Continue without cost info - it's optional
+    }
+
     const record = {
       timestamp: new Date().toISOString(),
       path,
@@ -303,6 +516,15 @@ async function recordCompression(path, originalContent, compressedContent, level
       format
     };
 
+    // Add cost tracking fields if available
+    if (costInfo) {
+      record.model = costInfo.model;
+      record.client = costInfo.client;
+      record.pricePerMTok = costInfo.pricePerMTok;
+      record.costSavingsUSD = costInfo.costSavingsUSD;
+      record.currency = 'USD';
+    }
+
     // Add to recent compressions (will be auto-aggregated on save)
     if (!stats.recent) stats.recent = [];
     stats.recent.push(record);
@@ -314,7 +536,8 @@ async function recordCompression(path, originalContent, compressedContent, level
 
     await saveStats(stats);
 
-    console.error(`[INFO] Recorded compression: ${path} - Original: ${originalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ${tokensSaved} tokens (${Math.round(savingsPercentage)}%)`);
+    const costMsg = costInfo ? `, Cost saved: $${costInfo.costSavingsUSD.toFixed(2)} (${costInfo.modelName})` : '';
+    console.error(`[INFO] Recorded compression: ${path} - Original: ${originalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ${tokensSaved} tokens (${Math.round(savingsPercentage)}%)${costMsg}`);
   } catch (error) {
     console.error(`[ERROR] Failed to record compression statistics: ${error.message}`);
   }
@@ -377,6 +600,15 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
     const compressionRatio = compressedTokens / estimatedOriginalTokens;
     const savingsPercentage = (tokensSaved / estimatedOriginalTokens) * 100;
 
+    // Calculate cost savings with LLM detection
+    let costInfo = null;
+    try {
+      costInfo = await calculateCostSavings(tokensSaved);
+    } catch (error) {
+      console.error(`[WARN] Cost calculation failed: ${error.message}`);
+      // Continue without cost info - it's optional
+    }
+
     const record = {
       timestamp: new Date().toISOString(),
       path: filePath,
@@ -390,6 +622,15 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
       estimated: true  // Flag to indicate this used estimation
     };
 
+    // Add cost tracking fields if available
+    if (costInfo) {
+      record.model = costInfo.model;
+      record.client = costInfo.client;
+      record.pricePerMTok = costInfo.pricePerMTok;
+      record.costSavingsUSD = costInfo.costSavingsUSD;
+      record.currency = 'USD';
+    }
+
     // Add to recent compressions (will be auto-aggregated on save)
     if (!stats.recent) stats.recent = [];
     stats.recent.push(record);
@@ -401,7 +642,8 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
 
     await saveStats(stats);
 
-    console.error(`[INFO] Recorded compression (estimated): ${filePath} - Original: ~${estimatedOriginalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ~${tokensSaved} tokens (${Math.round(savingsPercentage)}%)`);
+    const costMsg = costInfo ? `, Cost saved: ~$${costInfo.costSavingsUSD.toFixed(2)} (${costInfo.modelName})` : '';
+    console.error(`[INFO] Recorded compression (estimated): ${filePath} - Original: ~${estimatedOriginalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ~${tokensSaved} tokens (${Math.round(savingsPercentage)}%)${costMsg}`);
   } catch (error) {
     // This is the last resort - log and throw
     console.error(`[ERROR] Failed to record compression statistics even with estimation: ${error.message}`);
@@ -684,13 +926,13 @@ class MCPServer {
       },
       {
         name: 'get_compression_stats',
-        description: 'Retrieve token savings statistics for code compressions. Shows actual token counts (not estimates) for all compressions within specified time period.',
+        description: 'Retrieve token and cost savings statistics for code compressions with flexible date queries. Shows token counts, USD cost savings, and per-model breakdowns for compressions within specified time period.',
         inputSchema: {
           type: 'object',
           properties: {
             period: {
               type: 'string',
-              description: 'Time period to filter statistics',
+              description: 'Time period preset to filter statistics (backward compatible)',
               default: 'all',
               oneOf: [
                 {
@@ -714,6 +956,20 @@ class MCPServer {
                   description: 'Compressions from the last 30 days'
                 }
               ]
+            },
+            startDate: {
+              type: 'string',
+              description: 'Start date for custom date range. Accepts ISO 8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.sssZ) or relative time strings (e.g., "2 hours ago", "yesterday", "last week"). Optional - if omitted, no start boundary is applied.'
+            },
+            endDate: {
+              type: 'string',
+              description: 'End date for custom date range. Accepts ISO 8601 format (YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss.sssZ) or relative time strings (e.g., "now", "today", "1 hour ago"). Optional - if omitted, defaults to current time.'
+            },
+            relativeDays: {
+              type: 'number',
+              description: 'Number of days to look back from now. Alternative to startDate/endDate for simple queries. Example: relativeDays=7 returns compressions from last 7 days. Must be between 1 and 365.',
+              minimum: 1,
+              maximum: 365
             },
             includeDetails: {
               type: 'boolean',
@@ -802,63 +1058,151 @@ class MCPServer {
   async handleGetStats(args) {
     try {
       const stats = await loadStats();
-      const period = args.period || 'all';
       const includeDetails = args.includeDetails || false;
       const limit = args.limit || 10;
 
-      // Collect data from all tiers based on period
+      // Determine date range
+      // Priority: relativeDays > startDate/endDate > period (legacy)
+      let startDate, endDate, periodLabel;
       const now = new Date();
-      let recentCompressions = [];
-      let aggregatedData = { count: 0, originalTokens: 0, compressedTokens: 0, tokensSaved: 0 };
 
-      if (period === 'today') {
-        const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        // Only recent compressions can be from today
-        recentCompressions = (stats.recent || []).filter(c => new Date(c.timestamp) >= oneDayAgo);
-
-        aggregatedData.count = recentCompressions.length;
-        aggregatedData.originalTokens = recentCompressions.reduce((sum, c) => sum + c.originalTokens, 0);
-        aggregatedData.compressedTokens = recentCompressions.reduce((sum, c) => sum + c.compressedTokens, 0);
-        aggregatedData.tokensSaved = recentCompressions.reduce((sum, c) => sum + c.tokensSaved, 0);
-      } else if (period === 'week') {
-        const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        // Recent compressions from last week
-        recentCompressions = (stats.recent || []).filter(c => new Date(c.timestamp) >= oneWeekAgo);
-
-        aggregatedData.count = recentCompressions.length;
-        aggregatedData.originalTokens = recentCompressions.reduce((sum, c) => sum + c.originalTokens, 0);
-        aggregatedData.compressedTokens = recentCompressions.reduce((sum, c) => sum + c.compressedTokens, 0);
-        aggregatedData.tokensSaved = recentCompressions.reduce((sum, c) => sum + c.tokensSaved, 0);
-      } else if (period === 'month') {
-        const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        // Recent compressions from last month
-        recentCompressions = (stats.recent || []).filter(c => new Date(c.timestamp) >= oneMonthAgo);
-
-        aggregatedData.count = recentCompressions.length;
-        aggregatedData.originalTokens = recentCompressions.reduce((sum, c) => sum + c.originalTokens, 0);
-        aggregatedData.compressedTokens = recentCompressions.reduce((sum, c) => sum + c.compressedTokens, 0);
-        aggregatedData.tokensSaved = recentCompressions.reduce((sum, c) => sum + c.tokensSaved, 0);
-
-        // Add daily aggregates from last month
-        for (const [dayKey, dayStats] of Object.entries(stats.daily || {})) {
-          const dayDate = new Date(dayKey);
-          if (dayDate >= oneMonthAgo) {
-            aggregatedData.count += dayStats.count;
-            aggregatedData.originalTokens += dayStats.originalTokens;
-            aggregatedData.compressedTokens += dayStats.compressedTokens;
-            aggregatedData.tokensSaved += dayStats.tokensSaved;
-          }
+      if (args.relativeDays) {
+        // relativeDays: simple "last N days" query
+        if (typeof args.relativeDays !== 'number' || args.relativeDays < 1 || args.relativeDays > 365) {
+          throw new Error('relativeDays must be a number between 1 and 365');
         }
+        startDate = new Date(now.getTime() - args.relativeDays * 24 * 60 * 60 * 1000);
+        endDate = now;
+        periodLabel = `Last ${args.relativeDays} Day${args.relativeDays > 1 ? 's' : ''}`;
+      } else if (args.startDate || args.endDate) {
+        // Custom date range using startDate and/or endDate
+        try {
+          startDate = args.startDate ? parseFlexibleDate(args.startDate) : new Date(0);
+          endDate = args.endDate ? parseFlexibleDate(args.endDate) : now;
+        } catch (error) {
+          throw new Error(`Invalid date range: ${error.message}`);
+        }
+
+        // Validate date range
+        if (startDate > endDate) {
+          throw new Error(`Invalid date range: startDate (${startDate.toISOString()}) is after endDate (${endDate.toISOString()})`);
+        }
+
+        // Warn if endDate is in the future (likely a mistake)
+        if (endDate > now) {
+          console.error('[WARN] endDate is in the future, using current time instead');
+          endDate = now;
+        }
+
+        // Generate period label for custom range
+        const formatDate = (d) => d.toISOString().split('T')[0];
+        periodLabel = `${formatDate(startDate)} to ${formatDate(endDate)}`;
       } else {
-        // All time - use summary
-        recentCompressions = stats.recent || [];
-        aggregatedData = {
-          count: stats.summary.totalCompressions,
-          originalTokens: stats.summary.totalOriginalTokens,
-          compressedTokens: stats.summary.totalCompressedTokens,
-          tokensSaved: stats.summary.totalTokensSaved
-        };
+        // Legacy period parameter (backward compatibility)
+        const period = args.period || 'all';
+        switch (period) {
+          case 'today':
+            startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            endDate = now;
+            periodLabel = 'Last 24 Hours';
+            break;
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            endDate = now;
+            periodLabel = 'Last 7 Days';
+            break;
+          case 'month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            endDate = now;
+            periodLabel = 'Last 30 Days';
+            break;
+          case 'all':
+          default:
+            startDate = new Date(0);
+            endDate = now;
+            periodLabel = 'All Time';
+            break;
+        }
       }
+
+      // Filter compressions from all tiers by date range
+      let recentCompressions = [];
+      let aggregatedData = { count: 0, originalTokens: 0, compressedTokens: 0, tokensSaved: 0, costSavingsUSD: 0 };
+      let modelBreakdownMap = {}; // Track per-model statistics
+
+      // 1. Filter recent compressions (individual records)
+      recentCompressions = (stats.recent || []).filter(c => {
+        const timestamp = new Date(c.timestamp);
+        return timestamp >= startDate && timestamp <= endDate;
+      });
+
+      aggregatedData.count = recentCompressions.length;
+      aggregatedData.originalTokens = recentCompressions.reduce((sum, c) => sum + c.originalTokens, 0);
+      aggregatedData.compressedTokens = recentCompressions.reduce((sum, c) => sum + c.compressedTokens, 0);
+      aggregatedData.tokensSaved = recentCompressions.reduce((sum, c) => sum + c.tokensSaved, 0);
+
+      // Aggregate cost savings from records with cost fields
+      for (const c of recentCompressions) {
+        if (c.costSavingsUSD && typeof c.costSavingsUSD === 'number') {
+          aggregatedData.costSavingsUSD += c.costSavingsUSD;
+
+          // Build model breakdown
+          const modelKey = c.model || 'unknown';
+          if (!modelBreakdownMap[modelKey]) {
+            modelBreakdownMap[modelKey] = {
+              modelName: MODEL_PRICING[modelKey]?.name || modelKey,
+              compressions: 0,
+              tokensSaved: 0,
+              costSavingsUSD: 0
+            };
+          }
+          modelBreakdownMap[modelKey].compressions++;
+          modelBreakdownMap[modelKey].tokensSaved += c.tokensSaved;
+          modelBreakdownMap[modelKey].costSavingsUSD += c.costSavingsUSD;
+        }
+      }
+
+      // 2. Filter daily aggregates within date range
+      for (const [dayKey, dayStats] of Object.entries(stats.daily || {})) {
+        const dayDate = new Date(dayKey + 'T00:00:00.000Z'); // Parse as UTC midnight
+        if (dayDate >= startDate && dayDate <= endDate) {
+          aggregatedData.count += dayStats.count;
+          aggregatedData.originalTokens += dayStats.originalTokens;
+          aggregatedData.compressedTokens += dayStats.compressedTokens;
+          aggregatedData.tokensSaved += dayStats.tokensSaved;
+        }
+      }
+
+      // 3. Filter monthly aggregates within date range
+      for (const [monthKey, monthStats] of Object.entries(stats.monthly || {})) {
+        const monthDate = new Date(monthKey + '-01T00:00:00.000Z'); // Parse as UTC first of month
+        // Include month if any part of it overlaps with date range
+        const monthEnd = new Date(monthDate);
+        monthEnd.setMonth(monthEnd.getMonth() + 1); // End of month
+        if (monthDate <= endDate && monthEnd >= startDate) {
+          aggregatedData.count += monthStats.count;
+          aggregatedData.originalTokens += monthStats.originalTokens;
+          aggregatedData.compressedTokens += monthStats.compressedTokens;
+          aggregatedData.tokensSaved += monthStats.tokensSaved;
+        }
+      }
+
+      // Calculate cost savings based on detected LLM model (for fallback)
+      const costSavings = await calculateCostSavings(aggregatedData.tokensSaved);
+
+      // Use aggregated cost from records if available, otherwise fall back to calculated cost
+      const totalCostSavingsUSD = aggregatedData.costSavingsUSD > 0
+        ? aggregatedData.costSavingsUSD
+        : costSavings.costSavingsUSD;
+
+      // Calculate average cost savings per compression
+      const averageCostSavingsPerCompression = aggregatedData.count > 0
+        ? totalCostSavingsUSD / aggregatedData.count
+        : 0;
+
+      // Convert model breakdown map to array sorted by cost savings
+      const modelBreakdown = Object.values(modelBreakdownMap)
+        .sort((a, b) => b.costSavingsUSD - a.costSavingsUSD);
 
       // Calculate summary for filtered period
       const summary = {
@@ -866,16 +1210,22 @@ class MCPServer {
         totalOriginalTokens: aggregatedData.originalTokens,
         totalCompressedTokens: aggregatedData.compressedTokens,
         totalTokensSaved: aggregatedData.tokensSaved,
+        totalCostSavingsUSD: totalCostSavingsUSD,
+        averageCostSavingsPerCompression: averageCostSavingsPerCompression,
+        costSavingsUSD: costSavings.costSavingsUSD, // Keep for backward compatibility
+        detectedModel: costSavings.modelName,
+        pricePerMillionTokens: costSavings.pricePerMTok,
         averageCompressionRatio: aggregatedData.originalTokens > 0
           ? Math.round((aggregatedData.compressedTokens / aggregatedData.originalTokens) * 1000) / 1000
           : 0,
         averageSavingsPercentage: aggregatedData.originalTokens > 0
           ? Math.round((aggregatedData.tokensSaved / aggregatedData.originalTokens) * 100 * 10) / 10
-          : 0
+          : 0,
+        modelBreakdown: modelBreakdown
       };
 
       // Format response
-      let responseText = `## Compression Statistics (${period === 'all' ? 'All Time' : period === 'today' ? 'Last 24 Hours' : period === 'week' ? 'Last 7 Days' : 'Last 30 Days'})\n\n`;
+      let responseText = `## Compression Statistics (${periodLabel})\n\n`;
       responseText += '**Summary:**\n';
       responseText += `- Total Compressions: ${summary.totalCompressions}\n`;
       responseText += `- Original Tokens: ${summary.totalOriginalTokens.toLocaleString()}\n`;
@@ -883,6 +1233,23 @@ class MCPServer {
       responseText += `- Tokens Saved: ${summary.totalTokensSaved.toLocaleString()}\n`;
       responseText += `- Average Compression Ratio: ${summary.averageCompressionRatio}x\n`;
       responseText += `- Average Savings: ${summary.averageSavingsPercentage}%\n`;
+
+      // Cost Savings Section
+      responseText += `\n**Cost Savings:**\n`;
+      responseText += `- **Total Cost Savings: $${summary.totalCostSavingsUSD.toFixed(2)} USD**\n`;
+      responseText += `- Average Savings per Compression: $${summary.averageCostSavingsPerCompression.toFixed(2)} USD\n`;
+      responseText += `- Detected Model: ${summary.detectedModel} ($${summary.pricePerMillionTokens}/M tokens)\n`;
+
+      // Model Breakdown (if multiple models detected)
+      if (summary.modelBreakdown.length > 0) {
+        responseText += `\n**Model Breakdown:**\n`;
+        for (const model of summary.modelBreakdown) {
+          responseText += `- **${model.modelName}:**\n`;
+          responseText += `  - Compressions: ${model.compressions}\n`;
+          responseText += `  - Tokens Saved: ${model.tokensSaved.toLocaleString()}\n`;
+          responseText += `  - Cost Savings: $${model.costSavingsUSD.toFixed(2)} USD\n`;
+        }
+      }
 
       // Storage stats
       responseText += `\n**Storage Breakdown:**\n`;
