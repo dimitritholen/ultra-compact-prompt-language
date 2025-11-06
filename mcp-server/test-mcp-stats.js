@@ -8,6 +8,11 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs').promises;
 const os = require('os');
+const {
+  validateCompressionRecord,
+  validateStatsSummary,
+  validateStatsFile
+} = require('./test-validation-helpers');
 
 const STATS_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'compression-stats.json');
 
@@ -83,63 +88,108 @@ async function testMCPStatsRecording() {
 
   console.log('\nStatistics file was created successfully!\n');
 
-  // Validate stats structure
-  assert.ok(stats.summary, 'Stats file must have a summary object');
-  assert.ok(stats.compressions, 'Stats file must have a compressions array');
+  // Validate complete stats file structure
+  console.log('Validating stats file structure...');
+  validateStatsFile(stats, { requireRecords: true });
+  console.log('✅ Stats file structure is valid\n');
 
-  // Validate summary fields
-  assert.strictEqual(
-    typeof stats.summary.totalCompressions,
-    'number',
-    'totalCompressions must be a number'
-  );
-  assert.strictEqual(
-    typeof stats.summary.totalOriginalTokens,
-    'number',
-    'totalOriginalTokens must be a number'
-  );
-  assert.strictEqual(
-    typeof stats.summary.totalCompressedTokens,
-    'number',
-    'totalCompressedTokens must be a number'
-  );
-  assert.strictEqual(
-    typeof stats.summary.totalTokensSaved,
-    'number',
-    'totalTokensSaved must be a number'
-  );
+  // Validate summary object
+  console.log('Validating summary fields...');
+  validateStatsSummary(stats.summary);
+  console.log('✅ Summary fields validated\n');
 
   // Validate there is at least one compression recorded
   assert.ok(
-    stats.compressions.length > 0,
-    'At least one compression should be recorded'
+    stats.recent && stats.recent.length > 0,
+    'At least one compression should be recorded in recent array'
   );
+  console.log(`Found ${stats.recent.length} compression record(s)\n`);
 
-  // Validate compression record structure
-  const latest = stats.compressions[stats.compressions.length - 1];
-  assert.ok(latest.path, 'Compression record must have a path');
-  assert.ok(latest.level, 'Compression record must have a level');
-  assert.strictEqual(
-    typeof latest.savingsPercentage,
-    'number',
-    'savingsPercentage must be a number'
+  // Validate all compression records
+  console.log('Validating compression records...');
+  stats.recent.forEach((record, index) => {
+    validateCompressionRecord(record, `compression record #${index + 1}`);
+  });
+  console.log('✅ All compression records validated\n');
+
+  // Get latest compression for detailed output
+  const latest = stats.recent[stats.recent.length - 1];
+
+  // Validate all required fields are present with proper types
+  assert.ok(latest.timestamp, 'Latest record must have timestamp');
+  assert.ok(latest.path, 'Latest record must have path');
+  assert.ok(typeof latest.originalTokens === 'number', 'originalTokens must be a number');
+  assert.ok(typeof latest.compressedTokens === 'number', 'compressedTokens must be a number');
+  assert.ok(typeof latest.tokensSaved === 'number', 'tokensSaved must be a number');
+  assert.ok(typeof latest.compressionRatio === 'number', 'compressionRatio must be a number');
+  assert.ok(typeof latest.savingsPercentage === 'number', 'savingsPercentage must be a number');
+  assert.ok(latest.level, 'Latest record must have level');
+  assert.ok(latest.format, 'Latest record must have format');
+
+  // Validate value ranges
+  assert.ok(latest.originalTokens >= 0, 'originalTokens must be non-negative');
+  assert.ok(latest.compressedTokens >= 0, 'compressedTokens must be non-negative');
+  assert.ok(latest.tokensSaved >= 0, 'tokensSaved must be non-negative');
+  assert.ok(
+    latest.compressionRatio >= 0 && latest.compressionRatio <= 1.1,
+    'compressionRatio must be between 0 and 1.1'
   );
   assert.ok(
     latest.savingsPercentage >= 0 && latest.savingsPercentage <= 100,
     'savingsPercentage must be between 0 and 100'
   );
 
+  // Validate calculations
+  const expectedTokensSaved = latest.originalTokens - latest.compressedTokens;
+  assert.strictEqual(
+    latest.tokensSaved,
+    expectedTokensSaved,
+    `tokensSaved must equal originalTokens - compressedTokens (expected ${expectedTokensSaved}, got ${latest.tokensSaved})`
+  );
+
+  const expectedRatio = latest.originalTokens > 0 ? latest.compressedTokens / latest.originalTokens : 0;
+  assert.ok(
+    Math.abs(latest.compressionRatio - expectedRatio) < 0.001,
+    `compressionRatio must match calculation (expected ${expectedRatio.toFixed(3)}, got ${latest.compressionRatio})`
+  );
+
+  const expectedPercentage = latest.originalTokens > 0 ? (latest.tokensSaved / latest.originalTokens) * 100 : 0;
+  assert.ok(
+    Math.abs(latest.savingsPercentage - expectedPercentage) < 0.2,
+    `savingsPercentage must match calculation (expected ${expectedPercentage.toFixed(1)}%, got ${latest.savingsPercentage}%)`
+  );
+
   console.log('Stats summary:');
   console.log(`  Total compressions: ${stats.summary.totalCompressions}`);
-  console.log(`  Total original tokens: ${stats.summary.totalOriginalTokens}`);
-  console.log(`  Total compressed tokens: ${stats.summary.totalCompressedTokens}`);
-  console.log(`  Total tokens saved: ${stats.summary.totalTokensSaved}`);
-  console.log(`\nLatest compression:`);
+  console.log(`  Total original tokens: ${stats.summary.totalOriginalTokens.toLocaleString()}`);
+  console.log(`  Total compressed tokens: ${stats.summary.totalCompressedTokens.toLocaleString()}`);
+  console.log(`  Total tokens saved: ${stats.summary.totalTokensSaved.toLocaleString()}`);
+
+  console.log('\nLatest compression:');
+  console.log(`  Timestamp: ${latest.timestamp}`);
   console.log(`  Path: ${latest.path}`);
   console.log(`  Level: ${latest.level}`);
-  console.log(`  Savings: ${latest.savingsPercentage}%`);
+  console.log(`  Format: ${latest.format}`);
+  console.log(`  Original tokens: ${latest.originalTokens.toLocaleString()}`);
+  console.log(`  Compressed tokens: ${latest.compressedTokens.toLocaleString()}`);
+  console.log(`  Tokens saved: ${latest.tokensSaved.toLocaleString()}`);
+  console.log(`  Compression ratio: ${latest.compressionRatio}`);
+  console.log(`  Savings percentage: ${latest.savingsPercentage}%`);
 
-  console.log('\n✅ All assertions passed!');
+  if (latest.estimated) {
+    console.log('  ⚠️  Values are estimated (original content not available)');
+  }
+
+  if (latest.model) {
+    console.log(`\nCost tracking:`);
+    console.log(`  Model: ${latest.model}`);
+    console.log(`  Price per M tokens: $${latest.pricePerMTok}`);
+    console.log(`  Cost savings: $${latest.costSavingsUSD.toFixed(6)}`);
+  }
+
+  console.log('\n✅ All field validations passed!');
+  console.log('✅ All calculations verified!');
+  console.log('✅ All assertions passed!');
   return true;
 }
 
