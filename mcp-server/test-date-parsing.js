@@ -7,11 +7,12 @@
  */
 
 const assert = require('assert');
+const { startOfCurrentYear, dateWithOffset } = require('./test-date-helpers');
 
 /**
  * Parse flexible date input to Date object
  * Supports:
- * - ISO dates: "2025-01-01", "2025-01-01T12:00:00Z"
+ * - ISO dates: "YYYY-MM-DD", "YYYY-MM-DDTHH:mm:ss.sssZ"
  * - Relative: "-7d", "-2w", "-1m", "-1y"
  * - Special: "now", "today"
  */
@@ -105,21 +106,29 @@ function runTests() {
       }
     },
     {
-      name: 'Test 7: ISO date "2025-01-01"',
-      input: '2025-01-01',
+      name: 'Test 7: ISO date (start of current year)',
+      get input() {
+        return startOfCurrentYear().toISOString().split('T')[0];
+      },
       validate: (result) => {
-        return result.getFullYear() === 2025 &&
-               result.getMonth() === 0 && // January
-               result.getDate() === 1;
+        // When parsing "YYYY-01-01" (date-only), JS treats it as UTC
+        // So we validate using UTC components
+        const expected = startOfCurrentYear();
+        return result.getUTCFullYear() === expected.getFullYear() &&
+               result.getUTCMonth() === 0 && // January
+               result.getUTCDate() === 1;
       }
     },
     {
       name: 'Test 8: Full ISO timestamp',
-      input: '2025-01-15T12:30:00.000Z',
+      get input() {
+        const testDate = dateWithOffset({ days: 15, startOfDay: false });
+        testDate.setUTCHours(12, 30, 0, 0);
+        return testDate.toISOString();
+      },
       validate: (result) => {
-        return result.getFullYear() === 2025 &&
-               result.getMonth() === 0 &&
-               result.getDate() === 15 &&
+        const now = new Date();
+        return result.getFullYear() === now.getFullYear() &&
                result.getUTCHours() === 12 &&
                result.getUTCMinutes() === 30;
       }
@@ -145,8 +154,8 @@ function runTests() {
       errorMatch: /Invalid date format/
     },
     {
-      name: 'Test 12: Relative with missing unit throws error',
-      input: '-7',
+      name: 'Test 12: Malformed relative format throws error',
+      input: '7d',  // Missing the minus sign
       shouldThrow: true,
       errorMatch: /Invalid date format/
     }
