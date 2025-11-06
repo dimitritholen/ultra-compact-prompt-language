@@ -7,40 +7,11 @@
 
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 
-/**
- * Parse flexible date input to Date object
- * Supports:
- * - ISO dates: "2025-01-01", "2025-01-01T12:00:00Z"
- * - Relative: "-7d", "-2w", "-1m", "-1y"
- * - Special: "now", "today"
- */
-function parseFlexibleDate(value) {
-  if (!value || value === 'now') {
-    return new Date();
-  }
-
-  if (value === 'today') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  }
-
-  const relativeMatch = value.match(/^-(\d+)(d|w|m|y)$/);
-  if (relativeMatch) {
-    const [, amount, unit] = relativeMatch;
-    const multipliers = { d: 1, w: 7, m: 30, y: 365 };
-    const days = parseInt(amount, 10) * multipliers[unit];
-    return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-  }
-
-  const date = new Date(value);
-  if (!isNaN(date.getTime())) {
-    return date;
-  }
-
-  throw new Error(`Invalid date format: ${value}. Expected ISO date (YYYY-MM-DD), relative time (-7d, -2w), or special keyword (now, today)`);
-}
+// Import production function from server.js
+const require = createRequire(import.meta.url);
+const { parseFlexibleDate } = require('./server.js');
 
 describe('parseFlexibleDate() Function', () => {
   describe('Special Keywords', () => {
