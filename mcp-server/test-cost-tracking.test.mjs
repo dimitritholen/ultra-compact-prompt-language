@@ -348,84 +348,29 @@ describe('Cost Tracking Integration', () => {
 
   describe('Graceful error handling', () => {
     test('should handle pricing failures gracefully', async () => {
-      // Mock calculateCostSavings to throw error
-      const originalCalcCost = calculateCostSavings;
-      const mockCalculateCostSavings = async () => {
-        throw new Error('Pricing service unavailable');
-      };
+      // Test real error conditions: invalid inputs to calculateCostSavings
 
-      // Temporarily replace the function
-      const originalRecordCompression = recordCompression;
-      async function recordCompressionWithError(filePath, originalContent, compressedContent, level, format) {
-        const stats = await loadStats();
+      // Test 1: Invalid tokensSaved (negative) - should return defaults gracefully
+      const resultNegative = await calculateCostSavings(-100);
+      assert.strictEqual(resultNegative.costSavingsUSD, 0, 'Should return 0 cost for negative tokens');
+      assert.strictEqual(resultNegative.model, DEFAULT_MODEL, 'Should return default model on error');
+      assert.strictEqual(typeof resultNegative.pricePerMTok, 'number', 'Should have default pricing');
 
-        const originalTokens = countTokens(originalContent);
-        const compressedTokens = countTokens(compressedContent);
-        const tokensSaved = originalTokens - compressedTokens;
-        const compressionRatio = originalTokens > 0 ? (compressedTokens / originalTokens) : 0;
-        const savingsPercentage = originalTokens > 0 ? ((tokensSaved / originalTokens) * 100) : 0;
+      // Test 2: Invalid tokensSaved (NaN) - should return defaults gracefully
+      const resultNaN = await calculateCostSavings(NaN);
+      assert.strictEqual(resultNaN.costSavingsUSD, 0, 'Should return 0 cost for NaN tokens');
+      assert.strictEqual(resultNaN.model, DEFAULT_MODEL, 'Should return default model on error');
 
-        // Calculate cost savings - this will fail
-        let costInfo = null;
-        try {
-          costInfo = await mockCalculateCostSavings(tokensSaved);
-        } catch (error) {
-          // Gracefully handle errors
-        }
+      // Test 3: Invalid tokensSaved (non-number) - should return defaults gracefully
+      const resultString = await calculateCostSavings('invalid');
+      assert.strictEqual(resultString.costSavingsUSD, 0, 'Should return 0 cost for non-number tokens');
+      assert.strictEqual(resultString.model, DEFAULT_MODEL, 'Should return default model on error');
 
-        const record = {
-          timestamp: new Date().toISOString(),
-          path: filePath,
-          originalTokens,
-          compressedTokens,
-          tokensSaved,
-          compressionRatio: Math.round(compressionRatio * 1000) / 1000,
-          savingsPercentage: Math.round(savingsPercentage * 10) / 10,
-          level,
-          format
-        };
-
-        // Add cost tracking fields if available
-        if (costInfo) {
-          record.model = costInfo.model;
-          record.client = costInfo.client;
-          record.pricePerMTok = costInfo.pricePerMTok;
-          record.costSavingsUSD = costInfo.costSavingsUSD;
-          record.currency = 'USD';
-        }
-
-        stats.recent.push(record);
-        stats.summary.totalCompressions++;
-        stats.summary.totalOriginalTokens += originalTokens;
-        stats.summary.totalCompressedTokens += compressedTokens;
-        stats.summary.totalTokensSaved += tokensSaved;
-
-        await saveStats(stats);
-        return record;
-      }
-
-      const originalContent = 'test content ' + 'x'.repeat(1000);
-      const compressedContent = 'test';
-
-      // Should not throw, should continue without cost info
-      const record = await recordCompressionWithError(TEST_FILE, originalContent, compressedContent, 'full', 'text');
-
-      // Cost fields should not exist (graceful degradation)
-      assert.strictEqual(record.model, undefined, 'model field should not exist when pricing fails');
-      assert.strictEqual(record.costSavingsUSD, undefined, 'costSavingsUSD should not exist when pricing fails');
-
-      // But basic stats should still be recorded with strong validation
-      // Validate originalTokens is a positive number
-      assert.ok(typeof record.originalTokens === 'number' && record.originalTokens > 0,
-        `originalTokens should be a positive number, got: ${record.originalTokens}`);
-
-      // Validate compressedTokens is a non-negative number
-      assert.ok(typeof record.compressedTokens === 'number' && record.compressedTokens >= 0,
-        `compressedTokens should be a non-negative number, got: ${record.compressedTokens}`);
-
-      // Validate tokensSaved is a positive number
-      assert.ok(typeof record.tokensSaved === 'number' && record.tokensSaved > 0,
-        `tokensSaved should be a positive number, got: ${record.tokensSaved}`);
+      // Test 4: Unknown model - should fallback to defaults gracefully
+      const resultUnknownModel = await calculateCostSavings(1000, 'totally-fake-model-xyz');
+      assert.ok(resultUnknownModel.costSavingsUSD >= 0, 'Should calculate cost with default pricing');
+      assert.strictEqual(resultUnknownModel.model, 'totally-fake-model-xyz', 'Should preserve model name');
+      assert.ok(typeof resultUnknownModel.pricePerMTok === 'number', 'Should use fallback pricing');
     });
   });
 
