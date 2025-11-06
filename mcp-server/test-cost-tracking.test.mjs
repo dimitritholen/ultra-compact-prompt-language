@@ -246,19 +246,27 @@ describe('Cost Tracking Integration', () => {
         'text'
       );
 
-      // Verify all 5 cost fields exist
-      assert.ok(record.model !== undefined, 'model should exist');
-      assert.ok(record.client !== undefined, 'client should exist');
-      assert.ok(record.pricePerMTok !== undefined, 'pricePerMTok should exist');
-      assert.ok(record.costSavingsUSD !== undefined, 'costSavingsUSD should exist');
-      assert.ok(record.currency !== undefined, 'currency should exist');
+      // Verify all 5 cost fields exist with strong validation
+      // Validate model is a non-empty string
+      assert.ok(typeof record.model === 'string' && record.model.length > 0,
+        `model should be a non-empty string, got: ${record.model}`);
 
-      // Verify field types
-      assert.strictEqual(typeof record.model, 'string');
-      assert.strictEqual(typeof record.client, 'string');
-      assert.strictEqual(typeof record.pricePerMTok, 'number');
-      assert.strictEqual(typeof record.costSavingsUSD, 'number');
-      assert.strictEqual(record.currency, 'USD');
+      // Validate client is a known value
+      const validClients = ['anthropic', 'openai', 'auto', 'unknown', 'test-client'];
+      assert.ok(validClients.includes(record.client),
+        `client should be one of [${validClients.join(', ')}], got: ${record.client}`);
+
+      // Validate pricePerMTok is a positive number
+      assert.ok(typeof record.pricePerMTok === 'number' && record.pricePerMTok > 0,
+        `pricePerMTok should be a positive number, got: ${record.pricePerMTok}`);
+
+      // Validate costSavingsUSD is a non-negative number
+      assert.ok(typeof record.costSavingsUSD === 'number' && record.costSavingsUSD >= 0,
+        `costSavingsUSD should be a non-negative number, got: ${record.costSavingsUSD}`);
+
+      // Validate currency is exactly 'USD'
+      assert.strictEqual(record.currency, 'USD',
+        `currency should be 'USD', got: ${record.currency}`);
 
       // Verify cost calculation is positive
       assert.ok(record.costSavingsUSD >= 0, 'costSavingsUSD should be non-negative');
@@ -295,12 +303,28 @@ describe('Cost Tracking Integration', () => {
         'text'
       );
 
-      // Verify all cost fields exist
-      assert.ok(record.model !== undefined, 'model should exist');
-      assert.ok(record.client !== undefined, 'client should exist');
-      assert.ok(record.pricePerMTok !== undefined, 'pricePerMTok should exist');
-      assert.ok(record.costSavingsUSD !== undefined, 'costSavingsUSD should exist');
-      assert.ok(record.currency !== undefined, 'currency should exist');
+      // Verify all cost fields exist with strong validation
+      // Validate model is a non-empty string
+      assert.ok(typeof record.model === 'string' && record.model.length > 0,
+        `model should be a non-empty string, got: ${record.model}`);
+
+      // Validate client is a known value
+      const validClients = ['anthropic', 'openai', 'auto', 'unknown', 'test-client'];
+      assert.ok(validClients.includes(record.client),
+        `client should be one of [${validClients.join(', ')}], got: ${record.client}`);
+
+      // Validate pricePerMTok is a positive number
+      assert.ok(typeof record.pricePerMTok === 'number' && record.pricePerMTok > 0,
+        `pricePerMTok should be a positive number, got: ${record.pricePerMTok}`);
+
+      // Validate costSavingsUSD is a non-negative number (can be 0 for estimated)
+      assert.ok(typeof record.costSavingsUSD === 'number' && record.costSavingsUSD >= 0,
+        `costSavingsUSD should be a non-negative number, got: ${record.costSavingsUSD}`);
+
+      // Validate currency is exactly 'USD'
+      assert.strictEqual(record.currency, 'USD',
+        `currency should be 'USD', got: ${record.currency}`);
+
       assert.strictEqual(record.estimated, true, 'estimated flag should be true');
     });
   });
@@ -419,10 +443,18 @@ describe('Cost Tracking Integration', () => {
       assert.strictEqual(record.model, undefined, 'model field should not exist when pricing fails');
       assert.strictEqual(record.costSavingsUSD, undefined, 'costSavingsUSD should not exist when pricing fails');
 
-      // But basic stats should still be recorded
-      assert.ok(record.originalTokens !== undefined, 'originalTokens should exist');
-      assert.ok(record.compressedTokens !== undefined, 'compressedTokens should exist');
-      assert.ok(record.tokensSaved !== undefined, 'tokensSaved should exist');
+      // But basic stats should still be recorded with strong validation
+      // Validate originalTokens is a positive number
+      assert.ok(typeof record.originalTokens === 'number' && record.originalTokens > 0,
+        `originalTokens should be a positive number, got: ${record.originalTokens}`);
+
+      // Validate compressedTokens is a non-negative number
+      assert.ok(typeof record.compressedTokens === 'number' && record.compressedTokens >= 0,
+        `compressedTokens should be a non-negative number, got: ${record.compressedTokens}`);
+
+      // Validate tokensSaved is a positive number
+      assert.ok(typeof record.tokensSaved === 'number' && record.tokensSaved > 0,
+        `tokensSaved should be a positive number, got: ${record.tokensSaved}`);
     });
   });
 
