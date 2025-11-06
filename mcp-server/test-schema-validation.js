@@ -4,6 +4,9 @@
  * Tests the get_compression_stats tool schema for MCP compliance
  */
 
+const assert = require('assert');
+const { test } = require('node:test');
+
 // Extract the schema from server.js
 const schema = {
   name: 'get_compression_stats',
@@ -68,58 +71,115 @@ const schema = {
   }
 };
 
-console.log('Schema Validation Test for get_compression_stats\n');
-console.log('='.repeat(60));
+test('Schema validation for get_compression_stats', async (t) => {
+  const props = schema.inputSchema.properties;
 
-// Test 1: Tool name validation
-const toolNameRegex = /^[a-zA-Z0-9_-]{1,64}$/;
-const nameValid = toolNameRegex.test(schema.name);
-console.log(`✓ Tool name matches regex: ${nameValid ? 'PASS' : 'FAIL'}`);
-console.log(`  Name: ${schema.name}`);
+  await t.test('tool name matches MCP naming requirements', () => {
+    const toolNameRegex = /^[a-zA-Z0-9_-]{1,64}$/;
+    assert.ok(
+      toolNameRegex.test(schema.name),
+      `Tool name "${schema.name}" must match pattern /^[a-zA-Z0-9_-]{1,64}$/`
+    );
+  });
 
-// Test 2: Description length
-const descLength = schema.description.length;
-console.log(`✓ Description length: ${descLength} chars (${descLength < 255 ? 'PASS' : 'FAIL'})`);
+  await t.test('description is under 255 characters', () => {
+    const descLength = schema.description.length;
+    assert.ok(
+      descLength < 255,
+      `Description length ${descLength} must be less than 255 characters`
+    );
+  });
 
-// Test 3: Parameter validation
-console.log('\n✓ Parameter Definitions:');
-const props = schema.inputSchema.properties;
+  await t.test('all parameters have valid type definitions', () => {
+    for (const [paramName, param] of Object.entries(props)) {
+      assert.ok(
+        param.type,
+        `Parameter "${paramName}" must have a type definition`
+      );
+      assert.ok(
+        ['string', 'number', 'boolean', 'object', 'array'].includes(param.type),
+        `Parameter "${paramName}" type "${param.type}" must be a valid JSON Schema type`
+      );
+    }
+  });
 
-for (const [paramName, param] of Object.entries(props)) {
-  console.log(`\n  ${paramName}:`);
-  console.log(`    - Type: ${param.type}`);
-  console.log(`    - Description length: ${param.description.length} chars`);
-  if (param.default !== undefined) {
-    console.log(`    - Default: ${JSON.stringify(param.default)} (optional)`);
-  } else {
-    console.log(`    - No default (optional)`);
-  }
-  if (param.minimum !== undefined) {
-    console.log(`    - Minimum: ${param.minimum}`);
-  }
-  if (param.maximum !== undefined) {
-    console.log(`    - Maximum: ${param.maximum}`);
-  }
-  if (param.oneOf) {
-    console.log(`    - oneOf patterns: ${param.oneOf.length}`);
-  }
-}
+  await t.test('all parameters have descriptions', () => {
+    for (const [paramName, param] of Object.entries(props)) {
+      assert.ok(
+        param.description && param.description.length > 0,
+        `Parameter "${paramName}" must have a description`
+      );
+    }
+  });
 
-// Test 4: New parameters check
-console.log('\n✓ New Parameters Added:');
-console.log(`  - startDate: ${props.startDate ? 'YES' : 'NO'}`);
-console.log(`  - endDate: ${props.endDate ? 'YES' : 'NO'}`);
-console.log(`  - relativeDays: ${props.relativeDays ? 'YES' : 'NO'}`);
+  await t.test('new date filtering parameters are present', () => {
+    assert.ok(props.startDate, 'startDate parameter must be defined');
+    assert.strictEqual(props.startDate.type, 'string', 'startDate must be a string type');
 
-// Test 5: Validation constraints
-console.log('\n✓ Validation Constraints:');
-console.log(`  - relativeDays has minimum (1): ${props.relativeDays.minimum === 1 ? 'YES' : 'NO'}`);
-console.log(`  - relativeDays has maximum (365): ${props.relativeDays.maximum === 365 ? 'YES' : 'NO'}`);
+    assert.ok(props.endDate, 'endDate parameter must be defined');
+    assert.strictEqual(props.endDate.type, 'string', 'endDate must be a string type');
 
-// Test 6: Backward compatibility
-console.log('\n✓ Backward Compatibility:');
-console.log(`  - period parameter exists: ${props.period ? 'YES' : 'NO'}`);
-console.log(`  - period has default: ${props.period.default ? 'YES' : 'NO'}`);
+    assert.ok(props.relativeDays, 'relativeDays parameter must be defined');
+    assert.strictEqual(props.relativeDays.type, 'number', 'relativeDays must be a number type');
+  });
 
-console.log('\n' + '='.repeat(60));
-console.log('Schema validation complete!');
+  await t.test('relativeDays has proper validation constraints', () => {
+    assert.strictEqual(
+      props.relativeDays.minimum,
+      1,
+      'relativeDays minimum must be 1'
+    );
+    assert.strictEqual(
+      props.relativeDays.maximum,
+      365,
+      'relativeDays maximum must be 365'
+    );
+  });
+
+  await t.test('backward compatibility is maintained', () => {
+    assert.ok(
+      props.period,
+      'period parameter must exist for backward compatibility'
+    );
+    assert.strictEqual(
+      props.period.default,
+      'all',
+      'period parameter must have default value "all"'
+    );
+    assert.ok(
+      props.period.oneOf && props.period.oneOf.length === 4,
+      'period parameter must have 4 oneOf options (all, today, week, month)'
+    );
+  });
+
+  await t.test('includeDetails parameter has correct configuration', () => {
+    assert.strictEqual(
+      props.includeDetails.type,
+      'boolean',
+      'includeDetails must be boolean type'
+    );
+    assert.strictEqual(
+      props.includeDetails.default,
+      false,
+      'includeDetails must default to false'
+    );
+  });
+
+  await t.test('limit parameter has proper constraints', () => {
+    assert.strictEqual(
+      props.limit.minimum,
+      1,
+      'limit minimum must be 1'
+    );
+    assert.strictEqual(
+      props.limit.maximum,
+      100,
+      'limit maximum must be 100'
+    );
+    assert.strictEqual(
+      props.limit.default,
+      10,
+      'limit default must be 10'
+    );
+  });
+});
