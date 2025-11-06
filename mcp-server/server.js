@@ -1498,9 +1498,18 @@ SOLUTION - Use pagination:
   }
 }
 
-// Start server
-const server = new MCPServer();
-server.start().catch((error) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});
+// Export functions for testing
+module.exports = {
+  aggregateStats,
+  migrateStatsFormat,
+  RETENTION_POLICY
+};
+
+// Start server (only if running directly, not when imported)
+if (require.main === module) {
+  const server = new MCPServer();
+  server.start().catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}
