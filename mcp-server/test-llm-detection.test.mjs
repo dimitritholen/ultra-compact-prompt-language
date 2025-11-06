@@ -190,3 +190,62 @@ describe('Cost Calculation', () => {
     });
   });
 });
+
+describe('Config File Error Handling', () => {
+  const TEST_CONFIG_DIR = path.join(os.tmpdir(), `test-llm-config-${Date.now()}`);
+  const TEST_CONFIG_FILE = path.join(TEST_CONFIG_DIR, 'config.json');
+
+  beforeEach(async () => {
+    await fs.mkdir(TEST_CONFIG_DIR, { recursive: true });
+  });
+
+  afterEach(async () => {
+    await fs.rm(TEST_CONFIG_DIR, { recursive: true, force: true });
+  });
+
+  test('should handle malformed JSON gracefully', async () => {
+    await fs.writeFile(TEST_CONFIG_FILE, '{invalid json content');
+
+    const { detectLLMClient } = getServerModule();
+    const result = await detectLLMClient(TEST_CONFIG_FILE);
+
+    // Should fallback to environment detection
+    assert.strictEqual(result.client, 'unknown');
+    assert.strictEqual(result.model, 'claude-sonnet-4');
+  });
+
+  test('should handle file permission errors', async () => {
+    await fs.writeFile(TEST_CONFIG_FILE, '{"model": "gpt-4o"}');
+    await fs.chmod(TEST_CONFIG_FILE, 0o000); // Remove all permissions
+
+    const { detectLLMClient } = getServerModule();
+    const result = await detectLLMClient(TEST_CONFIG_FILE);
+
+    // Should fallback gracefully
+    assert.ok(result.client);
+    assert.ok(result.model);
+
+    // Cleanup
+    await fs.chmod(TEST_CONFIG_FILE, 0o644);
+  });
+
+  test('should handle non-object JSON', async () => {
+    await fs.writeFile(TEST_CONFIG_FILE, '"just a string"');
+
+    const { detectLLMClient } = getServerModule();
+    const result = await detectLLMClient(TEST_CONFIG_FILE);
+
+    // Should fallback to defaults
+    assert.strictEqual(result.client, 'unknown');
+  });
+
+  test('should handle null/undefined values', async () => {
+    await fs.writeFile(TEST_CONFIG_FILE, 'null');
+
+    const { detectLLMClient } = getServerModule();
+    const result = await detectLLMClient(TEST_CONFIG_FILE);
+
+    assert.ok(result.client);
+    assert.ok(result.model);
+  });
+});
