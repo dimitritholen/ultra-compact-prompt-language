@@ -106,4 +106,91 @@ describe('parseFlexibleDate() Function', () => {
       assert.ok(!isNaN(result.getTime()));
     });
   });
+
+  describe('Edge Cases and Error Conditions', () => {
+    test('should treat empty string as "now"', () => {
+      const result = parseFlexibleDate('');
+      const diff = Math.abs(result.getTime() - Date.now());
+      assert.ok(diff < 1000, 'Empty string should be treated as current time');
+    });
+
+    test('should handle malformed relative dates', () => {
+      assert.throws(() => parseFlexibleDate('-abc'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('-7x'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('7d'), /Invalid date format/); // Missing minus
+    });
+
+    test('should handle very large relative dates', () => {
+      // Very large dates are valid - they just go far into the past
+      const result = parseFlexibleDate('-10000d');
+      assert.ok(result instanceof Date);
+      assert.ok(!isNaN(result.getTime()));
+      assert.ok(result < new Date(), 'Should be in the past');
+    });
+
+    test('should handle special characters', () => {
+      assert.throws(() => parseFlexibleDate('$pecial'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('2025-13-40'), /Invalid date format/);
+    });
+
+    test('should reject whitespace-only input', () => {
+      assert.throws(
+        () => parseFlexibleDate('   '),
+        { message: /Invalid date format/ }
+      );
+    });
+
+    test('should handle negative years in ISO format', () => {
+      // Negative years are technically valid in ISO 8601 extended format
+      const result = parseFlexibleDate('-000001-01-01');
+      assert.ok(result instanceof Date);
+      assert.ok(!isNaN(result.getTime()));
+    });
+
+    test('should handle invalid month in ISO date', () => {
+      assert.throws(() => parseFlexibleDate('2025-00-01'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('2025-13-01'), /Invalid date format/);
+    });
+
+    test('should auto-correct invalid days (JavaScript Date behavior)', () => {
+      // JavaScript Date constructor auto-corrects overflow days
+      // Feb 30 becomes March 2 (Feb has 28/29 days)
+      const result = parseFlexibleDate('2025-02-30');
+      assert.ok(result instanceof Date);
+      assert.strictEqual(result.getMonth(), 2); // March (0-indexed)
+      assert.strictEqual(result.getDate(), 2);
+    });
+
+    test('should handle leap year edge cases', () => {
+      // 2024 is a leap year, Feb 29 should be valid
+      const leap = parseFlexibleDate('2024-02-29');
+      assert.strictEqual(leap.getMonth(), 1); // February
+      assert.strictEqual(leap.getDate(), 29);
+
+      // 2025 is not a leap year, Feb 29 auto-corrects to March 1
+      const nonLeap = parseFlexibleDate('2025-02-29');
+      assert.strictEqual(nonLeap.getMonth(), 2); // March
+      assert.strictEqual(nonLeap.getDate(), 1);
+    });
+
+    test('should reject truly invalid formats', () => {
+      assert.throws(() => parseFlexibleDate('not-a-date'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('@@invalid@@'), /Invalid date format/);
+      assert.throws(() => parseFlexibleDate('abc-def-ghij'), /Invalid date format/);
+    });
+
+    test('should parse alternate date formats (JavaScript Date behavior)', () => {
+      // JavaScript Date constructor is lenient with date formats
+      const result = parseFlexibleDate('01-01-2025');
+      assert.ok(result instanceof Date);
+      assert.ok(!isNaN(result.getTime()));
+    });
+
+    test('should parse slash-separated dates (JavaScript Date behavior)', () => {
+      // JavaScript Date constructor accepts slash-separated dates
+      const result = parseFlexibleDate('2025/01/01');
+      assert.ok(result instanceof Date);
+      assert.ok(!isNaN(result.getTime()));
+    });
+  });
 });
