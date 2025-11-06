@@ -25,15 +25,31 @@ function generateStatsWithCost(options = {}) {
         pricePerMTok: 3.00,
         costSavingsUSD: 0.00225,
         currency: 'USD'
+      },
+      {
+        timestamp: daysAgo(3).toISOString(),
+        path: 'test2.js',
+        originalTokens: 2000,
+        compressedTokens: 500,
+        tokensSaved: 1500,
+        compressionRatio: 0.25,
+        savingsPercentage: 75,
+        level: 'full',
+        format: 'text',
+        model: 'gpt-4o',
+        client: 'openai-sdk',
+        pricePerMTok: 2.50,
+        costSavingsUSD: 0.00375,
+        currency: 'USD'
       }
     ],
     daily: {},
     monthly: {},
     summary: {
-      totalCompressions: 1,
-      totalOriginalTokens: 1000,
-      totalCompressedTokens: 250,
-      totalTokensSaved: 750
+      totalCompressions: 2,
+      totalOriginalTokens: 3000,
+      totalCompressedTokens: 750,
+      totalTokensSaved: 2250
     }
   };
 }
