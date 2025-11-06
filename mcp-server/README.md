@@ -291,6 +291,8 @@ For each compression, the following is recorded:
 
 Statistics are stored in `~/.ucpl/compress/compression-stats.json` (cross-platform user home directory) and persist across sessions.
 
+**Note:** The statistics file path is hardcoded and cannot be configured via environment variables. This ensures consistent behavior across all MCP clients and simplifies debugging.
+
 #### Example Output (with Cost Tracking)
 
 ```markdown

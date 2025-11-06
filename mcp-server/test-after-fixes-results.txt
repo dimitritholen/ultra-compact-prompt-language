@@ -1,0 +1,1288 @@
+
+> ucpl-compress-mcp@1.2.0 test
+> node --test --test-reporter=spec
+
+▶ Backup/Restore Safety Tests
+  ✔ beforeEach creates backup successfully (6.36267ms)
+  ✔ afterEach restores backup even when test fails (3.975823ms)
+  ✔ afterEach handles missing backup gracefully (1.084092ms)
+  ✔ beforeEach handles missing stats file gracefully (1.265513ms)
+  ✔ restore executes in try/finally even on exception (2.972371ms)
+  ✔ multiple backup/restore cycles work correctly (5.437919ms)
+✔ Backup/Restore Safety Tests (21.842319ms)
+▶ Cache Isolation
+  ✔ Test 1: Cache starts empty (0.458445ms)
+  ✔ Test 2: Cache can be set and retrieved (0.108057ms)
+  ✔ Test 3: Cache is isolated from previous test (0.083219ms)
+  ✔ Test 4: Call count increments correctly (0.119989ms)
+  ✔ Test 5: Call count is isolated from previous test (0.183852ms)
+  ✔ Test 6: Multiple resets are safe (idempotent) (0.136036ms)
+  ✔ Test 7: Cache state before reset (0.134726ms)
+✔ Cache Isolation (1.826018ms)
+▶ Cache Isolation - Random Order Test
+  ✔ Random test A: Sets cache to value A (0.213555ms)
+  ✔ Random test B: Sets cache to value B (0.122785ms)
+  ✔ Random test C: Sets cache to value C (0.078362ms)
+  ✔ Random test D: Verifies cache starts empty (0.053331ms)
+  ✔ Random test E: Increments count to 5 (0.102508ms)
+  ✔ Random test F: Verifies count starts at 0 (0.044044ms)
+✔ Cache Isolation - Random Order Test (1.36005ms)
+✔ test-cache.mjs (78.924626ms)
+▶ Config Path Resolution - Integration Tests
+  ✔ should resolve production config file path correctly (3.107908ms)
+  ✔ should load config from production path with valid model (21.14893ms)
+  ✔ should handle missing config file gracefully (24.549029ms)
+  ✔ should handle malformed JSON config gracefully (38.24555ms)
+  ✔ should handle invalid model in config (fallback to env) (43.571381ms)
+  ✔ should validate config is a valid JSON object (32.432392ms)
+  ✔ should handle empty config file gracefully (23.258063ms)
+  ✔ should prioritize config over environment variables (21.049231ms)
+  ✔ should handle config with null model field (19.609653ms)
+  ✔ should handle config with additional fields (22.155712ms)
+  ✔ should fall back to default when no config and no env vars (20.642757ms)
+✔ Config Path Resolution - Integration Tests (274.536055ms)
+Starting cost reporting aggregation tests...
+
+Lifecycle hooks: beforeEach/afterEach run automatically per test
+
+
+=== Test 1: Total Cost Savings Aggregation ===
+✓ Total cost savings aggregated correctly: $0.17933
+
+=== Test 2: Average Cost Savings per Compression ===
+✓ Average cost savings calculated correctly: $0.035866
+
+=== Test 3: Model Breakdown Grouping ===
+✓ Model breakdown grouped and sorted correctly
+  1. claude-opus-4: 1 compressions, $0.08625
+  2. claude-sonnet-4: 2 compressions, $0.05640
+  3. gpt-4o: 1 compressions, $0.03645
+  4. gemini-2.0-flash: 1 compressions, $0.00023
+
+=== Test 4: Backward Compatibility (Missing Cost Fields) ===
+✓ Handled mixed old/new records correctly
+  - Records with cost: 1
+  - Total cost savings: $0.0045
+
+=== Test 5: USD Currency Formatting ===
+✓ All currency values formatted correctly to 2 decimal places
+
+=== Test 6: Model Breakdown Sorting ===
+✓ Model breakdown sorted correctly by cost savings (descending)
+  1. claude-opus-4: $0.0150
+  2. claude-sonnet-4: $0.0024
+  3. gpt-4o-mini: $0.0001
+
+=== Test 7: Empty Records Handling ===
+✓ Empty records handled correctly (no division by zero)
+
+✅ All cost reporting tests passed!
+
+✔ test-cost-reporting.js (78.312152ms)
+▶ Cost Reporting Aggregation
+  ✔ Total cost savings aggregation (1.89563ms)
+  ✔ Average cost savings per compression (1.231733ms)
+  ✔ Model breakdown grouping (0.726348ms)
+  ✔ Backward compatibility with missing cost fields (0.46038ms)
+  ✔ USD currency formatting (0.127308ms)
+  ✔ Model breakdown sorting (0.770195ms)
+  ✔ Empty records handling (0.542126ms)
+✔ Cost Reporting Aggregation (9.946673ms)
+Starting cost tracking integration tests...
+
+=== Test 1: Cost fields in compression records ===
+✓ All cost fields present and valid
+  - Model: claude-sonnet-4
+  - Client: test-client
+  - Price per MTok: $3
+  - Cost savings: $0
+  - Currency: USD
+
+=== Test 2: LLM detection caching ===
+✓ LLM detection called 1 time(s) for 3 compressions (cached correctly)
+
+=== Test 3: Cost fields in estimated compressions ===
+✓ All cost fields present in estimated compression
+  - Model: claude-sonnet-4
+  - Cost savings (estimated): $0
+
+=== Test 4: Backward compatibility ===
+✓ Backward compatibility maintained
+  - Old records without cost fields: OK
+  - New records with cost fields: OK
+
+=== Test 5: Graceful handling of pricing failures ===
+✓ Gracefully handles pricing unavailability
+  - Basic stats still recorded: OK
+  - Cost fields omitted: OK
+
+=== Test 6: Cost calculation accuracy ===
+✓ Cost calculations are accurate
+  - 1,000 tokens → $0
+  - 100,000 tokens → $0.3
+  - 1,000,000 tokens → $3
+
+============================================================
+Test Results: 6 passed, 0 failed
+============================================================
+[WARN] Cost calculation failed: Pricing service unavailable
+✔ test-cost-tracking.js (81.995551ms)
+▶ Cost Tracking Integration
+  ▶ Cost fields in compression records
+    ✔ should include all cost fields in compression record (3.023303ms)
+  ✔ Cost fields in compression records (3.294313ms)
+  ▶ LLM detection caching
+    ✔ should reuse cached LLM detection across multiple compressions (2.847617ms)
+  ✔ LLM detection caching (3.042063ms)
+  ▶ Estimated compressions
+    ✔ should include cost fields in estimated compressions (2.525348ms)
+  ✔ Estimated compressions (2.674413ms)
+  ▶ Backward compatibility
+    ✔ should maintain backward compatibility with old stats (2.591015ms)
+  ✔ Backward compatibility (2.753042ms)
+  ▶ Graceful error handling
+    ✔ should handle pricing failures gracefully (1.633312ms)
+  ✔ Graceful error handling (1.778953ms)
+  ▶ Cost calculation accuracy
+    ✔ should calculate costs accurately for different token amounts (1.613197ms)
+  ✔ Cost calculation accuracy (1.703734ms)
+✔ Cost Tracking Integration (17.820284ms)
+✔ test-date-helpers.js (82.022751ms)
+🧪 Testing parseFlexibleDate() Function
+
+✅ Test 1: "now" returns current time
+✅ Test 2: "today" returns midnight today
+✅ Test 3: "-7d" returns 7 days ago
+✅ Test 4: "-2w" returns 14 days ago
+✅ Test 5: "-1m" returns ~30 days ago
+✅ Test 6: "-1y" returns ~365 days ago
+✅ Test 7: ISO date (start of current year)
+✅ Test 8: Full ISO timestamp
+✅ Test 9: null/undefined returns current time
+✅ Test 10: Invalid format throws error
+   Correctly threw: Invalid date format: invalid-date. Expected ISO da...
+✅ Test 11: Invalid relative format throws error
+   Correctly threw: Invalid date format: -7x. Expected ISO date (YYYY-...
+✅ Test 12: Malformed relative format throws error
+   Correctly threw: Invalid date format: 7d. Expected ISO date (YYYY-M...
+
+============================================================
+
+🎯 Test Results: 12 passed, 0 failed
+
+✅ All parseFlexibleDate() tests passed!
+
+✔ test-date-parsing.js (81.801786ms)
+▶ parseFlexibleDate() Function
+  ▶ Special Keywords
+    ✔ "now" returns current time (0.52113ms)
+    ✔ "today" returns midnight today (0.253155ms)
+    ✔ null/undefined returns current time (0.122668ms)
+  ✔ Special Keywords (1.30848ms)
+  ▶ Relative Date Parsing
+    ✔ "-7d" returns 7 days ago (0.226247ms)
+    ✔ "-2w" returns 14 days ago (0.123726ms)
+    ✔ "-1m" returns ~30 days ago (0.142309ms)
+    ✔ "-1y" returns ~365 days ago (0.102356ms)
+  ✔ Relative Date Parsing (0.938374ms)
+  ▶ ISO Date Parsing
+    ✔ ISO date "2025-01-01" (0.11628ms)
+    ✔ Full ISO timestamp (0.164101ms)
+  ✔ ISO Date Parsing (0.482216ms)
+  ▶ Error Handling
+    ✔ Invalid format throws error (0.481423ms)
+    ✔ Invalid relative format throws error (0.071612ms)
+    ✔ Relative with missing unit is parsed as ISO date (0.051042ms)
+  ✔ Error Handling (0.708485ms)
+✔ parseFlexibleDate() Function (4.396168ms)
+============================================================
+Error Isolation Test Suite
+============================================================
+
+Test 1: Verify all tests execute to completion
+
+Test 2: Verify exit code reflects test results
+
+Test 3: Verify error isolation (all tests complete)
+
+Test 4: Verify clear failure reporting
+
+Exit code: 0
+
+Stdout:
+ ============================================================
+Multi-tier Statistics Retention Test Suite
+============================================================
+
+Test 1: Migration from old format to new format
+Test 2: Auto-aggregation on save
+Test 3: Retention policy enforcement
+✓ Old daily aggregates moved to monthly
+✓ Monthly aggregates older than 5 years pruned
+✓ Recent records older than 30 days moved to daily/monthly
+
+Debug - Aggregated structure:
+- Recent count: 1
+- Daily keys: []
+- Monthly keys: [ '2024-06', '2021-06' ]
+
+✓ 2018-01 pruned: true (expected: true)
+✓ 2021-06 in monthly: true (expected: true)
+✅ Test 3 PASSED
+
+Test 4: File size growth bounds
+✓ Uncompressed stats size: 6110 KB
+✓ Recent records: 30000
+✓ After aggregation: 6110 KB
+✓ Recent records after aggregation: 30000
+✓ Daily aggregates: 0
+✓ Total records after aggregation: 30000 (max: 30500)
+✅ Test 4 PASSED
+
+✓ Recent records: 2 (expected: 2)
+✓ Daily aggregates: 2 (expected: 2)
+✓ Monthly aggregates: 1 (expected: 1)
+✓ Summary preserved: true
+✅ Test 1 PASSED
+
+✓ Recent after aggregation: 2 (expected: 2)
+✓ Daily after aggregation: 3 (expected: 3)
+✓ Monthly after aggregation: 2 (expected: 2)
+✅ Test 2 PASSED
+
+============================================================
+Test Results:
+============================================================
+Passed: 4/4
+Failed: 0/4
+
+✅ All tests PASSED!
+
+
+Stderr:
+ [INFO] Migration complete: 2 recent, 2 daily, 1 monthly
+
+
+✓ All 4 tests executed: true
+✓ Test Results section present: true
+✓ Pass/Fail counts shown: true
+
+✅ Test 1 PASSED
+
+✓ Failure count reported: true
+✓ Pass count reported: true
+✓ Test summary present: true
+
+✅ Test 4 PASSED
+
+✓ Exit code matches result: true
+
+✅ Test 2 PASSED
+
+✓ Tests executed: 4 / 4
+✓ All tests completed: true
+
+✅ Test 3 PASSED
+
+============================================================
+Test Results:
+============================================================
+Passed: 4/4
+Failed: 0/4
+
+✅ All tests PASSED!
+✔ test-error-isolation.js (173.992126ms)
+Testing event-based subprocess communication...
+
+Starting MCP server subprocess...
+Sending tools/list request...
+✓ Response received in 67ms (event-based, not timeout-based)
+
+✓ Response is valid JSON-RPC
+✓ Response ID matches request ID
+✓ Response contains result field
+
+✓ Found 2 tools in response
+  Tools: compress_code_context, get_compression_stats
+
+✅ SUCCESS! Event-based waiting works correctly!
+   - No fixed timeouts used for synchronization
+   - Response detected via actual stdout events
+   - Response time: 67ms (actual time, not artificial delay)
+✔ test-event-based-waiting.js (148.515396ms)
+Setup: Created test directory at /tmp/node-test-example-1762461272515
+▶ Example Test Suite
+  ▶ File Operations
+    ✔ should read file content (4.238957ms)
+    ✔ should write file content (3.67271ms)
+    ✔ should delete file (2.93413ms)
+  ✔ File Operations (11.416801ms)
+  ▶ Assertions Examples
+    ✔ should use strict equality (1.666775ms)
+    ✔ should use deep strict equality for objects (0.679519ms)
+    ✔ should check truthiness (0.404409ms)
+    ✔ should check for exceptions (0.530855ms)
+    ✔ should check for async rejections (0.719935ms)
+    ✔ should use not equal assertions (0.586231ms)
+  ✔ Assertions Examples (4.925072ms)
+  ▶ Async Patterns
+    ✔ should handle promises (0.896473ms)
+    ✔ should handle async/await (12.248398ms)
+    ✔ should handle multiple async operations (0.901468ms)
+  ✔ Async Patterns (14.26165ms)
+  ▶ Test Context Usage
+    ✔ should use test context for diagnostics (1.368782ms)
+    ℹ This is a diagnostic message for debugging
+    ✔ should access test name from context (3.546184ms)
+  ✔ Test Context Usage (5.207648ms)
+  ▶ Edge Cases and Error Handling
+    ✔ should handle null and undefined (1.610142ms)
+    ✔ should handle empty collections (0.748027ms)
+    ✔ should validate error messages (0.655645ms)
+    ✔ should validate error types (0.536177ms)
+  ✔ Edge Cases and Error Handling (3.763627ms)
+Teardown: Removed test directory
+✔ Example Test Suite (43.856818ms)
+✔ standalone test example (0.124632ms)
+▶ Parent Suite
+  ▶ Child Suite 1
+    ✔ should run in child suite 1 (0.082236ms)
+  ✔ Child Suite 1 (0.193896ms)
+  ▶ Child Suite 2
+    ✔ should run in child suite 2 (0.136238ms)
+  ✔ Child Suite 2 (0.237971ms)
+✔ Parent Suite (0.604422ms)
+============================================================
+Failure Simulation Test Suite
+============================================================
+Expected: 2 pass, 1 fail, 1 exception - all should execute
+
+Test 1: Passing test
+✅ Test 1 PASSED
+
+Test 2: Failing test
+❌ Test 2 FAILED
+
+Test 3: Throwing test
+Test 4: Passing test after exception
+✅ Test 4 PASSED
+
+============================================================
+Test Results:
+============================================================
+Passed: 2/4
+Failed: 2/4
+
+Tests with exceptions:
+
+Verification:
+✓ All 4 tests executed: true
+✓ 2 tests passed: true
+✓ 2 tests failed: true
+✓ 1 exception caught: true
+
+✅ Error isolation verified! All tests executed despite failures.
+
+❌ throwingTest threw an exception: Error: Intentional test exception
+    at Object.throwingTest [as fn] (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-failure-simulation.js:39:9)
+    at /home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-failure-simulation.js:70:68
+    at Array.map (<anonymous>)
+    at runTests (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-failure-simulation.js:70:57)
+    at Object.<anonymous> (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-failure-simulation.js:125:1)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+- throwingTest: Intentional test exception
+✔ test-failure-simulation.js (42.918236ms)
+▶ File System Test Template
+  ✔ example test (0.523785ms)
+✔ File System Test Template (7.873011ms)
+▶ State Reset Test Template
+  ✔ test 1 modifies state (0.373668ms)
+  ✔ test 2 has fresh state (0.349597ms)
+✔ State Reset Test Template (0.977326ms)
+▶ Resource Cleanup Test Template
+  ✔ example test using resource (0.101238ms)
+✔ Resource Cleanup Test Template (0.475908ms)
+▶ Environment Variable Test Template
+  ✔ test with custom env vars (0.41593ms)
+  ✔ env vars are restored (0.586721ms)
+✔ Environment Variable Test Template (1.202515ms)
+▶ Mock Management Test Template
+  ✔ mocking with automatic cleanup (0.38094ms)
+  ✔ mocking methods (0.182567ms)
+✔ Mock Management Test Template (0.704929ms)
+▶ Async Setup with Error Handling Template
+  ✔ runs only if setup succeeded (0.376723ms)
+✔ Async Setup with Error Handling Template (10.613459ms)
+▶ Custom Timeout Test Template
+  ✔ fast test with default timeout (0.091ms)
+  ✔ slow test with custom timeout (100.94414ms)
+✔ Custom Timeout Test Template (101.18655ms)
+▶ Parent Suite Template
+  ▶ Child Suite 1
+    ✔ has access to both resources (0.091992ms)
+  ✔ Child Suite 1 (0.137609ms)
+  ▶ Child Suite 2
+    ✔ has access to parent but not sibling resources (0.069271ms)
+  ✔ Child Suite 2 (0.102213ms)
+✔ Parent Suite Template (0.461914ms)
+▶ Conditional Test Execution Template
+  ✔ runs on all platforms (0.093365ms)
+  ✔ linux-only test (0.067309ms)
+  ✔ skip in CI (0.038318ms)
+✔ Conditional Test Execution Template (0.247587ms)
+▶ Test Fixture Factory Template
+  ✔ uses fixture instance 1 (0.073775ms)
+  ✔ uses fresh fixture instance 2 (0.032686ms)
+✔ Test Fixture Factory Template (0.142281ms)
+╔══════════════════════════════════════════════════════════════╗
+║  MCP Statistics Enhancement - Integration Test Suite        ║
+╚══════════════════════════════════════════════════════════════╝
+
+✓ Temp directory available: /tmp
+
+📅 Date Parsing Tests (Task 001)
+============================================================
+✅ Date parsing: ISO format "2025-01-01"
+✅ Date parsing: Relative "-7d"
+✅ Date parsing: Keyword "today"
+✅ Date parsing: Invalid format throws error
+✅ Date parsing: Full ISO timestamp
+
+🔍 LLM Detection Tests (Task 005)
+============================================================
+✅ LLM detection: Default fallback
+✅ LLM detection: Claude Desktop
+✅ LLM detection: Claude Code (VSCODE_PID)
+✅ LLM detection: Config file override
+✅ LLM detection: Invalid config fallback
+
+💰 Cost Calculation Tests (Task 005)
+============================================================
+✅ Cost calculation: Claude Sonnet 4 (1M tokens)
+✅ Cost calculation: Claude Opus 4 (500K tokens)
+✅ Cost calculation: Small amounts with rounding
+✅ Cost calculation: Zero tokens
+✅ Cost calculation: Negative tokens fallback
+
+📝 Cost Recording Tests (Task 006)
+============================================================
+✅ Cost recording: Fields present in compression records
+✅ Cost recording: Multiple models tracked
+
+📊 Cost Breakdown Tests (Task 007)
+============================================================
+✅ Cost breakdown: Total cost savings
+✅ Cost breakdown: Average cost per compression
+✅ Cost breakdown: Model-specific breakdown
+✅ Cost breakdown: Records with/without cost
+
+🔎 Stats Query Tests (Task 003)
+============================================================
+✅ Stats query: Filter by relativeDays
+✅ Stats query: Custom date range
+✅ Stats query: No filters returns all
+
+💵 Pricing System Tests (Task 004)
+============================================================
+✅ Pricing system: All models have pricing
+✅ Pricing system: Config file parsing
+✅ Pricing system: Invalid config fallback
+
+============================================================
+
+🎯 Test Results: 27 passed, 0 failed
+⏱️  Execution time: 0.01s
+
+📊 Coverage Summary by Feature:
+  - Task 001 (Date Parsing): 5 tests
+  - Task 002 (Tool Schema): Covered by manual MCP Inspector validation
+  - Task 003 (Stats Query): 3 tests
+  - Task 004 (Pricing System): 3 tests
+  - Task 005 (LLM Detection & Cost): 10 tests
+  - Task 006 (Cost Recording): 2 tests
+  - Task 007 (Cost Breakdown): 4 tests
+
+✅ All integration tests passed!
+
+✔ test-integration.js (45.917424ms)
+▶ MCP Statistics Enhancement - Integration Tests
+  ▶ Date Parsing (Task 001)
+    ✔ should parse ISO format "2025-01-01" (0.623121ms)
+    ✔ should parse relative time "-7d" (0.203171ms)
+    ✔ should parse keyword "today" (0.207894ms)
+    ✔ should throw on invalid format (0.531333ms)
+    ✔ should parse full ISO timestamp (0.248226ms)
+  ✔ Date Parsing (Task 001) (2.290659ms)
+  ▶ LLM Detection (Task 005)
+    ✔ should default to unknown client when no env vars set (6.753721ms)
+    ✔ should detect Claude Desktop from env var (2.5893ms)
+    ✔ should detect Claude Code from VSCODE_PID (0.783297ms)
+    ✔ should use config file override (1.481924ms)
+    ✔ should fallback to env detection when config has invalid model (1.347416ms)
+  ✔ LLM Detection (Task 005) (13.392876ms)
+  ▶ Cost Calculation (Task 005)
+    ✔ should calculate cost for Claude Sonnet 4 (1M tokens) (0.222789ms)
+    ✔ should calculate cost for Claude Opus 4 (500K tokens) (0.152391ms)
+    ✔ should round small amounts to nearest cent (0.104323ms)
+    ✔ should handle zero tokens (0.114071ms)
+    ✔ should fallback to 0 for negative tokens (0.105576ms)
+  ✔ Cost Calculation (Task 005) (0.835554ms)
+  ▶ Cost Recording (Task 006)
+    ✔ should include cost fields in compression records (4.690391ms)
+    ✔ should track multiple models correctly (0.469461ms)
+  ✔ Cost Recording (Task 006) (5.449036ms)
+  ▶ Cost Breakdown (Task 007)
+    ✔ should calculate total cost savings (0.441764ms)
+    ✔ should calculate average cost per compression (0.376205ms)
+    ✔ should provide model-specific breakdown (0.320713ms)
+    ✔ should count records with/without cost tracking (0.206305ms)
+  ✔ Cost Breakdown (Task 007) (1.565633ms)
+  ▶ Stats Query (Task 003)
+    ✔ should filter by relativeDays (0.501561ms)
+    ✔ should filter by custom date range (0.289949ms)
+    ✔ should return all records when no filters applied (0.179703ms)
+  ✔ Stats Query (Task 003) (1.099357ms)
+  ▶ Pricing System (Task 004)
+    ✔ should have pricing for all required models (0.183329ms)
+    ✔ should parse config file correctly (9.530505ms)
+    ✔ should handle invalid config schema (1.306863ms)
+  ✔ Pricing System (Task 004) (11.273618ms)
+✔ MCP Statistics Enhancement - Integration Tests (42.802851ms)
+╔══════════════════════════════════════════════════════════════╗
+║  Lifecycle Hook Verification Tests                          ║
+║  Demonstrates: afterEach runs even on test failure          ║
+╚══════════════════════════════════════════════════════════════╝
+
+Test 1: Successful test (should cleanup)
+  [beforeEach] Setup 1: Created /tmp/lifecycle-verify-1762461272508/test-marker.txt
+  Test execution: Read marker file: "Setup 1"
+  ✅ Test passed
+  [afterEach] Teardown 1: Cleanup running (file exists)
+
+Test 2: Failing test (should STILL cleanup)
+  [beforeEach] Setup 2: Created /tmp/lifecycle-verify-1762461272508/test-marker.txt
+  Test execution: Read marker file: "Setup 2"
+  [afterEach] Teardown 2: Cleanup running (file exists)
+
+Test 3: Test with uncaught exception (should STILL cleanup)
+  [beforeEach] Setup 3: Created /tmp/lifecycle-verify-1762461272508/test-marker.txt
+  Test execution: Read marker file: "Setup 3"
+  [afterEach] Teardown 3: Cleanup running (file exists)
+
+============================================================
+
+Lifecycle hook execution summary:
+  - setupTest() called: 3 times
+  - teardownTest() called: 3 times
+  - Expected: 3 setup calls, 3 teardown calls
+
+
+Verification: Check if cleanup actually ran
+  ✅ SUCCESS: Test directory removed - cleanup ran correctly!
+
+============================================================
+
+✅ All lifecycle hooks verified!
+   - beforeEach ran before each test
+   - afterEach ran after each test (even on failure)
+   - Cleanup guaranteed for test isolation
+
+  ❌ Test failed: Intentional test failure
+  ❌ Test exception: Uncaught exception in test
+✔ test-lifecycle-verification.js (40.945526ms)
+Running LLM Detection and Cost Calculation Tests...
+
+✓ Test 1: Default detection works
+✓ Test 2: Claude Desktop detection works
+✓ Test 3: Claude Code detection (VSCODE_PID) works
+✓ Test 4: Claude Code detection (CLINE_VERSION) works
+✓ Test 5: ANTHROPIC_MODEL env var works
+✓ Test 6: OPENAI_MODEL env var works
+✓ Test 7: Config file override works
+✓ Test 8: Cost calculation for Claude Sonnet 4 works
+✓ Test 9: Cost calculation for Claude Opus 4 works
+✓ Test 10: Cost calculation for GPT-4o works
+✓ Test 11: Cost calculation with rounding works
+✓ Test 12: Cost calculation with zero tokens works
+✓ Test 13: Cost calculation with auto-detect works
+✓ Test 14: Invalid model fallback works
+
+==================================================
+Test Results: 14 passed, 0 failed
+==================================================
+✔ test-llm-detection.js (45.535936ms)
+▶ LLM Client Detection
+  ✔ Default detection (no env vars) (4.985482ms)
+  ✔ Claude Desktop detection (2.904199ms)
+  ✔ Claude Code detection (VSCODE_PID) (1.209253ms)
+  ✔ Claude Code detection (CLINE_VERSION) (1.023096ms)
+  ✔ ANTHROPIC_MODEL env var (4.204748ms)
+  ✔ OPENAI_MODEL env var (0.793098ms)
+  ✔ Config file override (1.378481ms)
+✔ LLM Client Detection (17.63383ms)
+▶ Cost Calculation
+  ▶ Specific Models
+    ✔ Claude Sonnet 4 (0.24704ms)
+    ✔ Claude Opus 4 (0.260235ms)
+    ✔ GPT-4o (0.140515ms)
+  ✔ Specific Models (0.869491ms)
+  ▶ Edge Cases
+    ✔ Small amounts (rounding) (0.0764ms)
+    ✔ Zero tokens (0.09726ms)
+    ✔ Auto-detect model (3.422883ms)
+    ✔ Invalid model fallback (0.178326ms)
+  ✔ Edge Cases (4.679685ms)
+✔ Cost Calculation (5.700505ms)
+Testing MCP server statistics recording...
+
+  (No existing stats file to clean)
+
+Sending test request to MCP server...
+✓ Request sent
+
+Polling for stats file creation...
+Response received (first 500 chars):
+{"jsonrpc":"2.0","id":0,"result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"ucpl-compress-mcp","version":"1.1.0"}}}
+{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"Error: Path not found: ./scripts/validate_ucpl.py\n\nMake sure the path is correct and accessible from the current working directory."}],"isError":true}}
+
+
+
+Statistics file was created successfully!
+
+Validating stats file structure...
+Test error: AssertionError [ERR_ASSERTION]: Stats file recent[0]: costSavingsUSD (0.04) must match (tokensSaved/1M)*pricePerMTok (0.038760)
+    at validateCompressionRecord (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-validation-helpers.js:150:12)
+    at /home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-validation-helpers.js:227:5
+    at Array.forEach (<anonymous>)
+    at validateStatsFile (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-validation-helpers.js:226:16)
+    at testMCPStatsRecording (/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-mcp-stats.js:140:3) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '=='
+}
+✖ test-mcp-stats.js (1454.035937ms)
+▶ MCP Server Statistics Recording
+  ﹣ should record statistics when compress_code_context is called (requires installed dependencies) (0.384967ms) # SKIP
+  ✔ Manual: Test with real MCP Inspector to verify full integration (0.061457ms) # TODO
+✔ MCP Server Statistics Recording (4.653043ms)
+  (No existing stats to backup)
+
+Test 1: Single file compression...
+  ✅ Stats file updated (0 → 1)
+  ✅ Record validation passed:
+     - Tokens: 13009 → 89 (saved: 12920)
+     - Ratio: 0.007 (99.3% savings)
+     - Path: server.js
+     - Timestamp: 2025-11-06T20:34:33.531Z
+  (No backup to restore)
+▶ Real Compression Statistics Recording
+  ✔ Single file compression (1455.84537ms)
+✅ Backed up existing stats file
+✖ test-real-compressions.js (1490.023805ms)
+▶ Real Compression Statistics Recording
+  ▶ Single file compression
+    ✖ should record compression for single file with valid data (8598.379259ms)
+  ✖ Single file compression (8599.568431ms)
+  ▶ Directory compression
+    ✔ should record compression for directory with fallback estimation (3507.827116ms)
+  ✔ Directory compression (3508.075832ms)
+  ▶ Multiple sequential compressions
+    ✔ should record all sequential compressions with valid data (10517.952571ms)
+  ✔ Multiple sequential compressions (10518.188659ms)
+  ▶ Statistics retrieval
+    ✔ should retrieve statistics correctly (3516.501336ms)
+  ✔ Statistics retrieval (3516.669247ms)
+✖ Real Compression Statistics Recording (26143.052283ms)
+▶ Schema validation for get_compression_stats
+  ✔ tool name matches MCP naming requirements (0.705779ms)
+  ✔ description is under 255 characters (0.131829ms)
+  ✔ all parameters have valid type definitions (0.26262ms)
+  ✔ all parameters have descriptions (0.136397ms)
+  ✔ new date filtering parameters are present (0.175304ms)
+  ✔ relativeDays has proper validation constraints (0.146056ms)
+  ✔ backward compatibility is maintained (0.122565ms)
+  ✔ includeDetails parameter has correct configuration (0.222885ms)
+  ✔ limit parameter has proper constraints (0.238091ms)
+✔ Schema validation for get_compression_stats (5.47062ms)
+▶ Schema Validation for get_compression_stats
+  ✔ Tool name matches regex (0.570658ms)
+  ✔ Description length is reasonable (0.113816ms)
+  ▶ Parameter Definitions
+    ✔ All parameters have type (0.165222ms)
+    ✔ All parameters have description (0.078817ms)
+    ✔ Optional parameters have defaults or are marked optional (0.202838ms)
+  ✔ Parameter Definitions (0.62693ms)
+  ▶ New Parameters
+    ✔ startDate parameter exists (0.145181ms)
+    ✔ endDate parameter exists (0.073324ms)
+    ✔ relativeDays parameter exists (0.429204ms)
+  ✔ New Parameters (0.834086ms)
+  ▶ Validation Constraints
+    ✔ relativeDays has minimum constraint (0.304143ms)
+    ✔ relativeDays has maximum constraint (0.178444ms)
+    ✔ limit has valid constraints (0.056755ms)
+  ✔ Validation Constraints (0.637454ms)
+  ▶ Backward Compatibility
+    ✔ period parameter exists (0.063893ms)
+    ✔ period has default (0.034418ms)
+    ✔ period has oneOf options (0.067447ms)
+  ✔ Backward Compatibility (0.271156ms)
+✔ Schema Validation for get_compression_stats (5.050839ms)
+=== MCP Server Schema Validation Report ===
+
+✓ Tool name format: compress_code_context ✓
+✓ Description length: 216 chars ✓
+
+=== Parameter Validation Constraints ===
+  ✓ path has minLength
+  ✓ path has maxLength
+  ✓ level has oneOf
+  ✓ level has default
+  ✓ language has oneOf
+  ✓ format has oneOf
+  ✓ format has default
+  ✓ include has items schema
+  ✓ include has minItems
+  ✓ exclude has items schema
+  ✓ exclude has minItems
+  ✓ limit has minimum
+  ✓ limit has maximum
+  ✓ offset has minimum
+  ✓ offset has default
+
+=== Enum Pattern (oneOf vs enum) ===
+  level: enum=false, oneOf=true ✓
+  language: enum=false, oneOf=true ✓
+  format: enum=false, oneOf=true ✓
+
+=== Output Schema ===
+  Has outputSchema: ✓
+  Properties defined: compressed, metadata
+
+=== Tool Annotations ===
+  Has annotations: ✓
+  audience: ["assistant"] ✓
+  priority: 0.7 ✓
+  readOnlyHint: true ✓
+  destructiveHint: false ✓
+  openWorldHint: false ✓
+
+=== Parameter Description Lengths ===
+  path: 97 chars ✓
+  level: 130 chars ✓
+  language: 104 chars ✓
+  format: 107 chars ✓
+  include: 66 chars ✓
+  exclude: 80 chars ✓
+  limit: 98 chars ✓
+  offset: 97 chars ✓
+
+=== Summary ===
+Overall: ✓ PASSED
+
+Discoverability Score: 100/100 (100%)
+✔ test-schema.js (31.840056ms)
+▶ MCP Server Schema Validation
+  ▶ Tool Name Format
+    ✔ should have valid tool name format (0.424715ms)
+  ✔ Tool Name Format (1.026518ms)
+  ▶ Description Length
+    ✔ should have description within 255 character limit (0.124622ms)
+  ✔ Description Length (0.274386ms)
+  ▶ Parameter Validation Constraints
+    ✔ path should have minLength constraint (0.209318ms)
+    ✔ path should have maxLength constraint (0.064043ms)
+    ✔ level should have oneOf constraint (0.120617ms)
+    ✔ level should have default value (0.125424ms)
+    ✔ language should have oneOf constraint (0.388763ms)
+    ✔ format should have oneOf constraint (0.131483ms)
+    ✔ format should have default value (0.212152ms)
+    ✔ include should have items schema (0.210618ms)
+    ✔ include should have minItems constraint (0.074096ms)
+    ✔ exclude should have items schema (0.049492ms)
+    ✔ exclude should have minItems constraint (0.044461ms)
+    ✔ limit should have minimum constraint (0.04906ms)
+    ✔ limit should have maximum constraint (0.066119ms)
+    ✔ offset should have minimum constraint (0.042407ms)
+    ✔ offset should have default value (0.041443ms)
+  ✔ Parameter Validation Constraints (2.530625ms)
+  ▶ Enum to oneOf Conversion
+    ✔ level should use oneOf instead of enum (0.105244ms)
+    ✔ language should use oneOf instead of enum (0.058221ms)
+    ✔ format should use oneOf instead of enum (0.042094ms)
+  ✔ Enum to oneOf Conversion (0.310863ms)
+  ▶ Output Schema
+    ✔ should have outputSchema defined (0.122298ms)
+    ✔ outputSchema should have properties (0.074051ms)
+  ✔ Output Schema (0.260783ms)
+  ▶ Tool Annotations
+    ✔ should have annotations defined (0.096804ms)
+    ✔ should have audience annotation (0.049134ms)
+    ✔ should have priority annotation (0.043208ms)
+    ✔ should have readOnlyHint annotation (0.042051ms)
+    ✔ should have destructiveHint annotation (0.116139ms)
+    ✔ should have openWorldHint annotation (0.062342ms)
+  ✔ Tool Annotations (0.516232ms)
+  ▶ Parameter Description Lengths
+    ✔ all parameter descriptions should be reasonable length (1.343584ms)
+    ℹ path: 97 chars ✓
+    ℹ level: 130 chars ✓
+    ℹ language: 104 chars ✓
+    ℹ format: 107 chars ✓
+    ℹ include: 66 chars ✓
+    ℹ exclude: 80 chars ✓
+    ℹ limit: 98 chars ✓
+    ℹ offset: 97 chars ✓
+  ✔ Parameter Description Lengths (1.454931ms)
+  ▶ Discoverability Score
+    ✔ should calculate and verify discoverability score (0.278792ms)
+    ℹ Discoverability Score: 100/100 (100%)
+  ✔ Discoverability Score (0.34409ms)
+✔ MCP Server Schema Validation (8.1564ms)
+=== Statistics Recording Fallback Tests ===
+
+Test 1: Accurate recording when readOriginalContent succeeds...
+  ✅ Accurate recording works correctly
+     Original: 1892, Compressed: 131, Saved: 1761 (93.1%)
+
+Test 2: Fallback recording when readOriginalContent fails...
+  ✅ Fallback recording works correctly
+     Original (estimated): 400, Compressed: 40, Saved: 360 (90%)
+
+Test 3: Estimation multipliers are correct...
+  ✅ minimal: multiplier 10x is correct
+  ✅ signatures: multiplier 6x is correct
+  ✅ full: multiplier 4x is correct
+
+Test 4: Multiple compressions are recorded correctly...
+  ✅ Multiple compressions recorded correctly (5 → 8)
+
+Test 5: Summary statistics accumulate correctly...
+  ✅ Summary statistics are correct
+     Total compressions: 8
+     Total tokens saved: 6071
+
+✅ Cleanup complete
+
+=== Results: 5/5 tests passed ===
+✅ All tests passed!
+✔ test-statistics-fallback.js (3617.291616ms)
+▶ Statistics Recording Fallback Tests
+  ▶ Accurate Recording
+    ✔ should record accurately when readOriginalContent succeeds (3.59071ms)
+    ℹ Original: 96, Compressed: 42, Saved: 54 (56.3%)
+  ✔ Accurate Recording (3.958563ms)
+  ▶ Fallback Recording
+    ✔ should use fallback estimation when readOriginalContent fails (2.378446ms)
+    ℹ Original (estimated): 250, Compressed: 25, Saved: 225 (90%)
+  ✔ Fallback Recording (2.515096ms)
+  ▶ Estimation Multipliers
+    ✔ should use correct multiplier for minimal level (10.0x) (2.972803ms)
+    ✔ should use correct multiplier for signatures level (6.0x) (1.276766ms)
+    ✔ should use correct multiplier for full level (4.0x) (2.33962ms)
+  ✔ Estimation Multipliers (7.073474ms)
+  ▶ Multiple Compressions
+    ✔ should record multiple compressions correctly (2.926555ms)
+  ✔ Multiple Compressions (3.174687ms)
+  ▶ Summary Accumulation
+    ✔ should accumulate summary statistics correctly (1.809404ms)
+  ✔ Summary Accumulation (1.92555ms)
+✔ Statistics Recording Fallback Tests (25.315084ms)
+=== Token Statistics Integration Tests ===
+
+✅ Test fixtures loaded successfully
+
+Testing token counting...
+  Original tokens: 872
+  Compressed tokens: 108
+  Tokens saved: 764
+  Compression ratio: 12.4%
+  ✅ Token counting works correctly
+
+Testing statistics persistence...
+  ✅ Wrote test statistics
+  ✅ Stats file structure is valid
+  ✅ Summary fields validated
+  ✅ Compression record fields validated
+  ✅ All field values match expected
+  ✅ Statistics persistence works correctly
+
+Testing statistics calculations...
+  Verifying token calculations:
+    originalTokens: 100
+    compressedTokens: 25
+    tokensSaved: 75 (expected: 75)
+  ✅ Token savings calculation is correct
+  Verifying compression ratio:
+    compressionRatio: 0.25 (expected: 0.250)
+  ✅ Compression ratio calculation is correct
+  Verifying savings percentage:
+    savingsPercentage: 75% (expected: 75.0%)
+  ✅ Savings percentage calculation is correct
+  ✅ All field validations passed
+  ✅ Statistics calculations are correct
+
+✅ Cleanup complete
+
+=== Results: 3/3 tests passed ===
+✅ All tests passed!
+✔ test-statistics.js (543.287967ms)
+▶ Token Statistics
+  ✔ Token counting works correctly (463.279012ms)
+  ✔ Statistics persistence works (3.114145ms)
+  ✔ Statistics calculations are correct (0.555019ms)
+✔ Token Statistics (467.906997ms)
+=== Statistics File Path Configuration Tests ===
+
+Test 1: Verify server uses hardcoded statistics file path...
+  ✅ Server uses hardcoded paths:
+     STATS_DIR: os.homedir()/.ucpl/compress
+     STATS_FILE: STATS_DIR/compression-stats.json
+     Resolved: /home/dimitri/.ucpl/compress/compression-stats.json
+
+Test 2: Verify UCPL_STATS_FILE environment variable is NOT used...
+  ✅ No environment variable checks for stats file path found
+     Confirmed: Server does NOT support UCPL_STATS_FILE or similar env vars
+
+Test 3: Verify STATS_FILE constant is used directly...
+  ✅ STATS_FILE constant used directly in:
+     - loadStats() function
+     - saveStats() function
+     No environment variable indirection found
+
+Test 4: Verify README documents hardcoded path...
+  ✅ README.md documents:
+     - Statistics file path: ~/.ucpl/compress/compression-stats.json
+     - Path is hardcoded and cannot be configured
+
+Test 5: Verify test files do not mock unused UCPL_STATS_FILE...
+  ✅ test-statistics-fallback.js does NOT mock UCPL_STATS_FILE
+     Test uses its own temporary file for isolation
+
+=== Results: 5/5 tests passed ===
+✅ All tests passed!
+
+📝 Summary:
+   - Statistics file path is hardcoded: ~/.ucpl/compress/compression-stats.json
+   - Environment variables for stats path are NOT supported
+   - Tests do not mock unused environment variables
+   - Documentation accurately reflects configuration behavior
+✔ test-stats-file-config.js (35.391538ms)
+▶ get_compression_stats Integration Tests
+  ✔ should filter by relativeDays=3 (last 3 days) (0.882633ms)
+  ✔ should filter by relativeDays=7 (last week) (0.282082ms)
+  ✔ should filter by relativeDays=30 (last 30 days) (0.165645ms)
+  ✔ should filter by custom date range (last 14-7 days) (0.274202ms)
+  ✔ should support legacy period=today (backward compatibility) (0.160382ms)
+  ✔ should support legacy period=week (backward compatibility) (1.357265ms)
+  ✔ should support legacy period=month (backward compatibility) (0.179307ms)
+  ✔ should support legacy period=all (includes all tiers) (0.173097ms)
+  ✔ should filter by ISO date range (specific dates) (0.242107ms)
+  ✔ should prioritize relativeDays over period parameter (0.197322ms)
+  ✔ should reject invalid relativeDays (out of range) (0.535164ms)
+  ✔ should reject invalid date format (0.179768ms)
+  ✔ should reject startDate after endDate (0.255648ms)
+  ✔ should calculate cost savings correctly (0.191843ms)
+  ✔ should track model breakdown correctly (0.116273ms)
+  ✔ should include details when includeDetails=true (0.088885ms)
+  ✔ should respect limit parameter with includeDetails (0.07793ms)
+✔ get_compression_stats Integration Tests (22.435578ms)
+▶ get_compression_stats Date Range Queries
+  ✔ should verify test stats file was created (5.900118ms)
+  ✔ Manual: Test relativeDays=3 (last 3 days) - expects 2 compressions, 2250 tokens saved (0.242999ms) # TODO
+  ✔ Manual: Test relativeDays=7 (last week) - expects 3 compressions, 3450 tokens saved (0.080996ms) # TODO
+  ✔ Manual: Test relativeDays=30 (last 30 days) - expects 5 compressions, 6650 tokens saved (0.332942ms) # TODO
+  ✔ Manual: Test startDate/endDate custom range (last 14-7 days) - expects 1-2 compressions (0.095513ms) # TODO
+  ✔ Manual: Test legacy period=today (backward compatibility) - expects 1 compression, 750 tokens saved (0.363003ms) # TODO
+  ✔ Manual: Test legacy period=week (backward compatibility) - expects 3 compressions, 3450 tokens saved (0.195256ms) # TODO
+  ✔ Manual: Test legacy period=month (backward compatibility) - expects 5 compressions, 6650 tokens saved (0.245139ms) # TODO
+  ✔ Manual: Test legacy period=all (includes all tiers) - expects 50 compressions, 87650 tokens saved (0.377438ms) # TODO
+  ✔ Manual: Test ISO date range (specific dates) - expects 1-2 compressions (0.405975ms) # TODO
+  ✔ Manual: Test relativeDays takes precedence over period - expects 3 compressions, 3450 tokens saved (0.056563ms) # TODO
+  ✔ Manual: Test invalid relativeDays (400) - should error with "must be a number between 1 and 365" (0.039331ms) # TODO
+  ✔ Manual: Test invalid date format - should error with "Invalid date format" (0.033663ms) # TODO
+  ✔ Manual: Test startDate after endDate - should error with "Invalid date range" (0.035895ms) # TODO
+✔ get_compression_stats Date Range Queries (19.955959ms)
+▶ Manual Test Documentation
+  ✔ should display manual test instructions (0.212225ms)
+  ℹ ╔══════════════════════════════════════════════════════════════╗
+║  Manual Test Scenarios for get_compression_stats            ║
+╚══════════════════════════════════════════════════════════════╝
+
+To test this feature manually with MCP Inspector:
+
+1. Start MCP server:
+   npx @modelcontextprotocol/inspector node server.js
+
+2. Test scenarios in Inspector:
+
+   A. relativeDays Parameter:
+      {"relativeDays": 3}
+      {"relativeDays": 7}
+      {"relativeDays": 30}
+
+   B. Custom Date Ranges (ISO):
+      {"startDate": "2025-01-01", "endDate": "2025-01-31"}
+      {"startDate": "2025-01-15"}
+      {"endDate": "2025-01-31"}
+
+   C. Relative Time Strings:
+      {"startDate": "-7d", "endDate": "now"}
+      {"startDate": "-2w", "endDate": "-1w"}
+      {"startDate": "-1m"}
+
+   D. Legacy Backward Compatibility:
+      {"period": "today"}
+      {"period": "week"}
+      {"period": "month"}
+      {"period": "all"}
+
+   E. Priority Order:
+      {"relativeDays": 7, "period": "all"}  → Uses relativeDays
+      {"startDate": "-7d", "period": "all"} → Uses startDate
+
+   F. Error Cases:
+      {"relativeDays": 400}  → Error: out of range
+      {"startDate": "invalid"} → Error: invalid format
+      {"startDate": "2025-02-01", "endDate": "2025-01-01"} → Error
+
+   G. Multi-tier Filtering:
+      {"relativeDays": 90}  → Includes recent + daily tiers
+      {"period": "all"}     → Includes all tiers + summary
+
+Expected Results:
+- All queries should return summary with correct token counts
+- Period labels should reflect the actual date range used
+- includeDetails=true should show individual compressions
+- Cost savings should be calculated for all queries
+- Backward compatibility maintained for existing period parameter
+
+╚══════════════════════════════════════════════════════════════╝
+✔ Manual Test Documentation (0.319298ms)
+============================================================
+Multi-tier Statistics Retention Test Suite
+============================================================
+
+Test 1: Migration from old format to new format
+Test 2: Auto-aggregation on save
+Test 3: Retention policy enforcement
+✓ Old daily aggregates moved to monthly
+✓ Monthly aggregates older than 5 years pruned
+✓ Recent records older than 30 days moved to daily/monthly
+
+Debug - Aggregated structure:
+- Recent count: 1
+- Daily keys: []
+- Monthly keys: [ '2024-06', '2021-06' ]
+
+✓ 2018-01 pruned: true (expected: true)
+✓ 2021-06 in monthly: true (expected: true)
+✅ Test 3 PASSED
+
+Test 4: File size growth bounds
+✓ Uncompressed stats size: 6110 KB
+✓ Recent records: 30000
+✓ After aggregation: 6110 KB
+✓ Recent records after aggregation: 30000
+✓ Daily aggregates: 0
+✓ Total records after aggregation: 30000 (max: 30500)
+✅ Test 4 PASSED
+
+[INFO] Migration complete: 2 recent, 2 daily, 1 monthly
+✓ Recent records: 2 (expected: 2)
+✓ Daily aggregates: 2 (expected: 2)
+✓ Monthly aggregates: 1 (expected: 1)
+✓ Summary preserved: true
+✅ Test 1 PASSED
+
+✓ Recent after aggregation: 2 (expected: 2)
+✓ Daily after aggregation: 3 (expected: 3)
+✓ Monthly after aggregation: 2 (expected: 2)
+✅ Test 2 PASSED
+
+============================================================
+Test Results:
+============================================================
+Passed: 4/4
+Failed: 0/4
+
+✅ All tests PASSED!
+✔ test-stats-retention.js (128.005171ms)
+▶ Multi-tier Statistics Retention
+  ▶ Migration from old format to new format
+    ✔ should migrate compressions to correct tiers (1.82485ms)
+    ℹ Recent records: 2 (expected: 2)
+    ℹ Daily aggregates: 2 (expected: 2)
+    ℹ Monthly aggregates: 1 (expected: 1)
+  ✔ Migration from old format to new format (2.194808ms)
+  ▶ Auto-aggregation on save
+    ✔ should move old records to appropriate tiers (0.217759ms)
+    ℹ Recent after aggregation: 2 (expected: 2)
+    ℹ Daily after aggregation: 1 (expected: 1)
+    ℹ Monthly after aggregation: 1 (expected: 1)
+  ✔ Auto-aggregation on save (0.344133ms)
+  ▶ Retention policy enforcement
+    ✔ should prune old data according to policy (0.134367ms)
+    ℹ Aggregated structure:
+    ℹ - Recent count: 1
+    ℹ - Daily keys: 
+    ℹ - Monthly keys: 2024-06, 2021-06
+  ✔ Retention policy enforcement (0.198293ms)
+  ▶ File size growth bounds
+    ✔ should maintain bounded size with retention policy (66.293747ms)
+    ℹ Uncompressed stats size: 6110 KB
+    ℹ Recent records: 30000
+    ℹ After aggregation: 6110 KB
+    ℹ Recent records after aggregation: 30000
+    ℹ Daily aggregates: 0
+    ℹ Total records after aggregation: 30000 (max: 30500)
+  ✔ File size growth bounds (66.438662ms)
+✔ Multi-tier Statistics Retention (69.638755ms)
+✔ test-utils.js (40.416952ms)
+All assertAlmostEqual tests completed
+▶ assertAlmostEqual - Happy Path Tests
+  ✔ should pass when values are exactly equal (0.700363ms)
+  ✔ should pass when difference is less than default epsilon (0.144512ms)
+  ✔ should pass for floating-point addition (0.1 + 0.2) (0.105652ms)
+  ✔ should pass for monetary values with default epsilon (0.191155ms)
+  ✔ should pass with custom epsilon (1.317193ms)
+  ✔ should pass for negative numbers within epsilon (0.099205ms)
+  ✔ should pass for zero comparison (0.055857ms)
+  ✔ should pass for large numbers within epsilon (0.434018ms)
+✔ assertAlmostEqual - Happy Path Tests (4.198639ms)
+▶ assertAlmostEqual - Error Path Tests
+  ✔ should throw when difference exceeds default epsilon (1.454837ms)
+  ✔ should throw when difference exceeds custom epsilon (0.39811ms)
+  ✔ should throw with custom error message (0.240038ms)
+  ✔ should show actual, expected, and difference in error (0.268163ms)
+✔ assertAlmostEqual - Error Path Tests (3.078127ms)
+▶ assertAlmostEqual - NaN Handling
+  ✔ should pass when both values are NaN (0.146543ms)
+  ✔ should throw when only actual is NaN (0.459941ms)
+  ✔ should throw when only expected is NaN (0.200076ms)
+✔ assertAlmostEqual - NaN Handling (1.092948ms)
+▶ assertAlmostEqual - Infinity Handling
+  ✔ should pass when both values are positive Infinity (0.083899ms)
+  ✔ should pass when both values are negative Infinity (0.062603ms)
+  ✔ should throw when comparing positive and negative Infinity (0.128277ms)
+  ✔ should throw when comparing finite to Infinity (0.728123ms)
+✔ assertAlmostEqual - Infinity Handling (2.090945ms)
+▶ assertAlmostEqual - Negative Number Handling
+  ✔ should handle negative numbers correctly (0.083893ms)
+  ✔ should handle mixed sign comparisons (0.194019ms)
+  ✔ should handle very small negative numbers (0.050589ms)
+✔ assertAlmostEqual - Negative Number Handling (0.516272ms)
+▶ assertAlmostEqual - Boundary Conditions
+  ✔ should pass when difference equals epsilon (boundary) (0.152236ms)
+  ✔ should throw when difference slightly exceeds epsilon (0.25953ms)
+  ✔ should handle very small epsilon values (0.077335ms)
+  ✔ should handle very large epsilon values (0.057271ms)
+✔ assertAlmostEqual - Boundary Conditions (0.749666ms)
+▶ assertAlmostEqual - Input Validation
+  ✔ should throw TypeError when actual is not a number (0.151474ms)
+  ✔ should throw TypeError when expected is not a number (0.166607ms)
+  ✔ should throw TypeError when epsilon is not a number (0.10279ms)
+  ✔ should throw TypeError when epsilon is negative (0.080167ms)
+  ✔ should throw TypeError when epsilon is zero (0.054496ms)
+  ✔ should throw TypeError when actual is null (0.053846ms)
+  ✔ should throw TypeError when actual is undefined (0.054402ms)
+✔ assertAlmostEqual - Input Validation (0.965843ms)
+▶ assertAlmostEqual - Default Epsilon Value
+  ✔ should export DEFAULT_EPSILON constant (0.09001ms)
+  ✔ should use DEFAULT_EPSILON when epsilon is omitted (0.130776ms)
+✔ assertAlmostEqual - Default Epsilon Value (0.419599ms)
+▶ assertAlmostEqual - Real-World Use Cases
+  ✔ should handle currency calculations (2 decimal places) (0.084295ms)
+  ✔ should handle percentage calculations (0.056157ms)
+  ✔ should handle cost savings aggregation (0.064046ms)
+  ✔ should handle average calculations (0.067313ms)
+✔ assertAlmostEqual - Real-World Use Cases (0.444331ms)
+=== Validation Helpers Unit Tests ===
+
+✅ validateCompressionRecord - accepts valid minimal record
+✅ validateCompressionRecord - accepts valid record with cost fields
+✅ validateCompressionRecord - accepts valid record with estimated flag
+✅ validateCompressionRecord - rejects missing timestamp
+✅ validateCompressionRecord - rejects invalid timestamp
+✅ validateCompressionRecord - rejects negative tokens
+✅ validateCompressionRecord - rejects non-integer tokens
+✅ validateCompressionRecord - rejects incorrect tokensSaved calculation
+✅ validateCompressionRecord - rejects invalid level
+✅ validateCompressionRecord - rejects invalid format
+✅ validateCompressionRecord - rejects savingsPercentage > 100
+✅ validateStatsSummary - accepts valid summary
+✅ validateStatsSummary - rejects negative values
+✅ validateStatsSummary - rejects non-integer values
+✅ validateStatsSummary - rejects incorrect calculation
+✅ validateStatsFile - accepts valid empty stats file
+✅ validateStatsFile - accepts valid stats file with records
+✅ validateStatsFile - rejects when requireRecords=true but no records
+✅ validateTimestamp - accepts valid ISO timestamp
+✅ validateTimestamp - rejects invalid timestamp
+✅ validateTimestamp - rejects future timestamp (more than 1 min)
+✅ validateRange - accepts value in range
+✅ validateRange - accepts boundary values
+✅ validateRange - rejects value below range
+✅ validateRange - rejects value above range
+
+=== Results ===
+✅ Passed: 25
+❌ Failed: 0
+Total: 25
+
+✅ All validation helper tests passed!
+✔ test-validation-helpers-unit.js (34.264079ms)
+✔ test-validation-helpers.js (36.521653ms)
+✔ test/fixtures/empty.js (29.917245ms)
+✔ test/fixtures/fixture-loader.js (24.235008ms)
+✔ test/fixtures/server-sample.js (52.844513ms)
+✔ test/fixtures/test-utils.js (24.187525ms)
+ℹ tests 315
+ℹ suites 85
+ℹ pass 297
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 14
+ℹ duration_ms 26275.665119
+
+✖ failing tests:
+
+test at test-mcp-stats.js:1:1
+✖ test-mcp-stats.js (1454.035937ms)
+  'test failed'
+
+test at test-real-compressions.js:1:1
+✖ test-real-compressions.js (1490.023805ms)
+  Error: Unable to deserialize cloned data due to invalid or unsupported version.
+      at #processRawBuffer (node:internal/test_runner/runner:353:20)
+      at FileTest.parseMessage (node:internal/test_runner/runner:289:27)
+      at Socket.<anonymous> (node:internal/test_runner/runner:399:15)
+      at Socket.emit (node:events:518:28)
+      at addChunk (node:internal/streams/readable:561:12)
+      at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+      at Readable.push (node:internal/streams/readable:392:5)
+      at Pipe.onStreamRead (node:internal/stream_base_commons:189:23)
+
+test at test-real-compressions.test.mjs:301:5
+✖ should record compression for single file with valid data (8598.379259ms)
+  AssertionError [ERR_ASSERTION]: Stats file should be updated (0 → 0)
+      at TestContext.<anonymous> (file:///home/dimitri/dev/ultra-compact-prompt-language/mcp-server/test-real-compressions.test.mjs:317:14)
+      at async Test.run (node:internal/test_runner/test:1054:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1442:7)
+      at async Promise.all (index 0)
+      at async Suite.run (node:internal/test_runner/test:1442:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '=='
+  }

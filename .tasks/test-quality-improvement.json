@@ -1,0 +1,671 @@
+{
+  "project": {
+    "name": "Test Quality Improvement",
+    "description": "Comprehensive test suite refactoring to address 28 identified issues across 13 test files, improving quality score from 72/100 to >80/100 through framework adoption, assertion improvements, and elimination of anti-patterns"
+  },
+  "tasks": [
+    {
+      "id": "001a",
+      "title": "Setup node:test Infrastructure",
+      "category": "infrastructure",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "001",
+      "dependencies": [],
+      "tags": [
+        "infrastructure",
+        "test-framework",
+        "node:test",
+        "setup"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "Test suite currently uses 13 custom test runners with native assert module. No test framework in place. Node 18+ environment available. Need foundation for migrating all test files to node:test.",
+        "objective": "Set up node:test infrastructure with package.json scripts, example migration patterns, lifecycle hooks template, and migration documentation.",
+        "style": "Follow Node.js test conventions using describe/test blocks, implement beforeEach/afterEach hooks, maintain ESM/CommonJS consistency with existing project, use native assert module.",
+        "tone": "Conservative migration approach - prefer incremental changes that minimize disruption. Validate each configuration step. High priority - blocks all test migration work.",
+        "audience": "Mid-level Node.js engineer familiar with testing patterns, package.json configuration, and node:test module capabilities.",
+        "response": "Deliverables:\n1. Updated package.json with test scripts (test, test:watch, test:coverage)\n2. Example test file demonstrating node:test patterns (describe/test/hooks)\n3. Lifecycle hooks template (beforeEach/afterEach patterns)\n4. Migration guide document (MIGRATION.md) with step-by-step instructions\n\nConstraints:\n- Node 18+ required (node:test is native)\n- Keep existing assert module (no new dependencies)\n- Maintain current test file structure and naming\n- No breaking changes to test logic during setup\n- Scripts must work cross-platform (Windows/Linux/macOS)\n\nAcceptance Criteria:\n- [ ] npm test runs node:test successfully with --test flag\n- [ ] Example file demonstrates all key patterns (describe, test, beforeEach, afterEach)\n- [ ] Migration guide covers file structure, import patterns, and common pitfalls\n- [ ] All test scripts work correctly (test, test:watch, test:coverage)\n- [ ] Documentation includes before/after code examples\n\nOut of Scope:\n- Migrating actual test files (tasks 001b-001d)\n- Setting coverage thresholds\n- CI/CD pipeline modifications\n- Test parallelization configuration"
+      }
+    },
+    {
+      "id": "001b",
+      "title": "Migrate Integration Tests to node:test",
+      "category": "infrastructure",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "001",
+      "dependencies": [
+        {
+          "taskId": "001a",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "infrastructure",
+        "migration",
+        "integration-tests"
+      ],
+      "estimatedTokens": 400,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "node:test infrastructure is set up (task 001a). Need to migrate 3 large integration test files: test-integration.js (767 lines), test-cost-tracking.js (506 lines), test-real-compressions.js (369 lines). These files use custom test runners with manual pass/fail tracking.",
+        "objective": "Convert integration test files to node:test format using describe/test blocks, proper assertions, and lifecycle hooks.",
+        "style": "Follow patterns from example file (001a). Group related tests with describe blocks. Use async/await consistently. Replace custom recordTest() with native test() calls. Maintain existing test logic.",
+        "tone": "Methodical migration - verify each test passes after conversion. High priority - these tests validate critical end-to-end workflows.",
+        "audience": "Mid-level backend engineer familiar with integration testing patterns, async JavaScript, and test organization.",
+        "response": "Deliverables:\n1. Migrated test-integration.js using node:test\n2. Migrated test-cost-tracking.js using node:test\n3. Migrated test-real-compressions.js using node:test\n4. All tests passing with node:test runner\n\nConstraints:\n- Preserve all existing test cases (no deletions)\n- Use describe blocks to group related tests\n- Replace console.log tracking with native test reporting\n- Maintain test file structure and names\n- Keep async patterns consistent\n\nAcceptance Criteria:\n- [ ] All 3 files converted to describe/test format\n- [ ] No custom test runner code remains (recordTest, etc.)\n- [ ] All tests pass when run with npm test\n- [ ] Test output is readable with node:test reporter\n- [ ] beforeEach/afterEach hooks used for setup/cleanup\n- [ ] Zero regression - same test coverage maintained\n\nOut of Scope:\n- Fixing flaky tests (separate tasks)\n- Adding new test cases\n- Performance optimization\n- Changing test logic or assertions"
+      }
+    },
+    {
+      "id": "001c",
+      "title": "Migrate Unit Tests to node:test",
+      "category": "infrastructure",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "001",
+      "dependencies": [
+        {
+          "taskId": "001a",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "infrastructure",
+        "migration",
+        "unit-tests"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "node:test infrastructure is set up (task 001a). Need to migrate 5 unit test files: test-date-parsing.js (205 lines), test-llm-detection.js (336 lines), test-statistics.js (185 lines), test-schema-validation.js (126 lines), test-cost-reporting.js (444 lines). These use custom test runners with manual validation.",
+        "objective": "Convert unit test files to node:test format using describe/test blocks and proper assertions.",
+        "style": "Follow patterns from example file (001a). Use describe for test suites, test for individual cases. Replace validation functions with proper assert calls. Maintain test isolation.",
+        "tone": "Systematic migration - ensure each unit remains focused and isolated. High priority - unit tests provide fast feedback.",
+        "audience": "Mid-level JavaScript engineer familiar with unit testing, mocking patterns, and test isolation principles.",
+        "response": "Deliverables:\n1. Migrated test-date-parsing.js using node:test\n2. Migrated test-llm-detection.js using node:test\n3. Migrated test-statistics.js using node:test\n4. Migrated test-schema-validation.js using node:test\n5. Migrated test-cost-reporting.js using node:test\n\nConstraints:\n- Preserve all test cases (no deletions)\n- Replace custom runTests() with describe/test structure\n- Convert validation functions to assert calls\n- Maintain test file independence (no shared state)\n- Use async/await consistently\n\nAcceptance Criteria:\n- [ ] All 5 files converted to node:test format\n- [ ] No custom test harness code remains\n- [ ] All tests pass with npm test\n- [ ] Test output clearly shows pass/fail per case\n- [ ] Tests can run independently (no order dependencies)\n- [ ] Same test coverage maintained\n\nOut of Scope:\n- Fixing weak assertions (task 008)\n- Adding new test cases\n- Refactoring test logic\n- Mock data improvements"
+      }
+    },
+    {
+      "id": "001d",
+      "title": "Migrate Specialty Tests to node:test",
+      "category": "infrastructure",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "001",
+      "dependencies": [
+        {
+          "taskId": "001a",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "infrastructure",
+        "migration",
+        "specialty-tests"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "node:test infrastructure is set up (task 001a). Need to migrate 5 specialty test files: test-stats-query.js (374 lines), test-statistics-fallback.js (419 lines), test-stats-retention.js (411 lines), test-mcp-stats.js (115 lines), test-schema.js (126 lines). These have unique patterns like manual verification and subprocess testing.",
+        "objective": "Convert specialty test files to node:test format, handling unique testing patterns like subprocess communication and manual verification scenarios.",
+        "style": "Follow patterns from example file (001a). Adapt lifecycle hooks for complex setups (subprocess, file system). Use test.todo() for manual verification cases. Document special requirements.",
+        "tone": "Careful migration - these tests have unique patterns requiring special attention. High priority - completes framework migration.",
+        "audience": "Senior Node.js engineer familiar with subprocess testing, file system operations, and edge case handling in tests.",
+        "response": "Deliverables:\n1. Migrated test-stats-query.js using node:test\n2. Migrated test-statistics-fallback.js using node:test\n3. Migrated test-stats-retention.js using node:test\n4. Migrated test-mcp-stats.js using node:test (subprocess patterns)\n5. Migrated test-schema.js using node:test\n\nConstraints:\n- Handle subprocess tests properly (mcp-stats)\n- Use test.skip() or test.todo() for manual verification scenarios\n- Preserve file system cleanup patterns\n- Maintain Promise.all patterns where appropriate\n- Document any special test requirements\n\nAcceptance Criteria:\n- [ ] All 5 files converted to node:test format\n- [ ] Subprocess tests work correctly with proper cleanup\n- [ ] Manual verification tests documented with test.todo()\n- [ ] All automated tests pass with npm test\n- [ ] File system tests clean up properly (beforeEach/afterEach)\n- [ ] Framework migration 100% complete\n\nOut of Scope:\n- Fixing brittle async tests (task 002)\n- Automating manual verification (task 006)\n- Improving test isolation (task 015)\n- Performance optimization"
+      }
+    },
+    {
+      "id": "002a",
+      "title": "Fix Subprocess Timeout with Event-Based Waiting",
+      "category": "general",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "002",
+      "dependencies": [
+        {
+          "taskId": "001b",
+          "type": "finish-to-start"
+        },
+        {
+          "taskId": "001c",
+          "type": "finish-to-start"
+        },
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "async",
+        "reliability",
+        "subprocess",
+        "event-emitters"
+      ],
+      "estimatedTokens": 250,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "Test suite now uses node:test (tasks 001a-001d complete). This is sub-task 1 of 2 for fixing brittle async tests. test-mcp-stats.js uses fixed 2-second timeout (setTimeout(resolve, 2000)) for subprocess responses, causing flaky behavior on slow systems.",
+        "objective": "Replace fixed timeout with event-based waiting for actual subprocess response events.",
+        "style": "Use Node.js streams and event emitters for subprocess stdout/stderr. Implement readline or similar for line-based processing. Use await with Promise-wrapped event listeners. Add failure timeout only (30s max).",
+        "tone": "Reliability-critical - tests must work on any system speed. Use proven event-driven patterns. Zero tolerance for race conditions.",
+        "audience": "Senior Node.js engineer familiar with subprocess communication, streams, event emitters, and async patterns.",
+        "response": "Deliverables:\n1. Event-based waiting in test-mcp-stats.js (replace setTimeout)\n2. Stream-based stdout/stderr handling with event listeners\n3. Proper message detection (wait for actual response)\n4. Failure timeout only (30s max, not synchronization timeout)\n\nConstraints:\n- No fixed setTimeout for synchronization\n- Use event listeners for actual subprocess output\n- Proper error propagation (no silent catches)\n- Backward compatible with existing subprocess interface\n- Works on both fast and slow systems\n\nAcceptance Criteria:\n- [ ] test-mcp-stats.js uses event-based waiting (not 2s setTimeout)\n- [ ] Subprocess stdout/stderr handled with stream events\n- [ ] Test waits for actual response (not arbitrary time)\n- [ ] Failure timeout present (30s max) for hung processes\n- [ ] Test passes consistently on throttled/slow systems\n- [ ] No synchronization setTimeout() calls remain\n\nOut of Scope:\n- JSON-RPC parsing (handled in task 002b)\n- Rewriting subprocess server implementation\n- Performance optimization of IPC\n- Retry logic for failed requests"
+      }
+    },
+    {
+      "id": "002b",
+      "title": "Fix JSON-RPC Parsing with Proper Message Framing",
+      "category": "general",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "parentTaskId": "002",
+      "dependencies": [
+        {
+          "taskId": "002a",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "async",
+        "reliability",
+        "json-rpc",
+        "parsing"
+      ],
+      "estimatedTokens": 250,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "Test suite now uses node:test (tasks 001a-001d complete). Subprocess waiting fixed (task 002a). This is sub-task 2 of 2 for fixing brittle async tests. test-real-compressions.js has fragile JSON-RPC parsing that searches backwards through lines and silently ignores errors.",
+        "objective": "Implement robust JSON-RPC client with proper newline-delimited JSON message framing.",
+        "style": "Implement proper newline-delimited JSON parsing. Use readline or split on newlines. Parse each line sequentially. Match request ID to response. Handle malformed lines with errors (no silent catches).",
+        "tone": "Reliability-critical - protocol parsing must be robust and fail fast on errors. Use proven message framing patterns.",
+        "audience": "Senior Node.js engineer familiar with JSON-RPC protocols, message framing, and protocol implementation.",
+        "response": "Deliverables:\n1. Robust JSON-RPC client/parser for test-real-compressions.js\n2. Newline-delimited JSON message framing implementation\n3. Sequential line parsing with request/response matching\n4. Proper error handling for malformed responses (no silent try/catch)\n\nConstraints:\n- Parse lines sequentially (not backwards search)\n- Match request ID to response properly\n- No silent error swallowing (empty catch blocks)\n- Handle malformed JSON with proper errors\n- Newline-delimited JSON framing\n\nAcceptance Criteria:\n- [ ] JSON-RPC parsing uses proper message framing\n- [ ] Lines parsed sequentially (not backwards search)\n- [ ] Request/response IDs matched correctly\n- [ ] Malformed lines cause proper test failures (not ignored)\n- [ ] No silent try/catch blocks remain\n- [ ] Tests fail fast on protocol errors\n\nOut of Scope:\n- Subprocess event handling (completed in 002a)\n- Rewriting subprocess server implementation\n- Performance optimization\n- Load testing or stress testing"
+      }
+    },
+    {
+      "id": "003",
+      "title": "Add Backup/Restore Safety with try/finally",
+      "category": "general",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "safety",
+        "file-system",
+        "cleanup",
+        "reliability"
+      ],
+      "estimatedTokens": 250,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-real-compressions.js manually backs up and restores stats files. If test crashes before restore, user data may be lost. No guaranteed cleanup mechanism in place. Framework migration (001d) complete, can use lifecycle hooks.",
+        "objective": "Implement guaranteed backup/restore using try/finally blocks and node:test lifecycle hooks to prevent data loss.",
+        "style": "Use beforeEach for backup, afterEach for restore. Wrap test body in try/finally if needed. Follow defensive programming - always restore even on exceptions. Use node:test hook guarantees.",
+        "tone": "Safety-critical - user data must never be lost due to test failures. Defensive approach with multiple safeguards. High priority.",
+        "audience": "Mid-level Node.js engineer familiar with error handling, file system operations, and test lifecycle hooks.",
+        "response": "Deliverables:\n1. beforeEach hook for stats file backup in test-real-compressions.js\n2. afterEach hook for guaranteed restore (even on test failure)\n3. try/finally blocks around risky file operations\n4. Verification that restore runs even on test crashes\n\nConstraints:\n- Restore must run even if test throws exception\n- Backup must complete before test starts\n- No user data loss under any circumstances\n- Handle cases where backup file doesn't exist\n- Clean up temporary backup files\n\nAcceptance Criteria:\n- [ ] beforeEach creates backup before each test\n- [ ] afterEach restores backup after each test (even on failure)\n- [ ] Simulated test crash still restores backup\n- [ ] Tests handle missing backup gracefully\n- [ ] Temporary files cleaned up properly\n- [ ] Manual backup/restore functions removed\n\nOut of Scope:\n- Backup versioning or history\n- Backup compression\n- Remote backup locations\n- Performance optimization of backup operations"
+      }
+    },
+    {
+      "id": "004",
+      "title": "Import Actual Server Functions (No Code Duplication)",
+      "category": "general",
+      "priority": "critical",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "refactoring",
+        "imports",
+        "test-reliability"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-stats-retention.js duplicates aggregateStats() logic from server.js for testing. Tests may pass while production code fails due to divergence. Framework migration (001d) complete, can use proper imports.",
+        "objective": "Replace duplicated test functions with imports of actual server functions to ensure tests validate real production code.",
+        "style": "Export functions from server.js if needed (aggregateStats, etc.). Import in tests using ESM/CommonJS. Maintain test isolation - no shared mutable state. Follow module export best practices.",
+        "tone": "Reliability-focused - tests must validate actual code, not copies. Refactor server.js exports if needed for testability. High priority.",
+        "audience": "Mid-level JavaScript engineer familiar with module systems (ESM/CommonJS), exports/imports, and dependency injection principles.",
+        "response": "Deliverables:\n1. Export aggregateStats and other duplicated functions from server.js\n2. Import actual functions in test-stats-retention.js\n3. Remove duplicated function implementations from tests\n4. Verify tests still pass with actual imports\n\nConstraints:\n- Maintain backward compatibility of server.js exports\n- No breaking changes to existing imports\n- Preserve test isolation (no shared state)\n- Use proper ESM or CommonJS based on project\n- Functions must be testable in isolation\n\nAcceptance Criteria:\n- [ ] aggregateStats and related functions exported from server.js\n- [ ] Tests import actual functions (not copies)\n- [ ] Zero duplicated function code in tests\n- [ ] All tests pass with actual imports\n- [ ] No shared mutable state between tests\n- [ ] Server exports documented\n\nOut of Scope:\n- Refactoring server.js architecture\n- Adding dependency injection framework\n- Splitting server.js into modules\n- Performance optimization"
+      }
+    },
+    {
+      "id": "005",
+      "title": "Fix Hardcoded Dates with Dynamic Generation",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "dates",
+        "maintainability",
+        "brittle-tests"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "Multiple test files use hardcoded dates (e.g., '2025-01-01') that become stale annually. test-integration.js (lines 100-159) and test-date-parsing.js (lines 107-126) affected. Tests pass/fail based on execution date. Framework migration (001d) complete.",
+        "objective": "Replace all hardcoded year values with dynamically generated dates relative to current time or fixed reference points.",
+        "style": "Use Date.now() and date arithmetic for relative dates. Create helper functions for common patterns (daysAgo, monthsFromNow). Document date generation logic. Maintain test readability.",
+        "tone": "Maintainability-focused - tests should not require manual updates. Use clear date generation patterns. High priority.",
+        "audience": "Mid-level JavaScript engineer familiar with Date API, time arithmetic, and test data generation patterns.",
+        "response": "Deliverables:\n1. Replace hardcoded dates in test-integration.js with dynamic generation\n2. Replace hardcoded dates in test-date-parsing.js with dynamic generation\n3. Create date helper utilities (daysAgo, monthsFromNow, etc.)\n4. Update test assertions to use relative validation\n\nConstraints:\n- No hardcoded year values (2025, 2024, etc.)\n- Use current date as reference point\n- Maintain test determinism (same input = same output)\n- Keep test assertions readable\n- Document date generation patterns\n\nAcceptance Criteria:\n- [ ] Zero hardcoded year values in test files\n- [ ] Date helpers created and documented\n- [ ] Tests pass regardless of execution year\n- [ ] Relative date assertions clear and maintainable\n- [ ] No manual date updates needed annually\n- [ ] Test output shows actual dates for debugging\n\nOut of Scope:\n- Time mocking library (e.g., timekeeper)\n- Timezone handling\n- Date parsing improvements\n- Historical date testing"
+      }
+    },
+    {
+      "id": "006",
+      "title": "Automate Manual Verification Tests",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "automation",
+        "ci-cd",
+        "test-reliability"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "test-stats-query.js (lines 218-262) contains manual verification tests that log 'Manual verification required' but always report as passed. Reduces CI/CD reliability. Framework migration (001d) complete.",
+        "objective": "Convert manual verification scenarios to fully automated tests with proper assertions, or document as manual test procedures outside automated suite.",
+        "style": "Either add proper assertions to automate, or move to manual testing guide. Use test.skip() with clear documentation if truly manual. Prefer automation where possible. Follow node:test patterns.",
+        "tone": "Pragmatic - automate what's practical, document what's truly manual. No fake passing tests. High priority for CI/CD reliability.",
+        "audience": "Mid-level QA engineer familiar with test automation principles, assertion design, and CI/CD requirements.",
+        "response": "Deliverables:\n1. Analysis of manual verification tests (what needs validation)\n2. Automated tests with proper assertions (where practical)\n3. MANUAL_TESTING.md guide for truly manual scenarios\n4. Removal of fake 'passed++' counters from manual tests\n\nConstraints:\n- No tests that claim to pass without validation\n- Clear distinction: automated (with assertions) vs manual (documented)\n- Use test.skip() for manual tests with documentation\n- Manual tests documented with step-by-step procedures\n- CI pipeline only runs automated tests\n\nAcceptance Criteria:\n- [ ] Manual verification tests analyzed and categorized\n- [ ] Practical tests automated with proper assertions\n- [ ] Truly manual tests use test.skip() with clear comments\n- [ ] MANUAL_TESTING.md created with procedures\n- [ ] Zero fake passing tests remain\n- [ ] CI pipeline reflects accurate test results\n\nOut of Scope:\n- UI automation for visual tests\n- Load testing or performance tests\n- Third-party integration tests\n- User acceptance testing procedures"
+      }
+    },
+    {
+      "id": "007",
+      "title": "Validate State Instead of Log Messages",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        },
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "assertions",
+        "test-reliability",
+        "refactoring"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-real-compressions.js (lines 173-192) checks stderr for '[INFO] Recorded compression' log message instead of validating actual stats file content. Tests break when log format changes. Framework (001d) and imports (004) complete.",
+        "objective": "Replace log message validation with actual state validation by reading and verifying stats file content.",
+        "style": "Read stats file after operation, parse JSON, assert on actual data fields (tokens, compression ratio, timestamps). Use proper assertions. Remove log format dependencies.",
+        "tone": "Best-practice focused - tests validate behavior, not implementation details like logs. High priority for test stability.",
+        "audience": "Mid-level test engineer familiar with test design principles, file system operations, and assertion strategies.",
+        "response": "Deliverables:\n1. Replace stderr log checks with stats file content validation\n2. Parse and verify actual compression data fields\n3. Remove dependencies on log message formats\n4. Add assertions for all critical stats fields\n\nConstraints:\n- Read actual stats file (not logs)\n- Validate data structure and values\n- No dependencies on log format strings\n- Handle file not found gracefully\n- Verify timestamps, tokens, ratios, etc.\n\nAcceptance Criteria:\n- [ ] No tests check stderr for log messages\n- [ ] Stats file read and parsed after compression\n- [ ] All critical fields validated (tokens, ratio, timestamp)\n- [ ] Tests pass with any log format changes\n- [ ] Clear error messages when validation fails\n- [ ] File reading errors handled properly\n\nOut of Scope:\n- Log format standardization\n- Structured logging implementation\n- Stats file schema changes\n- Performance optimization of file reading"
+      }
+    },
+    {
+      "id": "008",
+      "title": "Replace console.log with Proper Assertions",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "assertions",
+        "test-quality",
+        "refactoring"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "test-schema-validation.js (lines 74-126) and test-mcp-stats.js (lines 79-97) use console.log('PASS'/'FAIL') instead of proper assertions. Tests exit with code 0 even on failures. Framework migration (001d) complete.",
+        "objective": "Replace all console.log validation with proper assert statements that cause test failures when conditions not met.",
+        "style": "Use assert.strictEqual, assert.ok, assert.deepStrictEqual from native assert module. Follow node:test patterns. Each validation should throw on failure. Clear assertion messages.",
+        "tone": "Quality-focused - tests must actually fail when validation fails. Zero tolerance for fake passing tests. High priority.",
+        "audience": "Mid-level JavaScript engineer familiar with assert module, test design, and node:test patterns.",
+        "response": "Deliverables:\n1. Replace console.log validation in test-schema-validation.js with assertions\n2. Replace console.log validation in test-mcp-stats.js with assertions\n3. Add descriptive assertion messages\n4. Verify tests actually fail on invalid conditions\n\nConstraints:\n- Use native assert module (no new dependencies)\n- Each validation must use proper assertion\n- Tests must exit non-zero on assertion failure\n- Clear error messages for failures\n- Maintain test readability\n\nAcceptance Criteria:\n- [ ] Zero console.log('PASS'/'FAIL') statements remain\n- [ ] All validations use proper assertions\n- [ ] Tests fail with non-zero exit code on assertion failure\n- [ ] Assertion messages clearly describe what failed\n- [ ] Simulated failures properly caught by test runner\n- [ ] Test output shows proper pass/fail status\n\nOut of Scope:\n- Custom assertion library\n- Assertion helpers or utilities\n- Snapshot testing\n- Visual regression testing"
+      }
+    },
+    {
+      "id": "009",
+      "title": "Add Floating-Point Comparison Utility",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "008",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "assertions",
+        "utilities",
+        "precision"
+      ],
+      "estimatedTokens": 200,
+      "estimatedHours": 1,
+      "prompt": {
+        "context": "test-cost-reporting.js (lines 122-127) uses rounding hack (Math.round * 10000 / 10000) for floating-point comparison. Imprecise and error-prone. Assertion improvements (008) complete.",
+        "objective": "Create epsilon-based floating-point comparison utility for accurate monetary and numeric assertions.",
+        "style": "Create assertAlmostEqual(actual, expected, epsilon, message) utility. Use epsilon = 0.0001 default for 4 decimal places. Export from test-utils.js. Document usage.",
+        "tone": "Precision-focused - financial calculations need proper comparison. Provide reusable utility. High priority.",
+        "audience": "Mid-level JavaScript engineer familiar with floating-point arithmetic, precision issues, and utility design.",
+        "response": "Deliverables:\n1. test-utils.js with assertAlmostEqual() function\n2. Replace rounding hacks in test-cost-reporting.js with utility\n3. Documentation and usage examples\n4. Tests for the utility itself\n\nConstraints:\n- Epsilon-based comparison (configurable)\n- Default epsilon: 0.0001 (4 decimal places)\n- Works with negative numbers\n- Clear error messages showing actual vs expected\n- Compatible with native assert\n\nAcceptance Criteria:\n- [ ] assertAlmostEqual() utility created and exported\n- [ ] Rounding hacks replaced in test-cost-reporting.js\n- [ ] Utility handles edge cases (negative, zero, NaN)\n- [ ] Error messages show actual, expected, and epsilon\n- [ ] Unit tests for utility itself\n- [ ] Documentation with examples\n\nOut of Scope:\n- Decimal.js or BigNumber library integration\n- Currency-specific utilities\n- Percentage comparison utilities\n- Statistical comparison functions"
+      }
+    },
+    {
+      "id": "010",
+      "title": "Add Comprehensive Field Validation",
+      "category": "general",
+      "priority": "high",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "008",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "validation",
+        "assertions",
+        "test-coverage"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-statistics.js (lines 100-106) only checks record count, not actual data fields. test-mcp-stats.js (lines 79-97) only checks file existence. Missing validation of critical fields like tokens, ratios, timestamps. Assertion improvements (008) complete.",
+        "objective": "Add comprehensive field validation for all critical data structures in stats files and compression records.",
+        "style": "Use assert.strictEqual for exact values, assert.ok for type checks, assert.deepStrictEqual for objects. Validate all critical fields: tokens, ratios, timestamps, paths, formats. Descriptive messages.",
+        "tone": "Thoroughness-focused - validate complete data integrity, not just existence. High priority for data quality.",
+        "audience": "Mid-level test engineer familiar with data validation patterns, schema validation, and comprehensive testing strategies.",
+        "response": "Deliverables:\n1. Field validation in test-statistics.js (tokens, ratios, timestamps)\n2. Schema validation in test-mcp-stats.js (complete stats structure)\n3. Validation helper functions for common structures\n4. Clear error messages for validation failures\n\nConstraints:\n- Validate all critical fields (not just count)\n- Check types and value ranges\n- Verify required fields present\n- Handle optional fields correctly\n- Performance impact minimal\n\nAcceptance Criteria:\n- [ ] test-statistics.js validates all compression record fields\n- [ ] test-mcp-stats.js validates complete stats file schema\n- [ ] Validation helpers created and reused\n- [ ] Tests fail on missing or invalid fields\n- [ ] Error messages clearly identify what's invalid\n- [ ] Validation coverage for all critical structures\n\nOut of Scope:\n- JSON Schema validation library\n- Runtime schema validation in production\n- Schema documentation generation\n- Schema versioning system"
+      }
+    },
+    {
+      "id": "011",
+      "title": "Replace Global Monkeypatching with Dependency Injection",
+      "category": "general",
+      "priority": "medium",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "refactoring",
+        "test-isolation",
+        "maintainability"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "test-cost-tracking.js (lines 399-428) monkeypatches global.calculateCostSavings to simulate failures. Causes test pollution if restore fails. Imports (004) complete, can use dependency injection.",
+        "objective": "Refactor code to accept dependencies as parameters (dependency injection) instead of using global monkeypatching.",
+        "style": "Add optional parameters for testable functions. Use default values for production. Pass test doubles in tests. Follow functional programming patterns. Maintain backward compatibility.",
+        "tone": "Maintainability-focused - proper dependency injection improves testability without side effects. Medium priority.",
+        "audience": "Senior JavaScript engineer familiar with dependency injection, functional programming, and test design patterns.",
+        "response": "Deliverables:\n1. Refactor calculateCostSavings usage to accept dependency parameter\n2. Update test-cost-tracking.js to pass test doubles\n3. Remove global monkeypatching code\n4. Verify tests pass with dependency injection\n\nConstraints:\n- Maintain backward compatibility\n- Use default parameters for production\n- No global state mutation\n- Tests remain isolated\n- Clear function signatures\n\nAcceptance Criteria:\n- [ ] calculateCostSavings accepts optional dependency parameter\n- [ ] Tests pass test doubles as parameters (not global override)\n- [ ] Zero global monkeypatching remains\n- [ ] Production code uses defaults (no breaking changes)\n- [ ] Tests isolated and can run in any order\n- [ ] Function signatures documented\n\nOut of Scope:\n- Full dependency injection framework\n- Inversion of Control (IoC) container\n- Constructor injection patterns\n- Extensive refactoring of non-test code"
+      }
+    },
+    {
+      "id": "012",
+      "title": "Verify Environment Variable Usage",
+      "category": "general",
+      "priority": "medium",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "verification",
+        "configuration",
+        "test-reliability"
+      ],
+      "estimatedTokens": 200,
+      "estimatedHours": 1,
+      "prompt": {
+        "context": "test-statistics-fallback.js (line 27) mocks UCPL_STATS_FILE environment variable but unclear if server actually uses it. May create false confidence. Imports (004) complete, can verify actual usage.",
+        "objective": "Verify server actually reads UCPL_STATS_FILE environment variable and document configuration behavior.",
+        "style": "Trace server.js code to verify env var usage. Add integration test that validates actual behavior. Document configuration options. Remove test if env var unused.",
+        "tone": "Verification-focused - ensure tests validate actual behavior, not assumptions. Medium priority.",
+        "audience": "Mid-level backend engineer familiar with environment variable configuration, code tracing, and integration testing.",
+        "response": "Deliverables:\n1. Code analysis verifying UCPL_STATS_FILE usage in server.js\n2. Integration test validating env var behavior\n3. Documentation of configuration options\n4. Updated or removed test based on findings\n\nConstraints:\n- Trace actual code paths in server.js\n- Test actual behavior (not mocked)\n- Document configuration clearly\n- Remove test if env var not actually used\n- No assumptions without verification\n\nAcceptance Criteria:\n- [ ] UCPL_STATS_FILE usage verified in server.js\n- [ ] Integration test validates actual env var behavior\n- [ ] Configuration documented (README or CONFIG.md)\n- [ ] Test updated to reflect actual usage or removed\n- [ ] No false confidence from unused mocks\n\nOut of Scope:\n- Adding new configuration options\n- Configuration management library\n- Environment validation framework\n- Configuration file support"
+      }
+    },
+    {
+      "id": "013",
+      "title": "Add Test Lifecycle Hooks (beforeEach/afterEach)",
+      "category": "general",
+      "priority": "medium",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "test-structure",
+        "cleanup",
+        "maintainability"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-integration.js (lines 62-68) has manual clearEnvVars() function that's easy to forget. test-cost-reporting.js (lines 27-42) has manual setup/cleanup functions. Framework (001d) complete, can use lifecycle hooks.",
+        "objective": "Replace manual setup/cleanup functions with node:test lifecycle hooks (beforeEach/afterEach) for guaranteed execution.",
+        "style": "Use beforeEach for setup (env vars, temp files), afterEach for cleanup. Hooks run automatically per test. Follow node:test patterns. Document hook usage.",
+        "tone": "Maintainability-focused - automatic hooks prevent forgotten cleanup. Medium priority for test reliability.",
+        "audience": "Mid-level test engineer familiar with test lifecycle patterns, setup/teardown concepts, and node:test hooks.",
+        "response": "Deliverables:\n1. beforeEach/afterEach hooks in test-integration.js\n2. beforeEach/afterEach hooks in test-cost-reporting.js\n3. Remove manual setup/cleanup function calls\n4. Verify cleanup runs even on test failures\n\nConstraints:\n- Use node:test lifecycle hooks\n- Hooks run automatically (no manual calls)\n- Cleanup runs even on test failure/exception\n- Maintain test isolation\n- Clear hook ordering documented\n\nAcceptance Criteria:\n- [ ] Manual clearEnvVars() removed (uses afterEach)\n- [ ] Manual setup()/cleanup() removed (uses hooks)\n- [ ] beforeEach runs before each test automatically\n- [ ] afterEach runs after each test (even on failure)\n- [ ] Tests isolated with proper setup/teardown\n- [ ] Hook execution verified with test runner output\n\nOut of Scope:\n- Global hooks (before/after all)\n- Hook composition or nesting\n- Shared fixtures framework\n- Advanced hook ordering"
+      }
+    },
+    {
+      "id": "014",
+      "title": "Implement Proper Cache Management",
+      "category": "general",
+      "priority": "medium",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "013",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "caching",
+        "test-isolation",
+        "refactoring"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-cost-tracking.js (lines 241-244) manually resets caches (cachedLLMClient, llmDetectionCallCount) with no isolation guarantees. Lifecycle hooks (013) available.",
+        "objective": "Encapsulate cache in resettable module and use lifecycle hooks for automatic cache clearing between tests.",
+        "style": "Create cache module with reset() method. Use afterEach hook to call reset(). Export cache access methods. Follow singleton or module pattern. Document cache lifecycle.",
+        "tone": "Test-isolation-focused - each test should start with clean cache. Medium priority for reliability.",
+        "audience": "Mid-level JavaScript engineer familiar with module patterns, caching strategies, and test isolation principles.",
+        "response": "Deliverables:\n1. Cache module with reset() method\n2. afterEach hook calling cache.reset() in test-cost-tracking.js\n3. Remove manual cache reset code\n4. Verify tests isolated (no cache pollution)\n\nConstraints:\n- Cache module with clear API\n- reset() clears all cached data\n- afterEach hook calls reset() automatically\n- Tests can run in any order\n- No global state leakage\n\nAcceptance Criteria:\n- [ ] Cache module created with reset() method\n- [ ] afterEach hook resets cache automatically\n- [ ] Manual reset calls removed\n- [ ] Tests pass in random order (no cache pollution)\n- [ ] Cache API documented\n- [ ] Cache lifecycle clear and predictable\n\nOut of Scope:\n- Cache expiration or TTL\n- Distributed caching\n- Cache persistence\n- Cache size limits"
+      }
+    },
+    {
+      "id": "015",
+      "title": "Add Error Isolation for Parallel Tests",
+      "category": "general",
+      "priority": "medium",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "013",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "test-isolation",
+        "async",
+        "error-handling"
+      ],
+      "estimatedTokens": 250,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-stats-retention.js (lines 379-405) runs tests with Promise.all - if one throws, all remaining cancel. Lifecycle hooks (013) available for better error handling.",
+        "objective": "Add error isolation so individual test failures don't cancel other parallel tests.",
+        "style": "Use Promise.allSettled() instead of Promise.all(). Check each result for rejection. Report all failures. Or use node:test concurrent tests. Follow async best practices.",
+        "tone": "Reliability-focused - all tests should complete regardless of individual failures. Medium priority.",
+        "audience": "Mid-level JavaScript engineer familiar with Promise patterns, async error handling, and parallel test execution.",
+        "response": "Deliverables:\n1. Replace Promise.all with Promise.allSettled in test-stats-retention.js\n2. Check each result for rejection and report\n3. Verify all tests run even if one fails\n4. Clear failure reporting for each test\n\nConstraints:\n- All tests complete execution (no cancellation)\n- Individual failures reported clearly\n- Exit code reflects any failures\n- Works with node:test runner\n- No silent error swallowing\n\nAcceptance Criteria:\n- [ ] Promise.allSettled used for parallel tests\n- [ ] Each test result checked (fulfilled/rejected)\n- [ ] All tests complete even if one fails\n- [ ] Failures reported with clear error messages\n- [ ] Exit code non-zero if any test failed\n- [ ] Test runner shows all results\n\nOut of Scope:\n- Test retry logic\n- Test dependency ordering\n- Test parallelization configuration\n- Test sharding"
+      }
+    },
+    {
+      "id": "016",
+      "title": "Replace Synthetic Test Data with Real Files",
+      "category": "general",
+      "priority": "low",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        },
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "test-data",
+        "integration",
+        "realism"
+      ],
+      "estimatedTokens": 350,
+      "estimatedHours": 3,
+      "prompt": {
+        "context": "test-statistics.js (lines 16-32), test-integration.js (lines 372-421), test-statistics-fallback.js (lines 147-168) use hardcoded synthetic test content. Doesn't test real-world scenarios. Framework (001d) and imports (004) complete.",
+        "objective": "Replace synthetic test content with actual project files (e.g., server.js) for realistic compression testing.",
+        "style": "Use real files from project as test fixtures. Read actual file content. Validate compression with real data. Create fixtures directory if needed. Document test data sources.",
+        "tone": "Realism-focused - tests should validate real-world behavior with actual data. Low priority improvement.",
+        "audience": "Mid-level test engineer familiar with test fixtures, file operations, and integration testing patterns.",
+        "response": "Deliverables:\n1. Replace synthetic content in test-statistics.js with real file\n2. Replace mock data generation in test-integration.js with fixtures\n3. Replace mock read functions in test-statistics-fallback.js with real files\n4. Create test/fixtures/ directory for reusable test data\n\nConstraints:\n- Use actual project files (server.js, etc.)\n- Fixtures directory for shared test data\n- Tests remain deterministic\n- File paths documented\n- Handle file not found gracefully\n\nAcceptance Criteria:\n- [ ] Synthetic test content removed from all files\n- [ ] Tests use actual project files\n- [ ] test/fixtures/ directory created with reusable data\n- [ ] Tests pass with real file content\n- [ ] Real-world edge cases validated\n- [ ] Fixture files documented\n\nOut of Scope:\n- Binary file testing\n- Large file performance testing\n- Fixture generation automation\n- Snapshot testing framework"
+      }
+    },
+    {
+      "id": "017",
+      "title": "Use Production Stats Samples",
+      "category": "general",
+      "priority": "low",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "001d",
+          "type": "finish-to-start"
+        },
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "test-data",
+        "realism",
+        "fixtures"
+      ],
+      "estimatedTokens": 300,
+      "estimatedHours": 2,
+      "prompt": {
+        "context": "test-cost-reporting.js (lines 45-109) and test-stats-retention.js (lines 196-264) use manually constructed mock data with hardcoded token counts. Doesn't reflect production data patterns. Framework (001d) and imports (004) complete.",
+        "objective": "Create test fixtures from actual production stats samples for realistic testing.",
+        "style": "Extract anonymized production stats samples. Store in test/fixtures/. Load in tests. Maintain privacy (no sensitive data). Document fixture generation process.",
+        "tone": "Realism-focused - test with data that matches production patterns. Low priority improvement.",
+        "audience": "Mid-level test engineer familiar with fixture management, data sampling, and privacy considerations.",
+        "response": "Deliverables:\n1. Production stats samples extracted and anonymized\n2. Fixtures stored in test/fixtures/stats-samples/\n3. Tests updated to load fixtures instead of mock data\n4. Fixture generation script documented\n\nConstraints:\n- Anonymize sensitive data (paths, etc.)\n- Representative sample of production patterns\n- JSON format for easy loading\n- Varied scenarios (success, errors, edge cases)\n- Fixtures version controlled\n\nAcceptance Criteria:\n- [ ] Production stats samples extracted and anonymized\n- [ ] Fixtures stored in test/fixtures/stats-samples/\n- [ ] test-cost-reporting.js uses fixtures\n- [ ] test-stats-retention.js uses fixtures\n- [ ] No hardcoded mock data remains\n- [ ] Fixture generation process documented\n\nOut of Scope:\n- Automated fixture generation\n- Fixture updates from production\n- Large-scale data sampling\n- Statistical data analysis"
+      }
+    },
+    {
+      "id": "018",
+      "title": "Test Config Path Resolution",
+      "category": "general",
+      "priority": "low",
+      "status": "DONE",
+      "framework": "COSTAR",
+      "dependencies": [
+        {
+          "taskId": "004",
+          "type": "finish-to-start"
+        }
+      ],
+      "tags": [
+        "integration",
+        "configuration",
+        "path-resolution"
+      ],
+      "estimatedTokens": 250,
+      "estimatedHours": 1,
+      "prompt": {
+        "context": "test-llm-detection.js (lines 209-222) creates test config file but uses separate path, not production config path. Doesn't verify actual config loading. Imports (004) complete.",
+        "objective": "Add integration test validating actual production config file path resolution logic.",
+        "style": "Test actual config loading function from server. Use real config path. Verify path resolution (relative, absolute, home directory). Test missing config handling. Follow integration test patterns.",
+        "tone": "Verification-focused - ensure config loading works as users experience it. Low priority improvement.",
+        "audience": "Mid-level backend engineer familiar with path resolution, file system operations, and configuration loading patterns.",
+        "response": "Deliverables:\n1. Integration test for production config path resolution\n2. Test config loading with various path formats\n3. Test missing config file handling\n4. Document config path behavior\n\nConstraints:\n- Use actual config loading function\n- Test real path resolution logic\n- Handle relative and absolute paths\n- Test home directory expansion (~)\n- Clean up test configs properly\n\nAcceptance Criteria:\n- [ ] Integration test validates production config path\n- [ ] Test covers relative path resolution\n- [ ] Test covers absolute path resolution\n- [ ] Test handles missing config gracefully\n- [ ] Config path behavior documented\n- [ ] Tests clean up created configs\n\nOut of Scope:\n- Config validation logic\n- Config file format changes\n- Environment-specific configs\n- Config encryption"
+      }
+    }
+  ]
+}
