@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Test Utilities Test Suite
  *
@@ -13,9 +12,9 @@
  * 5. Input validation - type checking, invalid epsilon
  */
 
-const assert = require('assert');
-const { test } = require('node:test');
-const { assertAlmostEqual, DEFAULT_EPSILON } = require('./test-utils');
+import assert from 'assert';
+import { test } from 'node:test';
+import { assertAlmostEqual, DEFAULT_EPSILON } from './test-utils.js';
 
 test('assertAlmostEqual - Happy Path Tests', async (t) => {
   await t.test('should pass when values are exactly equal', () => {
@@ -361,5 +360,3 @@ test('assertAlmostEqual - Real-World Use Cases', async (t) => {
     });
   });
 });
-
-console.log('All assertAlmostEqual tests completed');

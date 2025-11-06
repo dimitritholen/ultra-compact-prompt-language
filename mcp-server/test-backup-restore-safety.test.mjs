@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * Verification test for guaranteed backup/restore in test-real-compressions.js
  *
@@ -10,11 +8,11 @@
  * 4. Missing backup files are handled gracefully
  */
 
-const { test, describe, beforeEach, afterEach } = require('node:test');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
-const assert = require('node:assert');
+import { test, describe, beforeEach, afterEach } from 'node:test';
+import { promises as fs } from 'fs';
+import path from 'path';
+import os from 'os';
+import assert from 'node:assert';
 
 const STATS_DIR = path.join(os.homedir(), '.ucpl', 'compress');
 const STATS_FILE = path.join(STATS_DIR, 'compression-stats.json');
@@ -220,11 +218,3 @@ describe('Backup/Restore Safety Tests', () => {
     assert.strictEqual(restored2, marker2, 'Second cycle should restore correctly');
   });
 });
-
-console.log('✅ All backup/restore safety tests passed!');
-console.log('\nVerified guarantees:');
-console.log('  ✓ beforeEach creates backups successfully');
-console.log('  ✓ afterEach restores even on test failure');
-console.log('  ✓ Missing files handled gracefully');
-console.log('  ✓ try/finally pattern protects data');
-console.log('  ✓ Multiple cycles work correctly');
