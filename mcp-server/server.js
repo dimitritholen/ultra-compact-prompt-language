@@ -484,8 +484,9 @@ function parseFlexibleDate(value) {
  * @param {string} compressedContent - Compressed output
  * @param {string} level - Compression level used
  * @param {string} format - Format used
+ * @param {Function} [costCalculator=calculateCostSavings] - Cost calculation function (for testing)
  */
-async function recordCompression(path, originalContent, compressedContent, level, format) {
+async function recordCompression(path, originalContent, compressedContent, level, format, costCalculator = calculateCostSavings) {
   try {
     const stats = await loadStats();
 
@@ -498,7 +499,7 @@ async function recordCompression(path, originalContent, compressedContent, level
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
-      costInfo = await calculateCostSavings(tokensSaved);
+      costInfo = await costCalculator(tokensSaved);
     } catch (error) {
       console.error(`[WARN] Cost calculation failed: ${error.message}`);
       // Continue without cost info - it's optional
@@ -580,8 +581,9 @@ async function recordCompressionWithFallback(filePath, compressedContent, level,
  * @param {string} compressedContent - Compressed output
  * @param {string} level - Compression level used
  * @param {string} format - Format used
+ * @param {Function} [costCalculator=calculateCostSavings] - Cost calculation function (for testing)
  */
-async function recordCompressionWithEstimation(filePath, compressedContent, level, format) {
+async function recordCompressionWithEstimation(filePath, compressedContent, level, format, costCalculator = calculateCostSavings) {
   try {
     const stats = await loadStats();
     const compressedTokens = countTokens(compressedContent);
@@ -603,7 +605,7 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
-      costInfo = await calculateCostSavings(tokensSaved);
+      costInfo = await costCalculator(tokensSaved);
     } catch (error) {
       console.error(`[WARN] Cost calculation failed: ${error.message}`);
       // Continue without cost info - it's optional
