@@ -20,6 +20,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
 const assert = require('assert');
+const { assertAlmostEqual } = require('./test-utils');
 
 // Test utilities
 const TEST_DIR = path.join(os.tmpdir(), `ucpl-cost-test-${Date.now()}`);
@@ -126,9 +127,10 @@ async function testTotalCostSavings() {
   }
 
     const expectedTotal = 0.0021 + 0.0045 + 0.01;
-    assert.strictEqual(
-      Math.round(totalCostSavingsUSD * 10000) / 10000,
-      Math.round(expectedTotal * 10000) / 10000,
+    assertAlmostEqual(
+      totalCostSavingsUSD,
+      expectedTotal,
+      0.0001,
       `Expected total cost savings to be ${expectedTotal.toFixed(4)}, got ${totalCostSavingsUSD.toFixed(4)}`
     );
 
@@ -210,9 +212,10 @@ async function testAverageCostSavings() {
     : 0;
 
     const expectedAverage = (0.0021 + 0.0045 + 0.01) / 3;
-    assert.strictEqual(
-      Math.round(averageCostSavingsPerCompression * 10000) / 10000,
-      Math.round(expectedAverage * 10000) / 10000,
+    assertAlmostEqual(
+      averageCostSavingsPerCompression,
+      expectedAverage,
+      0.0001,
       `Expected average cost savings to be ${expectedAverage.toFixed(4)}, got ${averageCostSavingsPerCompression.toFixed(4)}`
     );
 
@@ -309,18 +312,20 @@ async function testModelBreakdown() {
   assert.strictEqual(modelBreakdown[0].modelName, 'gpt-4o', 'Expected gpt-4o to be first (highest cost savings)');
   assert.strictEqual(modelBreakdown[0].compressions, 1, 'Expected 1 compression for gpt-4o');
   assert.strictEqual(modelBreakdown[0].tokensSaved, 4000, 'Expected 4000 tokens saved for gpt-4o');
-  assert.strictEqual(
-    Math.round(modelBreakdown[0].costSavingsUSD * 10000) / 10000,
+  assertAlmostEqual(
+    modelBreakdown[0].costSavingsUSD,
     0.01,
+    0.0001,
     'Expected $0.01 cost savings for gpt-4o'
   );
 
   assert.strictEqual(modelBreakdown[1].modelName, 'claude-sonnet-4', 'Expected claude-sonnet-4 to be second');
   assert.strictEqual(modelBreakdown[1].compressions, 2, 'Expected 2 compressions for claude-sonnet-4');
   assert.strictEqual(modelBreakdown[1].tokensSaved, 2200, 'Expected 2200 tokens saved for claude-sonnet-4');
-  assert.strictEqual(
-    Math.round(modelBreakdown[1].costSavingsUSD * 10000) / 10000,
+  assertAlmostEqual(
+    modelBreakdown[1].costSavingsUSD,
     0.0066,
+    0.0001,
     'Expected $0.0066 cost savings for claude-sonnet-4'
   );
 
@@ -387,9 +392,10 @@ async function testBackwardCompatibility() {
   }
 
   assert.strictEqual(recordsWithCost, 1, 'Expected only 1 record with cost field');
-  assert.strictEqual(
-    Math.round(totalCostSavingsUSD * 10000) / 10000,
+  assertAlmostEqual(
+    totalCostSavingsUSD,
     0.0045,
+    0.0001,
     'Expected cost only from new record'
   );
 
