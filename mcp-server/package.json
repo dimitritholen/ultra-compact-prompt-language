@@ -14,7 +14,10 @@
   ],
   "scripts": {
     "start": "node server.js",
-    "test": "node test-integration.js",
+    "test": "node --test --test-reporter=spec",
+    "test:watch": "node --test --watch --test-reporter=spec",
+    "test:coverage": "node --test --experimental-test-coverage --test-reporter=spec",
+    "test:legacy": "node test-integration.js",
     "lint": "eslint .",
     "postinstall": "node -e \"try { require('fs').chmodSync(require('path').join(__dirname, 'scripts', 'ucpl-compress'), '755'); } catch(e) { console.warn('Could not set permissions on ucpl-compress:', e.message); }\""
   },
