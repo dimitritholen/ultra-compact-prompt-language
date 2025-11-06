@@ -17,7 +17,11 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import { callMCPTool } from './test-utils/mcp-client.js';
+
+const require = createRequire(import.meta.url);
+const { validateCompressionRecordSafe } = require('./test-utils/validators.js');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -121,79 +125,6 @@ describe('Real Compression Statistics Recording', () => {
     }
   }
 
-  /**
-   * Validate compression record structure and values
-   * @param {Object} record - Compression record to validate
-   * @param {string} expectedPath - Expected file path
-   * @param {string} expectedLevel - Expected compression level
-   * @returns {Object} Validation result with success flag and errors
-   */
-  function validateCompressionRecord(record, expectedPath, expectedLevel) {
-    const errors = [];
-
-    // Required fields validation
-    const requiredFields = ['timestamp', 'path', 'originalTokens', 'compressedTokens',
-                            'tokensSaved', 'compressionRatio', 'savingsPercentage', 'level', 'format'];
-
-    for (const field of requiredFields) {
-      if (!(field in record)) {
-        errors.push(`Missing required field: ${field}`);
-      }
-    }
-
-    // Path validation (cross-platform)
-    if (record.path) {
-      const normalizedRecordPath = path.normalize(record.path);
-      const normalizedExpectedPath = path.normalize(expectedPath);
-      const expectedBasename = path.basename(normalizedExpectedPath);
-
-      if (!normalizedRecordPath.includes(expectedBasename)) {
-        errors.push(`Path mismatch: expected basename "${expectedBasename}" in path "${normalizedRecordPath}"`);
-      }
-    }
-
-    // Level validation
-    if (record.level !== expectedLevel) {
-      errors.push(`Level mismatch: expected ${expectedLevel}, got ${record.level}`);
-    }
-
-    // Token counts validation
-    if (record.originalTokens <= 0) {
-      errors.push(`Invalid originalTokens: ${record.originalTokens}`);
-    }
-    if (record.compressedTokens <= 0) {
-      errors.push(`Invalid compressedTokens: ${record.compressedTokens}`);
-    }
-    if (record.tokensSaved !== record.originalTokens - record.compressedTokens) {
-      errors.push(`Token math error: saved ${record.tokensSaved}, expected ${record.originalTokens - record.compressedTokens}`);
-    }
-
-    // Compression ratio validation
-    const expectedRatio = record.compressedTokens / record.originalTokens;
-    const ratioDiff = Math.abs(record.compressionRatio - expectedRatio);
-    if (ratioDiff > 0.01) {
-      errors.push(`Compression ratio error: ${record.compressionRatio}, expected ~${expectedRatio.toFixed(3)}`);
-    }
-
-    // Timestamp validation (CI-aware timeout)
-    try {
-      const timestamp = new Date(record.timestamp);
-      const now = new Date();
-      const ageSeconds = (now - timestamp) / 1000;
-      // 5 min on CI, 1 min locally
-      const MAX_TIMESTAMP_AGE_SECONDS = process.env.CI ? 300 : 60;
-      if (ageSeconds < 0 || ageSeconds > MAX_TIMESTAMP_AGE_SECONDS) {
-        errors.push(`Timestamp out of range: ${record.timestamp} (age: ${ageSeconds}s, max: ${MAX_TIMESTAMP_AGE_SECONDS}s)`);
-      }
-    } catch (e) {
-      errors.push(`Invalid timestamp format: ${record.timestamp}`);
-    }
-
-    return {
-      success: errors.length === 0,
-      errors
-    };
-  }
 
   /**
    * Test setup and teardown
@@ -231,7 +162,7 @@ describe('Real Compression Statistics Recording', () => {
 
       // Validate the new record
       const newRecord = finalStats.recent[finalStats.recent.length - 1];
-      const validation = validateCompressionRecord(newRecord, testFile, 'minimal');
+      const validation = validateCompressionRecordSafe(newRecord, testFile, 'minimal');
 
       assert.ok(validation.success, `Record validation should pass. Errors: ${validation.errors.join(', ')}`);
 
@@ -266,7 +197,7 @@ describe('Real Compression Statistics Recording', () => {
 
       // Validate the new record
       const newRecord = finalStats.recent[finalStats.recent.length - 1];
-      const validation = validateCompressionRecord(newRecord, testDir, 'minimal');
+      const validation = validateCompressionRecordSafe(newRecord, testDir, 'minimal');
 
       assert.ok(validation.success, `Record validation should pass. Errors: ${validation.errors.join(', ')}`);
 
@@ -311,7 +242,7 @@ describe('Real Compression Statistics Recording', () => {
       for (let i = 0; i < newRecords.length; i++) {
         const record = newRecords[i];
         const testFile = testFiles[i];
-        const validation = validateCompressionRecord(record, testFile, 'full');
+        const validation = validateCompressionRecordSafe(record, testFile, 'full');
 
         assert.ok(validation.success, `Record ${i + 1} should be valid. Errors: ${validation.errors.join(', ')}`);
       }
