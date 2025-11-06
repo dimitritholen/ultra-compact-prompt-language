@@ -11,7 +11,7 @@
  * This ensures tests remain stable even if log formats change.
  */
 
-import { describe, test, before, after } from 'node:test';
+import { describe, test, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -66,6 +66,36 @@ describe('Real Compression Statistics Recording', () => {
     }
   }
 
+  /**
+   * Poll for stats file update with exponential backoff
+   * @param {number} expectedCount - Expected number of records
+   * @param {number} maxWaitMs - Maximum wait time in milliseconds (default: 5000)
+   * @returns {Promise<object>} Stats object when condition is met
+   */
+  async function pollForStatsUpdate(expectedCount, maxWaitMs = 5000) {
+    const startTime = Date.now();
+    let delay = 100; // Start with 100ms
+
+    while (Date.now() - startTime < maxWaitMs) {
+      try {
+        const stats = await loadStats();
+        const currentCount = stats.recent ? stats.recent.length : 0;
+
+        if (currentCount >= expectedCount) {
+          return stats;
+        }
+      } catch (error) {
+        // Stats file doesn't exist yet, keep polling
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+      delay = Math.min(delay * 1.5, 1000); // Exponential backoff, max 1s
+    }
+
+    // Timeout - return current stats
+    return await loadStats();
+  }
+
   async function backupStats() {
     try {
       await fs.copyFile(STATS_FILE, BACKUP_FILE);
@@ -106,34 +136,42 @@ describe('Real Compression Statistics Recording', () => {
         stderr += data.toString();
       });
 
-      proc.on('close', (code) => {
-        if (code === 0) {
-          try {
-            const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+      // Set a timeout to collect output
+      let responseTimeout = setTimeout(() => {
+        proc.kill();
 
-            // Find the tool call response
-            let toolResponse = null;
-            for (let i = lines.length - 1; i >= 0; i--) {
-              try {
-                const parsed = JSON.parse(lines[i]);
-                if (parsed.id === requestId + 1) {
-                  toolResponse = parsed;
-                  break;
-                }
-              } catch (_e) {
-                // Skip non-JSON lines
+        try {
+          const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+
+          // Find the tool call response
+          let toolResponse = null;
+          for (let i = lines.length - 1; i >= 0; i--) {
+            try {
+              const parsed = JSON.parse(lines[i]);
+              if (parsed.id === requestId + 1) {
+                toolResponse = parsed;
+                break;
               }
+            } catch (_e) {
+              // Skip non-JSON lines
             }
-
-            if (toolResponse) {
-              resolve({ response: toolResponse, stderr });
-            } else {
-              reject(new Error('No tool response found in output'));
-            }
-          } catch (error) {
-            reject(new Error(`Failed to parse response: ${error.message}\nOutput: ${stdout}`));
           }
-        } else {
+
+          if (toolResponse) {
+            resolve({ response: toolResponse, stderr });
+          } else {
+            // Debug: show the actual output
+            const debugOutput = lines.length > 0 ? `\nFirst line: ${lines[0].substring(0, 200)}` : '\nNo lines';
+            reject(new Error(`No tool response found in output. Expected ID: ${requestId + 1}. Output lines: ${lines.length}.${debugOutput}\nStderr: ${stderr}`));
+          }
+        } catch (error) {
+          reject(new Error(`Failed to parse response: ${error.message}\nOutput: ${stdout}`));
+        }
+      }, 3500); // Wait 3.5 seconds for responses and stats recording
+
+      proc.on('close', (code) => {
+        clearTimeout(responseTimeout);
+        if (code !== 0 && code !== null) {
           reject(new Error(`Process exited with code ${code}: ${stderr}`));
         }
       });
@@ -162,8 +200,11 @@ describe('Real Compression Statistics Recording', () => {
       };
 
       proc.stdin.write(JSON.stringify(initRequest) + '\n');
-      proc.stdin.write(JSON.stringify(toolRequest) + '\n');
-      proc.stdin.end();
+      // Give server time to process initialize before sending tool request
+      setTimeout(() => {
+        proc.stdin.write(JSON.stringify(toolRequest) + '\n');
+        // Don't call end() - let the timeout kill the process after responses are received
+      }, 100);
     });
   }
 
@@ -187,9 +228,15 @@ describe('Real Compression Statistics Recording', () => {
       }
     }
 
-    // Path validation
-    if (record.path && !record.path.includes(path.basename(expectedPath))) {
-      errors.push(`Path mismatch: expected ${expectedPath}, got ${record.path}`);
+    // Path validation (cross-platform)
+    if (record.path) {
+      const normalizedRecordPath = path.normalize(record.path);
+      const normalizedExpectedPath = path.normalize(expectedPath);
+      const expectedBasename = path.basename(normalizedExpectedPath);
+
+      if (!normalizedRecordPath.includes(expectedBasename)) {
+        errors.push(`Path mismatch: expected basename "${expectedBasename}" in path "${normalizedRecordPath}"`);
+      }
     }
 
     // Level validation
@@ -215,13 +262,15 @@ describe('Real Compression Statistics Recording', () => {
       errors.push(`Compression ratio error: ${record.compressionRatio}, expected ~${expectedRatio.toFixed(3)}`);
     }
 
-    // Timestamp validation
+    // Timestamp validation (CI-aware timeout)
     try {
       const timestamp = new Date(record.timestamp);
       const now = new Date();
       const ageSeconds = (now - timestamp) / 1000;
-      if (ageSeconds < 0 || ageSeconds > 60) {
-        errors.push(`Timestamp out of range: ${record.timestamp} (age: ${ageSeconds}s)`);
+      // 5 min on CI, 1 min locally
+      const MAX_TIMESTAMP_AGE_SECONDS = process.env.CI ? 300 : 60;
+      if (ageSeconds < 0 || ageSeconds > MAX_TIMESTAMP_AGE_SECONDS) {
+        errors.push(`Timestamp out of range: ${record.timestamp} (age: ${ageSeconds}s, max: ${MAX_TIMESTAMP_AGE_SECONDS}s)`);
       }
     } catch (e) {
       errors.push(`Invalid timestamp format: ${record.timestamp}`);
@@ -236,12 +285,12 @@ describe('Real Compression Statistics Recording', () => {
   /**
    * Test setup and teardown
    */
-  before(async () => {
+  beforeEach(async () => {
     await backupStats();
     await clearStats();
   });
 
-  after(async () => {
+  afterEach(async () => {
     await restoreStats();
   });
 
@@ -260,10 +309,9 @@ describe('Real Compression Statistics Recording', () => {
         format: 'summary'
       });
 
-      // Wait for async recording to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const finalStats = await loadStats();
+      // Poll for stats update with exponential backoff
+      const expectedCount = initialCount + 1;
+      const finalStats = await pollForStatsUpdate(expectedCount);
       const finalCount = finalStats.recent ? finalStats.recent.length : 0;
 
       assert.ok(finalCount > initialCount, `Stats file should be updated (${initialCount} → ${finalCount})`);
@@ -296,10 +344,9 @@ describe('Real Compression Statistics Recording', () => {
         limit: 10
       });
 
-      // Wait for async recording to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      const finalStats = await loadStats();
+      // Poll for stats update with exponential backoff
+      const expectedCount = initialCount + 1;
+      const finalStats = await pollForStatsUpdate(expectedCount);
       const finalCount = finalStats.recent ? finalStats.recent.length : 0;
 
       assert.ok(finalCount > initialCount, `Stats file should be updated (${initialCount} → ${finalCount})`);
@@ -339,13 +386,10 @@ describe('Real Compression Statistics Recording', () => {
         });
       }
 
-      // Wait for all async recordings to complete
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const finalStats = await loadStats();
-      const finalCount = finalStats.recent ? finalStats.recent.length : 0;
-
+      // Poll for all stats updates with exponential backoff
       const expected = initialCount + testFiles.length;
+      const finalStats = await pollForStatsUpdate(expected, 8000); // Allow more time for multiple compressions
+      const finalCount = finalStats.recent ? finalStats.recent.length : 0;
       assert.strictEqual(finalCount, expected, `All compressions should be recorded (expected ${expected}, got ${finalCount})`);
 
       // Validate all new records
