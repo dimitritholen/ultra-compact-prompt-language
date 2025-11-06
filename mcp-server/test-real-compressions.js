@@ -30,9 +30,35 @@ const SERVER_PATH = path.join(__dirname, 'server.js');
 async function loadStats() {
   try {
     const data = await fs.readFile(STATS_FILE, 'utf-8');
-    return JSON.parse(data);
-  } catch (_error) {
-    return { compressions: [], summary: { totalCompressions: 0 } };
+    const stats = JSON.parse(data);
+
+    // Ensure stats has the expected structure (recent/archived/monthly/summary)
+    if (!stats.recent) stats.recent = [];
+    if (!stats.archived) stats.archived = [];
+    if (!stats.monthly) stats.monthly = [];
+    if (!stats.summary) {
+      stats.summary = {
+        totalCompressions: 0,
+        totalOriginalTokens: 0,
+        totalCompressedTokens: 0,
+        totalTokensSaved: 0
+      };
+    }
+
+    return stats;
+  } catch (error) {
+    // Return empty stats structure if file doesn't exist or is invalid
+    return {
+      recent: [],
+      archived: [],
+      monthly: [],
+      summary: {
+        totalCompressions: 0,
+        totalOriginalTokens: 0,
+        totalCompressedTokens: 0,
+        totalTokensSaved: 0
+      }
+    };
   }
 }
 
@@ -153,6 +179,72 @@ function callMCPTool(toolName, args) {
 }
 
 /**
+ * Validate compression record structure and values
+ * @param {Object} record - Compression record to validate
+ * @param {string} expectedPath - Expected file path
+ * @param {string} expectedLevel - Expected compression level
+ * @returns {Object} Validation result with success flag and errors
+ */
+function validateCompressionRecord(record, expectedPath, expectedLevel) {
+  const errors = [];
+
+  // Required fields validation
+  const requiredFields = ['timestamp', 'path', 'originalTokens', 'compressedTokens',
+                          'tokensSaved', 'compressionRatio', 'savingsPercentage', 'level', 'format'];
+
+  for (const field of requiredFields) {
+    if (!(field in record)) {
+      errors.push(`Missing required field: ${field}`);
+    }
+  }
+
+  // Path validation
+  if (record.path && !record.path.includes(path.basename(expectedPath))) {
+    errors.push(`Path mismatch: expected ${expectedPath}, got ${record.path}`);
+  }
+
+  // Level validation
+  if (record.level !== expectedLevel) {
+    errors.push(`Level mismatch: expected ${expectedLevel}, got ${record.level}`);
+  }
+
+  // Token counts validation
+  if (record.originalTokens <= 0) {
+    errors.push(`Invalid originalTokens: ${record.originalTokens}`);
+  }
+  if (record.compressedTokens <= 0) {
+    errors.push(`Invalid compressedTokens: ${record.compressedTokens}`);
+  }
+  if (record.tokensSaved !== record.originalTokens - record.compressedTokens) {
+    errors.push(`Token math error: saved ${record.tokensSaved}, expected ${record.originalTokens - record.compressedTokens}`);
+  }
+
+  // Compression ratio validation
+  const expectedRatio = record.compressedTokens / record.originalTokens;
+  const ratioDiff = Math.abs(record.compressionRatio - expectedRatio);
+  if (ratioDiff > 0.01) {
+    errors.push(`Compression ratio error: ${record.compressionRatio}, expected ~${expectedRatio.toFixed(3)}`);
+  }
+
+  // Timestamp validation
+  try {
+    const timestamp = new Date(record.timestamp);
+    const now = new Date();
+    const ageSeconds = (now - timestamp) / 1000;
+    if (ageSeconds < 0 || ageSeconds > 60) {
+      errors.push(`Timestamp out of range: ${record.timestamp} (age: ${ageSeconds}s)`);
+    }
+  } catch (e) {
+    errors.push(`Invalid timestamp format: ${record.timestamp}`);
+  }
+
+  return {
+    success: errors.length === 0,
+    errors
+  };
+}
+
+/**
  * Test compression recording with single file
  * @returns {Promise<boolean>} Test result
  */
@@ -162,35 +254,44 @@ async function testSingleFileCompression() {
   try {
     const testFile = path.join(__dirname, 'server.js');
     const initialStats = await loadStats();
-    const initialCount = initialStats.compressions.length;
+    const initialCount = initialStats.recent ? initialStats.recent.length : 0;
 
-    const { stderr } = await callMCPTool('compress_code_context', {
+    await callMCPTool('compress_code_context', {
       path: testFile,
       level: 'minimal',
       format: 'summary'
     });
 
-    // Check for recording message in stderr
-    if (stderr.includes('[INFO] Recorded compression')) {
-      console.log('  ✅ Compression was recorded (log message found)');
-    } else {
-      console.log('  ⚠️  No recording log message in stderr');
-      console.log('     stderr:', stderr);
-    }
-
-    // Wait a bit for async recording to complete
+    // Wait for async recording to complete
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const finalStats = await loadStats();
-    const finalCount = finalStats.compressions.length;
+    const finalCount = finalStats.recent ? finalStats.recent.length : 0;
 
-    if (finalCount > initialCount) {
-      console.log(`  ✅ Stats file updated (${initialCount} → ${finalCount})`);
-      return true;
-    } else {
+    if (finalCount <= initialCount) {
       console.log(`  ❌ Stats file not updated (${initialCount} → ${finalCount})`);
       return false;
     }
+
+    console.log(`  ✅ Stats file updated (${initialCount} → ${finalCount})`);
+
+    // Validate the new record
+    const newRecord = finalStats.recent[finalStats.recent.length - 1];
+    const validation = validateCompressionRecord(newRecord, testFile, 'minimal');
+
+    if (!validation.success) {
+      console.log('  ❌ Record validation failed:');
+      validation.errors.forEach(err => console.log(`     - ${err}`));
+      return false;
+    }
+
+    console.log('  ✅ Record validation passed:');
+    console.log(`     - Tokens: ${newRecord.originalTokens} → ${newRecord.compressedTokens} (saved: ${newRecord.tokensSaved})`);
+    console.log(`     - Ratio: ${newRecord.compressionRatio} (${newRecord.savingsPercentage}% savings)`);
+    console.log(`     - Path: ${path.basename(newRecord.path)}`);
+    console.log(`     - Timestamp: ${newRecord.timestamp}`);
+
+    return true;
   } catch (error) {
     console.log(`  ❌ Test failed: ${error.message}`);
     return false;
@@ -198,7 +299,7 @@ async function testSingleFileCompression() {
 }
 
 /**
- * Test compression recording with directory (likely to fail readOriginalContent)
+ * Test compression recording with directory (tests fallback estimation)
  * @returns {Promise<boolean>} Test result
  */
 async function testDirectoryCompression() {
@@ -207,45 +308,50 @@ async function testDirectoryCompression() {
   try {
     const testDir = path.join(__dirname, '../scripts');
     const initialStats = await loadStats();
-    const initialCount = initialStats.compressions.length;
+    const initialCount = initialStats.recent ? initialStats.recent.length : 0;
 
-    const { stderr } = await callMCPTool('compress_code_context', {
+    await callMCPTool('compress_code_context', {
       path: testDir,
       level: 'minimal',
       format: 'summary',
       limit: 10
     });
 
-    // Check for recording message in stderr (might be estimated)
-    const hasRecordingLog = stderr.includes('[INFO] Recorded compression');
-    const isEstimated = stderr.includes('estimated');
-
-    if (hasRecordingLog) {
-      console.log(`  ✅ Compression was recorded (${isEstimated ? 'estimated' : 'accurate'})`);
-    } else {
-      console.log('  ⚠️  No recording log message in stderr');
-    }
-
-    // Wait a bit for async recording to complete
+    // Wait for async recording to complete
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const finalStats = await loadStats();
-    const finalCount = finalStats.compressions.length;
+    const finalCount = finalStats.recent ? finalStats.recent.length : 0;
 
-    if (finalCount > initialCount) {
-      console.log(`  ✅ Stats file updated (${initialCount} → ${finalCount})`);
-
-      // Check if last record has estimated flag for large directories
-      const lastRecord = finalStats.compressions[finalStats.compressions.length - 1];
-      if (lastRecord.estimated) {
-        console.log('  ✅ Record marked as estimated (fallback worked)');
-      }
-
-      return true;
-    } else {
+    if (finalCount <= initialCount) {
       console.log(`  ❌ Stats file not updated (${initialCount} → ${finalCount})`);
       return false;
     }
+
+    console.log(`  ✅ Stats file updated (${initialCount} → ${finalCount})`);
+
+    // Validate the new record
+    const newRecord = finalStats.recent[finalStats.recent.length - 1];
+    const validation = validateCompressionRecord(newRecord, testDir, 'minimal');
+
+    if (!validation.success) {
+      console.log('  ❌ Record validation failed:');
+      validation.errors.forEach(err => console.log(`     - ${err}`));
+      return false;
+    }
+
+    console.log('  ✅ Record validation passed:');
+    console.log(`     - Tokens: ${newRecord.originalTokens} → ${newRecord.compressedTokens} (saved: ${newRecord.tokensSaved})`);
+    console.log(`     - Ratio: ${newRecord.compressionRatio} (${newRecord.savingsPercentage}% savings)`);
+
+    // Check if record is marked as estimated (expected for directories)
+    if (newRecord.estimated) {
+      console.log('  ✅ Record correctly marked as estimated (fallback worked)');
+    } else {
+      console.log('  ⓘ  Record not marked as estimated (accurate stats available)');
+    }
+
+    return true;
   } catch (error) {
     console.log(`  ❌ Test failed: ${error.message}`);
     return false;
@@ -261,7 +367,7 @@ async function testMultipleCompressions() {
 
   try {
     const initialStats = await loadStats();
-    const initialCount = initialStats.compressions.length;
+    const initialCount = initialStats.recent ? initialStats.recent.length : 0;
 
     const testFiles = [
       path.join(__dirname, 'server.js'),
@@ -281,17 +387,45 @@ async function testMultipleCompressions() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     const finalStats = await loadStats();
-    const finalCount = finalStats.compressions.length;
+    const finalCount = finalStats.recent ? finalStats.recent.length : 0;
 
     const expected = initialCount + testFiles.length;
 
-    if (finalCount === expected) {
-      console.log(`  ✅ All compressions recorded (${initialCount} → ${finalCount})`);
-      return true;
-    } else {
+    if (finalCount !== expected) {
       console.log(`  ❌ Not all compressions recorded (expected ${expected}, got ${finalCount})`);
       return false;
     }
+
+    console.log(`  ✅ All compressions recorded (${initialCount} → ${finalCount})`);
+
+    // Validate all new records
+    const newRecords = finalStats.recent.slice(-testFiles.length);
+    let allValid = true;
+
+    for (let i = 0; i < newRecords.length; i++) {
+      const record = newRecords[i];
+      const testFile = testFiles[i];
+      const validation = validateCompressionRecord(record, testFile, 'full');
+
+      if (!validation.success) {
+        console.log(`  ❌ Record ${i + 1} validation failed:`);
+        validation.errors.forEach(err => console.log(`     - ${err}`));
+        allValid = false;
+      } else {
+        console.log(`  ✅ Record ${i + 1} valid: ${path.basename(record.path)} (${record.tokensSaved} tokens saved)`);
+      }
+    }
+
+    // Validate summary was updated correctly
+    const expectedTotalCompressions = initialStats.summary.totalCompressions + testFiles.length;
+    if (finalStats.summary.totalCompressions !== expectedTotalCompressions) {
+      console.log(`  ❌ Summary totalCompressions incorrect: expected ${expectedTotalCompressions}, got ${finalStats.summary.totalCompressions}`);
+      allValid = false;
+    } else {
+      console.log('  ✅ Summary totalCompressions updated correctly');
+    }
+
+    return allValid;
   } catch (error) {
     console.log(`  ❌ Test failed: ${error.message}`);
     return false;
