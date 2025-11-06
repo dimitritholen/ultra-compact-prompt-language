@@ -1,0 +1,9 @@
+assertAlmostEqual(actual, expected, epsilon, message): Compares floating-point numbers within tolerance (default 0.0001)
+  - Validates inputs are numbers
+  - Handles NaN: both NaN = equal, one NaN = throws
+  - Handles Infinity: same infinity = equal, different = throws
+  - Throws AssertionError if |actual - expected| > epsilon
+
+DEFAULT_EPSILON: 0.0001 (4 decimal places precision)
+
+Exports: { assertAlmostEqual, DEFAULT_EPSILON }
