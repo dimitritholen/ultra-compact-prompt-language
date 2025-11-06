@@ -1,11 +1,43 @@
 const { spawn } = require('child_process');
 
 /**
- * Call an MCP tool by spawning the server process
- * @param {string} serverPath - Path to the server.js file
- * @param {string} toolName - Name of the MCP tool to call
- * @param {Object} args - Arguments to pass to the tool
- * @returns {Promise<{response: Object, stderr: string}>} Tool response and stderr output
+ * Call an MCP (Model Context Protocol) tool by spawning the server process
+ *
+ * Spawns the MCP server as a child process, sends an initialize request
+ * followed by a tools/call request, and waits for the response. This function
+ * handles the full MCP protocol handshake including JSON-RPC formatting.
+ *
+ * @param {string} serverPath - Absolute path to the server.js file to spawn
+ * @param {string} toolName - Name of the MCP tool to call (e.g., 'compress_code_context', 'get_compression_stats')
+ * @param {Object} args - Arguments object to pass to the tool (tool-specific parameters)
+ * @returns {Promise<{response: Object, stderr: string}>} Object containing the JSON-RPC response and stderr output
+ * @returns {Object} response - The JSON-RPC response object with id, result, or error
+ * @returns {string} stderr - Standard error output from the server process
+ * @throws {Error} When the server process exits with non-zero code
+ * @throws {Error} When no tool response is found in the output
+ * @throws {Error} When response parsing fails
+ * @example
+ * // Call the compress_code_context tool
+ * const { response, stderr } = await callMCPTool(
+ *   '/path/to/server.js',
+ *   'compress_code_context',
+ *   { path: './src/index.js', level: 'full', format: 'text' }
+ * );
+ *
+ * if (response.error) {
+ *   console.error('Tool error:', response.error);
+ * } else {
+ *   console.log('Tool result:', response.result);
+ * }
+ *
+ * @example
+ * // Call the get_compression_stats tool
+ * const { response } = await callMCPTool(
+ *   '/path/to/server.js',
+ *   'get_compression_stats',
+ *   { period: 'today', includeDetails: true }
+ * );
+ * const stats = response.result?.content[0]?.text;
  */
 function callMCPTool(serverPath, toolName, args) {
   return new Promise((resolve, reject) => {
