@@ -13,7 +13,14 @@ module.exports = [
         require: 'readonly',
         module: 'readonly',
         __dirname: 'readonly',
-        exports: 'readonly'
+        exports: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        setImmediate: 'readonly',
+        clearImmediate: 'readonly',
+        Buffer: 'readonly'
       }
     },
     rules: {
