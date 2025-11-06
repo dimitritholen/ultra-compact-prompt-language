@@ -17,19 +17,26 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {
-  getCachedLLMClient,
-  setCachedLLMClient,
-  getLLMDetectionCallCount,
-  incrementLLMDetectionCallCount,
-  resetCache
-} from './test-cache.mjs';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 
-// Constants
-const MODEL_PRICING = {
-  'claude-sonnet-4': { pricePerMTok: 3.00, name: 'Claude Sonnet 4' },
-  'gpt-4o': { pricePerMTok: 2.50, name: 'GPT-4o' }
-};
+// Import production functions and constants from server.js
+const require = createRequire(import.meta.url);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_PATH = path.join(__dirname, 'server.js');
+
+// Helper to get fresh imports (clears cache)
+function getServerModule() {
+  delete require.cache[SERVER_PATH];
+  return require('./server.js');
+}
+
+const {
+  detectLLMClient,
+  calculateCostSavings,
+  MODEL_PRICING
+} = require('./server.js');
+
 const DEFAULT_MODEL = 'claude-sonnet-4';
 
 describe('Cost Tracking Integration', () => {
@@ -51,52 +58,18 @@ describe('Cost Tracking Integration', () => {
 
   beforeEach(async () => {
     await fs.rm(TEST_STATS_FILE, { force: true }).catch(() => {});
-  });
-
-  afterEach(() => {
-    // Automatically reset cache after each test for isolation
-    resetCache();
+    // Clear environment variables
+    delete process.env.CLAUDE_DESKTOP_VERSION;
+    delete process.env.VSCODE_PID;
+    delete process.env.CLINE_VERSION;
+    delete process.env.ANTHROPIC_MODEL;
+    delete process.env.OPENAI_MODEL;
   });
 
   /**
-   * Helper functions (mocked versions from server.js)
-   * Note: These functions use the test-cache module for caching
+   * Helper functions
+   * Note: Most functions now use production code from server.js
    */
-  function detectLLMClient() {
-    incrementLLMDetectionCallCount();
-
-    const cached = getCachedLLMClient();
-    if (cached) {
-      return cached;
-    }
-
-    // Simulate detection
-    const client = { client: 'test-client', model: DEFAULT_MODEL };
-    setCachedLLMClient(client);
-    return client;
-  }
-
-  function calculateCostSavings(tokensSaved, model = null) {
-    let client = 'unknown';
-    if (!model) {
-      const detection = detectLLMClient();
-      model = detection.model;
-      client = detection.client;
-    }
-
-    const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
-    const pricePerMTok = pricing.pricePerMTok;
-    const costSavingsUSD = Math.round((tokensSaved / 1_000_000) * pricePerMTok * 100) / 100;
-
-    return {
-      costSavingsUSD,
-      model,
-      client,
-      modelName: pricing.name,
-      pricePerMTok
-    };
-  }
-
   function countTokens(text) {
     return Math.ceil(text.length / 4);
   }
@@ -138,7 +111,7 @@ describe('Cost Tracking Integration', () => {
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
-      costInfo = calculateCostSavings(tokensSaved);
+      costInfo = await calculateCostSavings(tokensSaved);
     } catch (error) {
       // Gracefully handle errors
     }
@@ -193,7 +166,7 @@ describe('Cost Tracking Integration', () => {
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
-      costInfo = calculateCostSavings(tokensSaved);
+      costInfo = await calculateCostSavings(tokensSaved);
     } catch (error) {
       // Gracefully handle errors
     }
@@ -274,21 +247,19 @@ describe('Cost Tracking Integration', () => {
   });
 
   describe('LLM detection caching', () => {
-    test('should reuse cached LLM detection across multiple compressions', async () => {
+    test('should handle multiple compressions with consistent cost fields', async () => {
       const originalContent = 'test content ' + 'x'.repeat(1000);
       const compressedContent = 'test';
 
-      await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
-      const firstClient = getCachedLLMClient();
+      const record1 = await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
+      const record2 = await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
+      const record3 = await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
 
-      await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
-      await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
-
-      // Cache should be reused (same object reference)
-      const currentClient = getCachedLLMClient();
-      assert.strictEqual(currentClient, firstClient, 'Should reuse same cached client object');
-      assert.strictEqual(currentClient.client, 'test-client');
-      assert.strictEqual(currentClient.model, 'claude-sonnet-4');
+      // All records should have consistent cost fields (production code caches LLM detection)
+      assert.strictEqual(record1.model, record2.model, 'Models should be consistent');
+      assert.strictEqual(record2.model, record3.model, 'Models should be consistent');
+      assert.strictEqual(record1.client, record2.client, 'Clients should be consistent');
+      assert.strictEqual(record1.pricePerMTok, record2.pricePerMTok, 'Prices should be consistent');
     });
   });
 
@@ -459,17 +430,17 @@ describe('Cost Tracking Integration', () => {
   });
 
   describe('Cost calculation accuracy', () => {
-    test('should calculate costs accurately for different token amounts', () => {
+    test('should calculate costs accurately for different token amounts', async () => {
       // Known values: 1000 tokens saved at $3/MTok = $0.003 → rounds to $0.00
-      const costInfo1 = calculateCostSavings(1000);
+      const costInfo1 = await calculateCostSavings(1000);
       assert.strictEqual(costInfo1.costSavingsUSD, 0.00);
 
       // Test with 100,000 tokens: $3/MTok * 0.1M = $0.30
-      const costInfo2 = calculateCostSavings(100000);
+      const costInfo2 = await calculateCostSavings(100000);
       assert.strictEqual(costInfo2.costSavingsUSD, 0.30);
 
       // Test with 1,000,000 tokens: $3/MTok * 1M = $3.00
-      const costInfo3 = calculateCostSavings(1000000);
+      const costInfo3 = await calculateCostSavings(1000000);
       assert.strictEqual(costInfo3.costSavingsUSD, 3.00);
     });
   });
