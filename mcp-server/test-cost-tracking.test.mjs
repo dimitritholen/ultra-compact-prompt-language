@@ -9,13 +9,21 @@
  * 5. Backward compatibility with existing stats
  *
  * Migrated to node:test from custom test runner
+ * Uses test-cache module for automatic cache reset between tests
  */
 
-import { describe, test, before, after, beforeEach } from 'node:test';
+import { describe, test, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import {
+  getCachedLLMClient,
+  setCachedLLMClient,
+  getLLMDetectionCallCount,
+  incrementLLMDetectionCallCount,
+  resetCache
+} from './test-cache.mjs';
 
 // Constants
 const MODEL_PRICING = {
@@ -28,10 +36,6 @@ describe('Cost Tracking Integration', () => {
   let TEST_STATS_DIR;
   let TEST_STATS_FILE;
   let TEST_FILE;
-
-  // Shared cache variables at describe scope
-  let cachedLLMClient;
-  let llmDetectionCallCount;
 
   before(async () => {
     TEST_STATS_DIR = path.join(os.tmpdir(), `.ucpl-test-cost-${Date.now()}`);
@@ -46,26 +50,30 @@ describe('Cost Tracking Integration', () => {
   });
 
   beforeEach(async () => {
-    // Reset cache and counter before each test
-    cachedLLMClient = null;
-    llmDetectionCallCount = 0;
     await fs.rm(TEST_STATS_FILE, { force: true }).catch(() => {});
+  });
+
+  afterEach(() => {
+    // Automatically reset cache after each test for isolation
+    resetCache();
   });
 
   /**
    * Helper functions (mocked versions from server.js)
-   * Note: These functions use the describe-scope variables for caching
+   * Note: These functions use the test-cache module for caching
    */
   function detectLLMClient() {
-    llmDetectionCallCount++;
+    incrementLLMDetectionCallCount();
 
-    if (cachedLLMClient) {
-      return cachedLLMClient;
+    const cached = getCachedLLMClient();
+    if (cached) {
+      return cached;
     }
 
     // Simulate detection
-    cachedLLMClient = { client: 'test-client', model: DEFAULT_MODEL };
-    return cachedLLMClient;
+    const client = { client: 'test-client', model: DEFAULT_MODEL };
+    setCachedLLMClient(client);
+    return client;
   }
 
   function calculateCostSavings(tokensSaved, model = null) {
@@ -263,15 +271,16 @@ describe('Cost Tracking Integration', () => {
       const compressedContent = 'test';
 
       await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
-      const firstClient = cachedLLMClient;
+      const firstClient = getCachedLLMClient();
 
       await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
       await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
 
       // Cache should be reused (same object reference)
-      assert.strictEqual(cachedLLMClient, firstClient, 'Should reuse same cached client object');
-      assert.strictEqual(cachedLLMClient.client, 'test-client');
-      assert.strictEqual(cachedLLMClient.model, 'claude-sonnet-4');
+      const currentClient = getCachedLLMClient();
+      assert.strictEqual(currentClient, firstClient, 'Should reuse same cached client object');
+      assert.strictEqual(currentClient.client, 'test-client');
+      assert.strictEqual(currentClient.model, 'claude-sonnet-4');
     });
   });
 
