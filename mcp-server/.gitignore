@@ -8,3 +8,7 @@ npm-debug.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Test output files
+*-results.txt
+*-test-results.txt
