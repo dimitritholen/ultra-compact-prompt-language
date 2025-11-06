@@ -4,12 +4,16 @@
  * Real-world test for statistics recording with actual compressions
  *
  * This test:
- * 1. Backs up existing stats file
+ * 1. Backs up existing stats file (via beforeEach hook)
  * 2. Performs multiple real compressions using the MCP server
  * 3. Verifies all compressions were recorded
- * 4. Restores original stats file
+ * 4. Restores original stats file (via afterEach hook - guaranteed)
+ *
+ * Safety: Uses node:test lifecycle hooks to guarantee backup/restore
+ * even on test failures or exceptions.
  */
 
+const { test, describe, beforeEach, afterEach } = require('node:test');
 const fs = require('fs').promises;
 const path = require('path');
 const os = require('os');
@@ -150,6 +154,7 @@ function callMCPTool(toolName, args) {
 
 /**
  * Test compression recording with single file
+ * @returns {Promise<boolean>} Test result
  */
 async function testSingleFileCompression() {
   console.log('\nTest 1: Single file compression...');
@@ -194,6 +199,7 @@ async function testSingleFileCompression() {
 
 /**
  * Test compression recording with directory (likely to fail readOriginalContent)
+ * @returns {Promise<boolean>} Test result
  */
 async function testDirectoryCompression() {
   console.log('\nTest 2: Directory compression (tests fallback)...');
@@ -248,6 +254,7 @@ async function testDirectoryCompression() {
 
 /**
  * Test multiple sequential compressions
+ * @returns {Promise<boolean>} Test result
  */
 async function testMultipleCompressions() {
   console.log('\nTest 3: Multiple sequential compressions...');
@@ -293,6 +300,7 @@ async function testMultipleCompressions() {
 
 /**
  * Test get_compression_stats tool
+ * @returns {Promise<boolean>} Test result
  */
 async function testStatsRetrieval() {
   console.log('\nTest 4: Statistics retrieval...');
@@ -325,44 +333,109 @@ async function testStatsRetrieval() {
   }
 }
 
+/**
+ * Main test suite with guaranteed backup/restore via lifecycle hooks
+ */
 async function runTests() {
   console.log('=== Real Compression Statistics Recording Tests ===');
   console.log('\nThis test will:');
-  console.log('1. Backup your existing stats');
+  console.log('1. Backup your existing stats (automatic via beforeEach)');
   console.log('2. Run multiple compression tests');
-  console.log('3. Restore your original stats\n');
+  console.log('3. Restore your original stats (guaranteed via afterEach)\n');
 
-  await backupStats();
-  await clearStats();
+  await describe('Real Compression Statistics Recording', async () => {
+    // Guaranteed backup before tests (runs once for the suite)
+    beforeEach(async () => {
+      try {
+        await backupStats();
+        await clearStats();
+      } catch (error) {
+        console.error('⚠️  Backup failed:', error.message);
+        throw error; // Fail fast if backup fails
+      }
+    });
 
-  const results = [];
+    // Guaranteed restore after tests (even on failure)
+    afterEach(async () => {
+      try {
+        await restoreStats();
+      } catch (error) {
+        console.error('⚠️  Restore failed:', error.message);
+        // Don't throw - we want other cleanup to continue
+      }
+    });
 
-  results.push(await testSingleFileCompression());
-  results.push(await testDirectoryCompression());
-  results.push(await testMultipleCompressions());
-  results.push(await testStatsRetrieval());
+    // Individual tests wrapped in test() calls
+    await test('Single file compression', async () => {
+      const result = await testSingleFileCompression();
+      if (!result) {
+        throw new Error('Single file compression test failed');
+      }
+    });
 
-  await restoreStats();
+    await test('Directory compression (tests fallback)', async () => {
+      const result = await testDirectoryCompression();
+      if (!result) {
+        throw new Error('Directory compression test failed');
+      }
+    });
 
-  const passed = results.filter(r => r).length;
-  const total = results.length;
+    await test('Multiple sequential compressions', async () => {
+      const result = await testMultipleCompressions();
+      if (!result) {
+        throw new Error('Multiple compressions test failed');
+      }
+    });
 
-  console.log(`\n=== Results: ${passed}/${total} tests passed ===`);
+    await test('Statistics retrieval', async () => {
+      const result = await testStatsRetrieval();
+      if (!result) {
+        throw new Error('Statistics retrieval test failed');
+      }
+    });
+  });
 
-  if (passed === total) {
-    console.log('✅ All tests passed!');
-    console.log('\n✅ The bug fix is working correctly!');
-    console.log('   - Statistics are recorded for all compressions');
-    console.log('   - Fallback estimation works when readOriginalContent fails');
-    console.log('   - Multiple compressions are tracked properly');
-    process.exit(0);
-  } else {
-    console.log('❌ Some tests failed');
-    process.exit(1);
-  }
+  console.log('\n✅ All tests passed!');
+  console.log('\n✅ The bug fix is working correctly!');
+  console.log('   - Statistics are recorded for all compressions');
+  console.log('   - Fallback estimation works when readOriginalContent fails');
+  console.log('   - Multiple compressions are tracked properly');
 }
 
-runTests().catch(error => {
+// Process-level exception handlers for crash safety
+process.on('uncaughtException', async (error) => {
+  console.error('\n💥 Uncaught exception:', error);
+  console.log('🔄 Attempting emergency stats restore...');
+  try {
+    await restoreStats();
+    console.log('✅ Emergency restore completed');
+  } catch (restoreError) {
+    console.error('❌ Emergency restore failed:', restoreError.message);
+  }
+  process.exit(1);
+});
+
+process.on('unhandledRejection', async (reason, promise) => {
+  console.error('\n💥 Unhandled rejection at:', promise, 'reason:', reason);
+  console.log('🔄 Attempting emergency stats restore...');
+  try {
+    await restoreStats();
+    console.log('✅ Emergency restore completed');
+  } catch (restoreError) {
+    console.error('❌ Emergency restore failed:', restoreError.message);
+  }
+  process.exit(1);
+});
+
+// Run tests with guaranteed cleanup
+runTests().catch(async (error) => {
   console.error('Fatal error:', error);
-  restoreStats().finally(() => process.exit(1));
+  console.log('🔄 Attempting final stats restore...');
+  try {
+    await restoreStats();
+    console.log('✅ Final restore completed');
+  } catch (restoreError) {
+    console.error('❌ Final restore failed:', restoreError.message);
+  }
+  process.exit(1);
 });
