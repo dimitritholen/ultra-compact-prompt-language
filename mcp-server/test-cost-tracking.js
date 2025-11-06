@@ -110,7 +110,7 @@ async function saveStats(stats) {
 /**
  * Mock recordCompression with cost tracking
  */
-async function recordCompression(filePath, originalContent, compressedContent, level, format) {
+async function recordCompression(filePath, originalContent, compressedContent, level, format, costCalculator = calculateCostSavings) {
   const stats = await loadStats();
 
   const originalTokens = countTokens(originalContent);
@@ -122,7 +122,7 @@ async function recordCompression(filePath, originalContent, compressedContent, l
   // Calculate cost savings with LLM detection
   let costInfo = null;
   try {
-    costInfo = await calculateCostSavings(tokensSaved);
+    costInfo = await costCalculator(tokensSaved);
   } catch (error) {
     console.error(`[WARN] Cost calculation failed: ${error.message}`);
   }
@@ -161,7 +161,7 @@ async function recordCompression(filePath, originalContent, compressedContent, l
 /**
  * Mock recordCompressionWithEstimation with cost tracking
  */
-async function recordCompressionWithEstimation(filePath, compressedContent, level, format) {
+async function recordCompressionWithEstimation(filePath, compressedContent, level, format, costCalculator = calculateCostSavings) {
   const stats = await loadStats();
   const compressedTokens = countTokens(compressedContent);
 
@@ -180,7 +180,7 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
   // Calculate cost savings with LLM detection
   let costInfo = null;
   try {
-    costInfo = await calculateCostSavings(tokensSaved);
+    costInfo = await costCalculator(tokensSaved);
   } catch (error) {
     console.error(`[WARN] Cost calculation failed: ${error.message}`);
   }
@@ -397,35 +397,29 @@ async function testBackwardCompatibility() {
 async function testGracefulPricingFailure() {
   console.log('\n=== Test 5: Graceful handling of pricing failures ===');
 
-  // Mock calculateCostSavings to throw error
-  const originalCalcCost = calculateCostSavings;
-  global.calculateCostSavings = async () => {
+  // Create test double that throws error
+  const failingCostCalculator = async () => {
     throw new Error('Pricing service unavailable');
   };
 
-  try {
-    const originalContent = 'test content ' + 'x'.repeat(1000);
-    const compressedContent = 'test';
+  const originalContent = 'test content ' + 'x'.repeat(1000);
+  const compressedContent = 'test';
 
-    // Should not throw, should continue without cost info
-    const record = await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text');
+  // Pass test double as parameter - should not throw, should continue without cost info
+  const record = await recordCompression(TEST_FILE, originalContent, compressedContent, 'full', 'text', failingCostCalculator);
 
-    // Cost fields should not exist (graceful degradation)
-    assert(!record.model, 'model field should not exist when pricing fails');
-    assert(!record.costSavingsUSD, 'costSavingsUSD should not exist when pricing fails');
+  // Cost fields should not exist (graceful degradation)
+  assert(!record.model, 'model field should not exist when pricing fails');
+  assert(!record.costSavingsUSD, 'costSavingsUSD should not exist when pricing fails');
 
-    // But basic stats should still be recorded
-    assertExists(record.originalTokens, 'originalTokens');
-    assertExists(record.compressedTokens, 'compressedTokens');
-    assertExists(record.tokensSaved, 'tokensSaved');
+  // But basic stats should still be recorded
+  assertExists(record.originalTokens, 'originalTokens');
+  assertExists(record.compressedTokens, 'compressedTokens');
+  assertExists(record.tokensSaved, 'tokensSaved');
 
-    console.log('✓ Gracefully handles pricing unavailability');
-    console.log('  - Basic stats still recorded: OK');
-    console.log('  - Cost fields omitted: OK');
-  } finally {
-    // Restore original function
-    global.calculateCostSavings = originalCalcCost;
-  }
+  console.log('✓ Gracefully handles pricing unavailability');
+  console.log('  - Basic stats still recorded: OK');
+  console.log('  - Cost fields omitted: OK');
 }
 
 /**
