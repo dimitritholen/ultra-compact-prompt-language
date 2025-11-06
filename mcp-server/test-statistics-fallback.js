@@ -22,9 +22,8 @@ const TEST_STATS_FILE = path.join(TEST_STATS_DIR, 'compression-stats.json');
 // Import functions from server.js by requiring and extracting
 const serverPath = path.join(__dirname, 'server.js');
 
-// Mock the stats file path in server.js
-const originalEnv = process.env;
-process.env.UCPL_STATS_FILE = TEST_STATS_FILE;
+// Note: server.js uses hardcoded path ~/.ucpl/compress/compression-stats.json
+// This test uses its own temporary file for isolation (TEST_STATS_FILE)
 
 /**
  * Count tokens (simplified version matching server.js)
