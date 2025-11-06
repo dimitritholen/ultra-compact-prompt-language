@@ -1,0 +1,93 @@
+{
+  "version": "2.0",
+  "summary": {
+    "totalCompressions": 5,
+    "totalOriginalTokens": 45320,
+    "totalCompressedTokens": 3890,
+    "totalTokensSaved": 41430
+  },
+  "recent": [
+    {
+      "timestamp": "2025-11-06T10:30:00.000Z",
+      "path": "/projects/api/handlers/user.js",
+      "originalTokens": 8540,
+      "compressedTokens": 950,
+      "tokensSaved": 7590,
+      "compressionRatio": 0.111,
+      "savingsPercentage": 88.9,
+      "level": "full",
+      "format": "text",
+      "model": "claude-sonnet-4",
+      "client": "claude-desktop",
+      "pricePerMTok": 3.00,
+      "costSavingsUSD": 0.02277,
+      "currency": "USD"
+    },
+    {
+      "timestamp": "2025-11-06T11:45:00.000Z",
+      "path": "/projects/utils/validation.py",
+      "originalTokens": 12450,
+      "compressedTokens": 1240,
+      "tokensSaved": 11210,
+      "compressionRatio": 0.100,
+      "savingsPercentage": 90.0,
+      "level": "full",
+      "format": "text",
+      "model": "claude-sonnet-4",
+      "client": "claude-code",
+      "pricePerMTok": 3.00,
+      "costSavingsUSD": 0.03363,
+      "currency": "USD"
+    },
+    {
+      "timestamp": "2025-11-06T14:20:00.000Z",
+      "path": "/projects/models/database.ts",
+      "originalTokens": 15680,
+      "compressedTokens": 1100,
+      "tokensSaved": 14580,
+      "compressionRatio": 0.070,
+      "savingsPercentage": 93.0,
+      "level": "full",
+      "format": "text",
+      "model": "gpt-4o",
+      "client": "cursor",
+      "pricePerMTok": 2.50,
+      "costSavingsUSD": 0.03645,
+      "currency": "USD"
+    },
+    {
+      "timestamp": "2025-11-06T16:00:00.000Z",
+      "path": "/projects/services/auth.go",
+      "originalTokens": 6200,
+      "compressedTokens": 450,
+      "tokensSaved": 5750,
+      "compressionRatio": 0.073,
+      "savingsPercentage": 92.7,
+      "level": "signatures",
+      "format": "text",
+      "model": "claude-opus-4",
+      "client": "windsurf",
+      "pricePerMTok": 15.00,
+      "costSavingsUSD": 0.08625,
+      "currency": "USD"
+    },
+    {
+      "timestamp": "2025-11-06T17:30:00.000Z",
+      "path": "/projects/config/settings.json",
+      "originalTokens": 2450,
+      "compressedTokens": 150,
+      "tokensSaved": 2300,
+      "compressionRatio": 0.061,
+      "savingsPercentage": 93.9,
+      "level": "minimal",
+      "format": "summary",
+      "model": "gemini-2.0-flash",
+      "client": "unknown",
+      "pricePerMTok": 0.10,
+      "costSavingsUSD": 0.00023,
+      "currency": "USD"
+    }
+  ],
+  "daily": {},
+  "monthly": {}
+}

@@ -1,0 +1,65 @@
+{
+  "compressions": [
+    {
+      "timestamp": "2025-11-04T12:00:00.000Z",
+      "path": "/projects/recent/file1.js",
+      "originalTokens": 8000,
+      "compressedTokens": 900,
+      "tokensSaved": 7100,
+      "compressionRatio": 0.113,
+      "savingsPercentage": 88.7,
+      "level": "full",
+      "format": "text"
+    },
+    {
+      "timestamp": "2025-10-28T10:00:00.000Z",
+      "path": "/projects/recent/file2.py",
+      "originalTokens": 9500,
+      "compressedTokens": 1100,
+      "tokensSaved": 8400,
+      "compressionRatio": 0.116,
+      "savingsPercentage": 88.4,
+      "level": "full",
+      "format": "text"
+    },
+    {
+      "timestamp": "2025-09-15T14:30:00.000Z",
+      "path": "/projects/older/file3.ts",
+      "originalTokens": 11200,
+      "compressedTokens": 1300,
+      "tokensSaved": 9900,
+      "compressionRatio": 0.116,
+      "savingsPercentage": 88.4,
+      "level": "full",
+      "format": "text"
+    },
+    {
+      "timestamp": "2025-07-20T09:00:00.000Z",
+      "path": "/projects/older/file4.go",
+      "originalTokens": 7800,
+      "compressedTokens": 950,
+      "tokensSaved": 6850,
+      "compressionRatio": 0.122,
+      "savingsPercentage": 87.8,
+      "level": "full",
+      "format": "text"
+    },
+    {
+      "timestamp": "2024-03-10T11:00:00.000Z",
+      "path": "/projects/archive/file5.rs",
+      "originalTokens": 13500,
+      "compressedTokens": 1600,
+      "tokensSaved": 11900,
+      "compressionRatio": 0.119,
+      "savingsPercentage": 88.1,
+      "level": "signatures",
+      "format": "text"
+    }
+  ],
+  "summary": {
+    "totalCompressions": 5,
+    "totalOriginalTokens": 50000,
+    "totalCompressedTokens": 5850,
+    "totalTokensSaved": 44150
+  }
+}

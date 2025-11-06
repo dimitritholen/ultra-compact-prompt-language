@@ -21,6 +21,7 @@ const path = require('path');
 const os = require('os');
 const assert = require('assert');
 const { assertAlmostEqual } = require('./test-utils');
+const { loadFixture, cloneFixture } = require('./test/fixtures/fixture-loader');
 
 // Test utilities
 const TEST_DIR = path.join(os.tmpdir(), `ucpl-cost-test-${Date.now()}`);
@@ -70,71 +71,30 @@ async function testTotalCostSavings() {
   try {
     await setupTest(); // beforeEach hook
 
-    const mockData = {
-    summary: {
-      totalCompressions: 0,
-      totalOriginalTokens: 0,
-      totalCompressedTokens: 0,
-      totalTokensSaved: 0
-    },
-    recent: [
-      {
-        timestamp: new Date().toISOString(),
-        path: '/test/file1.py',
-        originalTokens: 1000,
-        compressedTokens: 300,
-        tokensSaved: 700,
-        model: 'claude-sonnet-4',
-        pricePerMTok: 3.00,
-        costSavingsUSD: 0.0021, // 700 * 3.00 / 1,000,000
-        currency: 'USD'
-      },
-      {
-        timestamp: new Date().toISOString(),
-        path: '/test/file2.py',
-        originalTokens: 2000,
-        compressedTokens: 500,
-        tokensSaved: 1500,
-        model: 'claude-sonnet-4',
-        pricePerMTok: 3.00,
-        costSavingsUSD: 0.0045, // 1500 * 3.00 / 1,000,000
-        currency: 'USD'
-      },
-      {
-        timestamp: new Date().toISOString(),
-        path: '/test/file3.py',
-        originalTokens: 5000,
-        compressedTokens: 1000,
-        tokensSaved: 4000,
-        model: 'gpt-4o',
-        pricePerMTok: 2.50,
-        costSavingsUSD: 0.01, // 4000 * 2.50 / 1,000,000
-        currency: 'USD'
+    // Load production fixture data
+    const fixtureData = await loadFixture('cost-reporting.json');
+    const mockData = cloneFixture(fixtureData);
+
+    await createMockStats(mockData);
+
+    // Simulate aggregation logic
+    let totalCostSavingsUSD = 0;
+    for (const record of mockData.recent) {
+      if (record.costSavingsUSD && typeof record.costSavingsUSD === 'number') {
+        totalCostSavingsUSD += record.costSavingsUSD;
       }
-    ],
-    daily: {},
-    monthly: {}
-  };
-
-  await createMockStats(mockData);
-
-  // Simulate aggregation logic
-  let totalCostSavingsUSD = 0;
-  for (const record of mockData.recent) {
-    if (record.costSavingsUSD && typeof record.costSavingsUSD === 'number') {
-      totalCostSavingsUSD += record.costSavingsUSD;
     }
-  }
 
-    const expectedTotal = 0.0021 + 0.0045 + 0.01;
+    // Expected total from fixture: 0.02277 + 0.03363 + 0.03645 + 0.08625 + 0.00023 = 0.17933
+    const expectedTotal = 0.17933;
     assertAlmostEqual(
       totalCostSavingsUSD,
       expectedTotal,
-      0.0001,
-      `Expected total cost savings to be ${expectedTotal.toFixed(4)}, got ${totalCostSavingsUSD.toFixed(4)}`
+      0.001,
+      `Expected total cost savings to be ${expectedTotal.toFixed(5)}, got ${totalCostSavingsUSD.toFixed(5)}`
     );
 
-    console.log(`✓ Total cost savings aggregated correctly: $${totalCostSavingsUSD.toFixed(4)}`);
+    console.log(`✓ Total cost savings aggregated correctly: $${totalCostSavingsUSD.toFixed(5)}`);
   } finally {
     await teardownTest(); // afterEach hook - runs even on failure
   }
@@ -149,77 +109,36 @@ async function testAverageCostSavings() {
   try {
     await setupTest(); // beforeEach hook
 
-    // Re-create test data (each test is independent)
-    const mockData = {
-      summary: {
-        totalCompressions: 0,
-        totalOriginalTokens: 0,
-        totalCompressedTokens: 0,
-        totalTokensSaved: 0
-      },
-      recent: [
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file1.py',
-          originalTokens: 1000,
-          compressedTokens: 300,
-          tokensSaved: 700,
-          model: 'claude-sonnet-4',
-          pricePerMTok: 3.00,
-          costSavingsUSD: 0.0021,
-          currency: 'USD'
-        },
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file2.py',
-          originalTokens: 2000,
-          compressedTokens: 500,
-          tokensSaved: 1500,
-          model: 'claude-sonnet-4',
-          pricePerMTok: 3.00,
-          costSavingsUSD: 0.0045,
-          currency: 'USD'
-        },
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file3.py',
-          originalTokens: 5000,
-          compressedTokens: 1000,
-          tokensSaved: 4000,
-          model: 'gpt-4o',
-          pricePerMTok: 2.50,
-          costSavingsUSD: 0.01,
-          currency: 'USD'
-        }
-      ],
-      daily: {},
-      monthly: {}
-    };
+    // Load production fixture data
+    const fixtureData = await loadFixture('cost-reporting.json');
+    const mockData = cloneFixture(fixtureData);
 
     await createMockStats(mockData);
     const stats = await loadStats();
-  const totalCompressions = stats.recent.length;
-  let totalCostSavingsUSD = 0;
 
-  for (const record of stats.recent) {
-    if (record.costSavingsUSD) {
-      totalCostSavingsUSD += record.costSavingsUSD;
+    const totalCompressions = stats.recent.length;
+    let totalCostSavingsUSD = 0;
+
+    for (const record of stats.recent) {
+      if (record.costSavingsUSD) {
+        totalCostSavingsUSD += record.costSavingsUSD;
+      }
     }
-  }
 
-  const averageCostSavingsPerCompression = totalCompressions > 0
-    ? totalCostSavingsUSD / totalCompressions
-    : 0;
+    const averageCostSavingsPerCompression = totalCompressions > 0
+      ? totalCostSavingsUSD / totalCompressions
+      : 0;
 
-    const expectedAverage = (0.0021 + 0.0045 + 0.01) / 3;
+    // Expected average from fixture: 0.17933 / 5 = 0.035866
+    const expectedAverage = 0.035866;
     assertAlmostEqual(
       averageCostSavingsPerCompression,
       expectedAverage,
-      0.0001,
-      `Expected average cost savings to be ${expectedAverage.toFixed(4)}, got ${averageCostSavingsPerCompression.toFixed(4)}`
+      0.001,
+      `Expected average cost savings to be ${expectedAverage.toFixed(6)}, got ${averageCostSavingsPerCompression.toFixed(6)}`
     );
 
-    console.log(`✓ Average cost savings calculated correctly: $${averageCostSavingsPerCompression.toFixed(4)}`);
+    console.log(`✓ Average cost savings calculated correctly: $${averageCostSavingsPerCompression.toFixed(6)}`);
   } finally {
     await teardownTest(); // afterEach hook - runs even on failure
   }
@@ -234,104 +153,63 @@ async function testModelBreakdown() {
   try {
     await setupTest(); // beforeEach hook
 
-    // Re-create test data (each test is independent)
-    const mockData = {
-      summary: {
-        totalCompressions: 0,
-        totalOriginalTokens: 0,
-        totalCompressedTokens: 0,
-        totalTokensSaved: 0
-      },
-      recent: [
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file1.py',
-          originalTokens: 1000,
-          compressedTokens: 300,
-          tokensSaved: 700,
-          model: 'claude-sonnet-4',
-          pricePerMTok: 3.00,
-          costSavingsUSD: 0.0021,
-          currency: 'USD'
-        },
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file2.py',
-          originalTokens: 2000,
-          compressedTokens: 500,
-          tokensSaved: 1500,
-          model: 'claude-sonnet-4',
-          pricePerMTok: 3.00,
-          costSavingsUSD: 0.0045,
-          currency: 'USD'
-        },
-        {
-          timestamp: new Date().toISOString(),
-          path: '/test/file3.py',
-          originalTokens: 5000,
-          compressedTokens: 1000,
-          tokensSaved: 4000,
-          model: 'gpt-4o',
-          pricePerMTok: 2.50,
-          costSavingsUSD: 0.01,
-          currency: 'USD'
-        }
-      ],
-      daily: {},
-      monthly: {}
-    };
+    // Load production fixture data
+    const fixtureData = await loadFixture('cost-reporting.json');
+    const mockData = cloneFixture(fixtureData);
 
     await createMockStats(mockData);
     const stats = await loadStats();
-  const modelBreakdownMap = {};
 
-  // Group by model
-  for (const record of stats.recent) {
-    if (record.costSavingsUSD && typeof record.costSavingsUSD === 'number') {
-      const modelKey = record.model || 'unknown';
-      if (!modelBreakdownMap[modelKey]) {
-        modelBreakdownMap[modelKey] = {
-          modelName: modelKey,
-          compressions: 0,
-          tokensSaved: 0,
-          costSavingsUSD: 0
-        };
+    const modelBreakdownMap = {};
+
+    // Group by model
+    for (const record of stats.recent) {
+      if (record.costSavingsUSD && typeof record.costSavingsUSD === 'number') {
+        const modelKey = record.model || 'unknown';
+        if (!modelBreakdownMap[modelKey]) {
+          modelBreakdownMap[modelKey] = {
+            modelName: modelKey,
+            compressions: 0,
+            tokensSaved: 0,
+            costSavingsUSD: 0
+          };
+        }
+        modelBreakdownMap[modelKey].compressions++;
+        modelBreakdownMap[modelKey].tokensSaved += record.tokensSaved;
+        modelBreakdownMap[modelKey].costSavingsUSD += record.costSavingsUSD;
       }
-      modelBreakdownMap[modelKey].compressions++;
-      modelBreakdownMap[modelKey].tokensSaved += record.tokensSaved;
-      modelBreakdownMap[modelKey].costSavingsUSD += record.costSavingsUSD;
     }
-  }
 
-  // Convert to array and sort by cost savings (descending)
-  const modelBreakdown = Object.values(modelBreakdownMap)
-    .sort((a, b) => b.costSavingsUSD - a.costSavingsUSD);
+    // Convert to array and sort by cost savings (descending)
+    const modelBreakdown = Object.values(modelBreakdownMap)
+      .sort((a, b) => b.costSavingsUSD - a.costSavingsUSD);
 
-  // Verify breakdown
-  assert.strictEqual(modelBreakdown.length, 2, 'Expected 2 models in breakdown');
-  assert.strictEqual(modelBreakdown[0].modelName, 'gpt-4o', 'Expected gpt-4o to be first (highest cost savings)');
-  assert.strictEqual(modelBreakdown[0].compressions, 1, 'Expected 1 compression for gpt-4o');
-  assert.strictEqual(modelBreakdown[0].tokensSaved, 4000, 'Expected 4000 tokens saved for gpt-4o');
-  assertAlmostEqual(
-    modelBreakdown[0].costSavingsUSD,
-    0.01,
-    0.0001,
-    'Expected $0.01 cost savings for gpt-4o'
-  );
+    // Verify breakdown (from fixture: claude-opus-4 has highest cost, then gpt-4o, claude-sonnet-4, gemini-2.0-flash)
+    assert.strictEqual(modelBreakdown.length, 4, 'Expected 4 models in breakdown');
+    assert.strictEqual(modelBreakdown[0].modelName, 'claude-opus-4', 'Expected claude-opus-4 to be first (highest cost savings)');
+    assert.strictEqual(modelBreakdown[0].compressions, 1, 'Expected 1 compression for claude-opus-4');
+    assert.strictEqual(modelBreakdown[0].tokensSaved, 5750, 'Expected 5750 tokens saved for claude-opus-4');
+    assertAlmostEqual(
+      modelBreakdown[0].costSavingsUSD,
+      0.08625,
+      0.001,
+      'Expected $0.08625 cost savings for claude-opus-4'
+    );
 
-  assert.strictEqual(modelBreakdown[1].modelName, 'claude-sonnet-4', 'Expected claude-sonnet-4 to be second');
-  assert.strictEqual(modelBreakdown[1].compressions, 2, 'Expected 2 compressions for claude-sonnet-4');
-  assert.strictEqual(modelBreakdown[1].tokensSaved, 2200, 'Expected 2200 tokens saved for claude-sonnet-4');
-  assertAlmostEqual(
-    modelBreakdown[1].costSavingsUSD,
-    0.0066,
-    0.0001,
-    'Expected $0.0066 cost savings for claude-sonnet-4'
-  );
+    assert.strictEqual(modelBreakdown[1].modelName, 'claude-sonnet-4', 'Expected claude-sonnet-4 to be second');
+    assert.strictEqual(modelBreakdown[1].compressions, 2, 'Expected 2 compressions for claude-sonnet-4');
+    assert.strictEqual(modelBreakdown[1].tokensSaved, 7590 + 11210, 'Expected 18800 tokens saved for claude-sonnet-4');
+    assertAlmostEqual(
+      modelBreakdown[1].costSavingsUSD,
+      0.0564,
+      0.001,
+      'Expected $0.0564 cost savings for claude-sonnet-4'
+    );
 
     console.log('✓ Model breakdown grouped and sorted correctly');
-    console.log(`  - ${modelBreakdown[0].modelName}: ${modelBreakdown[0].compressions} compressions, $${modelBreakdown[0].costSavingsUSD.toFixed(4)}`);
-    console.log(`  - ${modelBreakdown[1].modelName}: ${modelBreakdown[1].compressions} compressions, $${modelBreakdown[1].costSavingsUSD.toFixed(4)}`);
+    for (let i = 0; i < modelBreakdown.length; i++) {
+      console.log(`  ${i + 1}. ${modelBreakdown[i].modelName}: ${modelBreakdown[i].compressions} compressions, $${modelBreakdown[i].costSavingsUSD.toFixed(5)}`);
+    }
   } finally {
     await teardownTest(); // afterEach hook - runs even on failure
   }
