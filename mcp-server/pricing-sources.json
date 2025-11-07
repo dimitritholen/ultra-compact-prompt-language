@@ -1,0 +1,129 @@
+{
+  "lastVerified": "2025-11-07",
+  "vendors": {
+    "anthropic": {
+      "name": "Anthropic",
+      "mainPricingPage": "https://docs.claude.com/en/docs/about-claude/pricing",
+      "models": {
+        "claude-sonnet-4-5": {
+          "name": "Claude Sonnet 4.5",
+          "announcementUrl": "https://www.anthropic.com/news/claude-sonnet-4-5",
+          "productPage": "https://www.anthropic.com/claude/sonnet",
+          "pricePerMTok": 3.0,
+          "lastVerified": "2025-11-07"
+        },
+        "claude-opus-4-1": {
+          "name": "Claude Opus 4.1",
+          "announcementUrl": "https://www.anthropic.com/news/claude-4",
+          "productPage": "https://www.anthropic.com/claude/opus",
+          "pricePerMTok": 15.0,
+          "lastVerified": "2025-11-07"
+        },
+        "claude-haiku-4-5": {
+          "name": "Claude Haiku 4.5",
+          "announcementUrl": "https://www.anthropic.com/news/claude-haiku-4-5",
+          "productPage": "https://www.anthropic.com/claude/haiku",
+          "pricePerMTok": 1.0,
+          "lastVerified": "2025-11-07"
+        }
+      },
+      "apiDocs": "https://docs.claude.com/en/docs/about-claude/models/overview"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "mainPricingPage": "https://openai.com/api/pricing/",
+      "alternativePricingPage": "https://platform.openai.com/docs/pricing",
+      "models": {
+        "gpt-4-1": {
+          "name": "GPT-4.1",
+          "announcementUrl": "https://openai.com/index/gpt-4-1/",
+          "pricePerMTok": 2.0,
+          "lastVerified": "2025-11-07"
+        },
+        "gpt-4-1-mini": {
+          "name": "GPT-4.1 Mini",
+          "announcementUrl": "https://openai.com/index/gpt-4-1/",
+          "pricePerMTok": 0.4,
+          "lastVerified": "2025-11-07"
+        },
+        "gpt-4-1-nano": {
+          "name": "GPT-4.1 Nano",
+          "announcementUrl": "https://openai.com/index/gpt-4-1/",
+          "pricePerMTok": 0.1,
+          "lastVerified": "2025-11-07"
+        },
+        "gpt-5": {
+          "name": "GPT-5",
+          "pricePerMTok": 1.25,
+          "lastVerified": "2025-11-07",
+          "notes": "Includes reasoning tokens at $10/million which can multiply costs"
+        },
+        "gpt-5-mini": {
+          "name": "GPT-5 Mini",
+          "pricePerMTok": 0.25,
+          "lastVerified": "2025-11-07"
+        },
+        "gpt-5-nano": {
+          "name": "GPT-5 Nano",
+          "pricePerMTok": 0.05,
+          "lastVerified": "2025-11-07"
+        },
+        "o3": {
+          "name": "OpenAI o3",
+          "pricePerMTok": 0.4,
+          "lastVerified": "2025-11-07"
+        },
+        "o3-mini": {
+          "name": "OpenAI o3-mini",
+          "pricePerMTok": 1.1,
+          "lastVerified": "2025-11-07"
+        },
+        "o4-mini": {
+          "name": "OpenAI o4-mini",
+          "pricePerMTok": 0.6,
+          "lastVerified": "2025-11-07"
+        }
+      },
+      "apiDocs": "https://platform.openai.com/docs/models"
+    },
+    "google": {
+      "name": "Google",
+      "mainPricingPage": "https://cloud.google.com/vertex-ai/generative-ai/pricing",
+      "alternativePricingPage": "https://ai.google.dev/gemini-api/docs/pricing",
+      "models": {
+        "gemini-2-5-flash": {
+          "name": "Gemini 2.5 Flash",
+          "pricePerMTok": 0.3,
+          "lastVerified": "2025-11-07",
+          "notes": "Standard pricing for prompts up to 200K tokens"
+        },
+        "gemini-2-5-pro": {
+          "name": "Gemini 2.5 Pro",
+          "pricePerMTok": 1.25,
+          "lastVerified": "2025-11-07",
+          "notes": "Tiered pricing: $1.25 for <200K tokens, $2.50 for >200K tokens"
+        },
+        "gemini-2-5-flash-lite": {
+          "name": "Gemini 2.5 Flash-Lite",
+          "pricePerMTok": 0.1,
+          "lastVerified": "2025-11-07"
+        }
+      },
+      "releaseNotes": "https://ai.google.dev/gemini-api/docs/changelog",
+      "apiDocs": "https://ai.google.dev/gemini-api/docs/models"
+    }
+  },
+  "notes": {
+    "inputTokensOnly": "All prices listed are for INPUT tokens only. Output tokens have different pricing.",
+    "caching": "Most providers offer prompt caching discounts (50-90% off)",
+    "batchAPI": "Batch API pricing typically offers 50% discount",
+    "updateFrequency": "Prices should be verified monthly or when new models are released",
+    "verificationSteps": [
+      "Visit each vendor's main pricing page",
+      "Check for model announcements at vendor blog/news pages",
+      "Verify pricing hasn't changed for existing models",
+      "Look for new model releases",
+      "Update lastVerified dates after verification"
+    ]
+  }
+}

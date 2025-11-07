@@ -35,19 +35,43 @@ const RETENTION_POLICY = {
 };
 
 // LLM Model Pricing (USD per million input tokens)
-// Prices as of 2025-11-06
+// Prices verified as of 2025-11-07 from official vendor websites
 const MODEL_PRICING = {
+  // Anthropic Claude models (verified 2025-11-07)
+  "claude-sonnet-4-5": { pricePerMTok: 3.0, name: "Claude Sonnet 4.5" },
+  "claude-opus-4-1": { pricePerMTok: 15.0, name: "Claude Opus 4.1" },
+  "claude-haiku-4-5": { pricePerMTok: 1.0, name: "Claude Haiku 4.5" },
+
+  // OpenAI GPT models (verified 2025-11-07)
+  "gpt-4-1": { pricePerMTok: 2.0, name: "GPT-4.1" },
+  "gpt-4-1-mini": { pricePerMTok: 0.4, name: "GPT-4.1 Mini" },
+  "gpt-4-1-nano": { pricePerMTok: 0.1, name: "GPT-4.1 Nano" },
+  "gpt-5": { pricePerMTok: 1.25, name: "GPT-5" },
+  "gpt-5-mini": { pricePerMTok: 0.25, name: "GPT-5 Mini" },
+  "gpt-5-nano": { pricePerMTok: 0.05, name: "GPT-5 Nano" },
+
+  // OpenAI o-series reasoning models (verified 2025-11-07)
+  "o3": { pricePerMTok: 0.4, name: "OpenAI o3" },
+  "o3-mini": { pricePerMTok: 1.1, name: "OpenAI o3-mini" },
+  "o4-mini": { pricePerMTok: 0.6, name: "OpenAI o4-mini" },
+
+  // Google Gemini models (verified 2025-11-07)
+  "gemini-2-5-flash": { pricePerMTok: 0.3, name: "Gemini 2.5 Flash" },
+  "gemini-2-5-pro": { pricePerMTok: 1.25, name: "Gemini 2.5 Pro" },
+  "gemini-2-5-flash-lite": { pricePerMTok: 0.1, name: "Gemini 2.5 Flash-Lite" },
+
+  // Legacy models (kept for backward compatibility)
   "claude-sonnet-4": { pricePerMTok: 3.0, name: "Claude Sonnet 4" },
   "claude-opus-4": { pricePerMTok: 15.0, name: "Claude Opus 4" },
   "gpt-4o": { pricePerMTok: 2.5, name: "GPT-4o" },
   "gpt-4o-mini": { pricePerMTok: 0.15, name: "GPT-4o Mini" },
   "gemini-2.0-flash": { pricePerMTok: 0.1, name: "Gemini 2.0 Flash" },
-  o1: { pricePerMTok: 15.0, name: "OpenAI o1" },
+  "o1": { pricePerMTok: 15.0, name: "OpenAI o1" },
   "o1-mini": { pricePerMTok: 3.0, name: "OpenAI o1-mini" },
 };
 
 // Default model if detection fails
-const DEFAULT_MODEL = "claude-sonnet-4";
+const DEFAULT_MODEL = "claude-sonnet-4-5";
 
 // Path to optional config file for model override
 const CONFIG_FILE = path.join(os.homedir(), ".ucpl", "compress", "config.json");
