@@ -20,6 +20,10 @@ const COMPRESS_SCRIPT = path.join(__dirname, 'scripts', 'ucpl-compress');
 const STATS_DIR = path.join(os.homedir(), '.ucpl', 'compress');
 const STATS_FILE = path.join(STATS_DIR, 'compression-stats.json');
 
+// Path to logs directory
+const LOGS_DIR = path.join(os.homedir(), '.ucpl', 'logs');
+const LOG_FILE = path.join(LOGS_DIR, 'mcp-server.log');
+
 // Token counting model (using gpt-4o as approximation for Claude)
 const TOKEN_MODEL = 'gpt-4o';
 
@@ -52,18 +56,143 @@ const CONFIG_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'config.json');
 let cachedLLMClient = null;
 
 /**
+ * Logger class with file rotation and performance tracking
+ */
+class Logger {
+  constructor(logFile) {
+    this.logFile = logFile;
+    this.maxLogSize = 10 * 1024 * 1024; // 10MB
+    this.maxBackups = 5;
+    this.initPromise = this.ensureLogDir();
+  }
+
+  async ensureLogDir() {
+    try {
+      await fs.mkdir(LOGS_DIR, { recursive: true });
+    } catch (err) {
+      // Directory already exists or permission error - log to stderr
+      console.error(`[WARN] Could not create logs directory: ${err.message}`);
+    }
+  }
+
+  async write(level, message, data = {}) {
+    await this.initPromise;
+
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      level,
+      message,
+      ...data
+    };
+
+    const logLine = JSON.stringify(logEntry) + '\n';
+
+    try {
+      // Check file size and rotate if needed
+      try {
+        const stats = await fs.stat(this.logFile);
+        if (stats.size > this.maxLogSize) {
+          await this.rotateLog();
+        }
+      } catch (err) {
+        // File doesn't exist yet, that's fine
+      }
+
+      // Append to log file
+      await fs.appendFile(this.logFile, logLine);
+
+      // Also log to stderr for immediate visibility
+      const consoleMsg = `[${level.toUpperCase()}] ${message}`;
+      if (level === 'error') {
+        console.error(consoleMsg, data);
+      } else if (level === 'warn') {
+        console.error(consoleMsg);
+      } else if (level === 'debug' || level === 'info') {
+        console.error(consoleMsg);
+      }
+    } catch (err) {
+      // Fallback to stderr if file write fails
+      console.error(`[ERROR] Log write failed: ${err.message}`, logEntry);
+    }
+  }
+
+  async rotateLog() {
+    try {
+      // Rotate existing backups
+      for (let i = this.maxBackups - 1; i >= 1; i--) {
+        const oldFile = `${this.logFile}.${i}`;
+        const newFile = `${this.logFile}.${i + 1}`;
+        try {
+          await fs.rename(oldFile, newFile);
+        } catch (err) {
+          // File doesn't exist, continue
+        }
+      }
+
+      // Move current log to .1
+      await fs.rename(this.logFile, `${this.logFile}.1`);
+    } catch (err) {
+      console.error(`[WARN] Log rotation failed: ${err.message}`);
+    }
+  }
+
+  info(message, data) {
+    return this.write('info', message, data);
+  }
+
+  warn(message, data) {
+    return this.write('warn', message, data);
+  }
+
+  error(message, data) {
+    return this.write('error', message, data);
+  }
+
+  debug(message, data) {
+    return this.write('debug', message, data);
+  }
+
+  /**
+   * Start a performance timer
+   * @param {string} operation - Name of the operation
+   * @returns {Function} - Call this function to log the duration
+   */
+  startTimer(operation) {
+    const start = Date.now();
+    return async (status = 'completed', extraData = {}) => {
+      const duration = Date.now() - start;
+      await this.info(`${operation} ${status}`, {
+        operation,
+        duration_ms: duration,
+        status,
+        ...extraData
+      });
+    };
+  }
+}
+
+// Global logger instance
+const logger = new Logger(LOG_FILE);
+
+/**
  * Detect LLM client and model from environment variables (cached per server lifecycle)
  * @returns {Promise<{client: string, model: string}>} Detected client and model
  */
 async function detectLLMClient() {
+  const endTimer = logger.startTimer('detect_llm_client');
+
   // Return cached result if available
   if (cachedLLMClient) {
+    await logger.debug('Using cached LLM client detection', cachedLLMClient);
+    await endTimer('cached', cachedLLMClient);
     return cachedLLMClient;
   }
 
   try {
     // Try config file first (highest priority)
     try {
+      await logger.debug('Checking config file', { path: CONFIG_FILE });
       const configData = await fs.readFile(CONFIG_FILE, 'utf-8');
       const config = JSON.parse(configData);
 
@@ -73,32 +202,40 @@ async function detectLLMClient() {
       }
 
       if (config.model && MODEL_PRICING[config.model]) {
-        console.error(`[INFO] Using model from config file: ${config.model}`);
+        await logger.info('Using model from config file', { model: config.model });
         cachedLLMClient = { client: 'config-override', model: config.model };
+        await endTimer('completed', { method: 'config_file', ...cachedLLMClient });
         return cachedLLMClient;
       } else if (config.model) {
-        console.error(`[WARN] Unknown model in config: ${config.model}, falling back to env detection`);
+        await logger.warn('Unknown model in config, falling back to env detection', {
+          model: config.model,
+          available_models: Object.keys(MODEL_PRICING)
+        });
       }
     } catch (err) {
       // Config file doesn't exist or is invalid - continue with env detection
       if (err.code !== 'ENOENT') {
-        console.error(`[WARN] Config file error: ${err.message}`);
+        await logger.warn('Config file error', { error: err.message, path: CONFIG_FILE });
+      } else {
+        await logger.debug('Config file not found, checking environment variables', { path: CONFIG_FILE });
       }
     }
 
     // Check for Claude Desktop (CLAUDE_DESKTOP_VERSION environment variable)
     if (process.env.CLAUDE_DESKTOP_VERSION) {
-      console.error(`[INFO] Detected Claude Desktop (version: ${process.env.CLAUDE_DESKTOP_VERSION})`);
+      await logger.info('Detected Claude Desktop', { version: process.env.CLAUDE_DESKTOP_VERSION });
       // Claude Desktop typically uses Sonnet as default
       cachedLLMClient = { client: 'claude-desktop', model: 'claude-sonnet-4' };
+      await endTimer('completed', { method: 'claude_desktop', ...cachedLLMClient });
       return cachedLLMClient;
     }
 
     // Check for Claude Code / VSCode (VSCODE_PID or CLINE_VERSION)
     if (process.env.VSCODE_PID || process.env.CLINE_VERSION) {
       const version = process.env.CLINE_VERSION || 'unknown';
-      console.error(`[INFO] Detected Claude Code/VSCode (version: ${version})`);
+      await logger.info('Detected Claude Code/VSCode', { version });
       cachedLLMClient = { client: 'claude-code', model: 'claude-sonnet-4' };
+      await endTimer('completed', { method: 'vscode', ...cachedLLMClient });
       return cachedLLMClient;
     }
 
@@ -106,8 +243,9 @@ async function detectLLMClient() {
     if (process.env.ANTHROPIC_MODEL) {
       const model = process.env.ANTHROPIC_MODEL;
       if (MODEL_PRICING[model]) {
-        console.error(`[INFO] Using ANTHROPIC_MODEL env var: ${model}`);
+        await logger.info('Using ANTHROPIC_MODEL env var', { model });
         cachedLLMClient = { client: 'anthropic-sdk', model };
+        await endTimer('completed', { method: 'anthropic_env', ...cachedLLMClient });
         return cachedLLMClient;
       }
     }
@@ -115,19 +253,25 @@ async function detectLLMClient() {
     if (process.env.OPENAI_MODEL) {
       const model = process.env.OPENAI_MODEL;
       if (MODEL_PRICING[model]) {
-        console.error(`[INFO] Using OPENAI_MODEL env var: ${model}`);
+        await logger.info('Using OPENAI_MODEL env var', { model });
         cachedLLMClient = { client: 'openai-sdk', model };
+        await endTimer('completed', { method: 'openai_env', ...cachedLLMClient });
         return cachedLLMClient;
       }
     }
 
     // Default fallback (conservative choice)
-    console.error(`[INFO] No client detected, defaulting to ${DEFAULT_MODEL}`);
+    await logger.info('No client detected, using default', { model: DEFAULT_MODEL });
     cachedLLMClient = { client: 'unknown', model: DEFAULT_MODEL };
+    await endTimer('completed', { method: 'default', ...cachedLLMClient });
     return cachedLLMClient;
   } catch (error) {
-    console.error(`[WARN] LLM detection failed: ${error.message}, using default ${DEFAULT_MODEL}`);
+    await logger.warn('LLM detection failed, using default', {
+      error: error.message,
+      model: DEFAULT_MODEL
+    });
     cachedLLMClient = { client: 'error', model: DEFAULT_MODEL };
+    await endTimer('failed', { error: error.message, ...cachedLLMClient });
     return cachedLLMClient;
   }
 }
@@ -139,30 +283,47 @@ async function detectLLMClient() {
  * @returns {Promise<{costSavingsUSD: number, model: string, client: string, modelName: string, pricePerMTok: number}>}
  */
 async function calculateCostSavings(tokensSaved, model = null) {
+  const endTimer = logger.startTimer('calculate_cost_savings');
+
   try {
     // Validate input
     if (typeof tokensSaved !== 'number' || isNaN(tokensSaved) || tokensSaved < 0) {
-      throw new Error(`Invalid tokensSaved: ${tokensSaved} (must be non-negative number)`);
+      const error = new Error(`Invalid tokensSaved: ${tokensSaved} (must be non-negative number)`);
+      await logger.error('Invalid token count for cost calculation', {
+        tokensSaved,
+        type: typeof tokensSaved
+      });
+      throw error;
     }
+
+    await logger.debug('Calculating cost savings', { tokensSaved, model });
 
     // Cap at reasonable maximum to prevent precision issues
     if (tokensSaved > 1_000_000_000) {
-      console.error(`[WARN] Token count capped at 1 billion (was: ${tokensSaved})`);
+      await logger.warn('Token count capped at 1 billion', {
+        original: tokensSaved,
+        capped: 1_000_000_000
+      });
       tokensSaved = 1_000_000_000;
     }
 
     // Auto-detect model if not provided
     let client = 'unknown';
     if (!model) {
+      await logger.debug('Auto-detecting model for pricing');
       const detection = await detectLLMClient();
       model = detection.model;
       client = detection.client;
+      await logger.debug('Model detected for pricing', { model, client });
     }
 
     // Get pricing for detected/specified model (with fallback)
     const pricing = MODEL_PRICING[model] || MODEL_PRICING[DEFAULT_MODEL];
     if (!MODEL_PRICING[model]) {
-      console.error(`[WARN] Unknown model '${model}', using default ${DEFAULT_MODEL}`);
+      await logger.warn('Unknown model for pricing, using default', {
+        requested_model: model,
+        default_model: DEFAULT_MODEL
+      });
     }
     const pricePerMTok = pricing.pricePerMTok;
 
@@ -172,15 +333,30 @@ async function calculateCostSavings(tokensSaved, model = null) {
     // Round to 2 decimal places (cents)
     const costSavingsRounded = Math.round(costSavingsUSD * 100) / 100;
 
-    return {
+    const result = {
       costSavingsUSD: costSavingsRounded,
       model: model,
       client: client,
       modelName: pricing.name,
       pricePerMTok: pricePerMTok
     };
+
+    await endTimer('completed', {
+      tokensSaved,
+      costSavingsUSD: costSavingsRounded,
+      model,
+      pricePerMTok
+    });
+
+    return result;
   } catch (error) {
-    console.error(`[ERROR] Cost calculation failed: ${error.message}`);
+    await logger.error('Cost calculation failed', {
+      error: error.message,
+      tokensSaved,
+      model
+    });
+    await endTimer('failed', { error: error.message });
+
     // Return zero cost on error
     return {
       costSavingsUSD: 0,
@@ -203,7 +379,11 @@ function countTokens(text) {
     const tokens = enc.encode(text);
     return tokens.length;
   } catch (error) {
-    console.error(`[WARN] Token counting failed: ${error.message}`);
+    logger.warn('Token counting failed, using fallback estimation', {
+      error: error.message,
+      text_length: text.length,
+      estimated_tokens: Math.ceil(text.length / 4)
+    });
     // Fallback: rough estimate (chars/4)
     return Math.ceil(text.length / 4);
   }
@@ -214,19 +394,53 @@ function countTokens(text) {
  * @returns {Promise<Object>} Statistics object
  */
 async function loadStats() {
+  const endTimer = logger.startTimer('load_stats');
+
   try {
+    await logger.debug('Loading stats file', { path: STATS_FILE });
     const data = await fs.readFile(STATS_FILE, 'utf-8');
     const stats = JSON.parse(data);
 
+    await logger.debug('Stats file loaded', {
+      file_size: data.length,
+      version: stats.version,
+      recent_count: (stats.recent || []).length,
+      daily_count: Object.keys(stats.daily || {}).length,
+      monthly_count: Object.keys(stats.monthly || {}).length
+    });
+
     // Migrate old format if needed
     if (stats.compressions && !stats.recent) {
-      console.error('[INFO] Migrating stats to new multi-tier format...');
-      return migrateStatsFormat(stats);
+      await logger.info('Migrating stats to new multi-tier format');
+      const migratedStats = migrateStatsFormat(stats);
+      await endTimer('completed', {
+        migrated: true,
+        recent_count: migratedStats.recent.length,
+        daily_count: Object.keys(migratedStats.daily).length,
+        monthly_count: Object.keys(migratedStats.monthly).length
+      });
+      return migratedStats;
     }
 
+    await endTimer('completed', {
+      migrated: false,
+      total_compressions: stats.summary?.totalCompressions || 0
+    });
+
     return stats;
-  } catch (_error) {
+  } catch (error) {
     // File doesn't exist or is corrupted - return empty stats
+    if (error.code === 'ENOENT') {
+      await logger.debug('Stats file not found, initializing empty stats', { path: STATS_FILE });
+    } else {
+      await logger.warn('Failed to load stats file, initializing empty stats', {
+        error: error.message,
+        path: STATS_FILE
+      });
+    }
+
+    await endTimer('completed', { initialized: true });
+
     return {
       version: '2.0',
       recent: [],      // Individual records from last 30 days
@@ -307,7 +521,12 @@ function migrateStatsFormat(oldStats) {
     }
   }
 
-  console.error(`[INFO] Migration complete: ${newStats.recent.length} recent, ${Object.keys(newStats.daily).length} daily, ${Object.keys(newStats.monthly).length} monthly`);
+  logger.info('Stats migration complete', {
+    recent_count: newStats.recent.length,
+    daily_count: Object.keys(newStats.daily).length,
+    monthly_count: Object.keys(newStats.monthly).length,
+    total_compressions: newStats.summary.totalCompressions
+  });
   return newStats;
 }
 
@@ -321,6 +540,12 @@ function aggregateStats(stats) {
   const recentCutoff = new Date(now.getTime() - RETENTION_POLICY.RECENT_DAYS * 24 * 60 * 60 * 1000);
   const dailyCutoff = new Date(now.getTime() - RETENTION_POLICY.DAILY_DAYS * 24 * 60 * 60 * 1000);
   const monthlyCutoff = new Date(now.getTime() - RETENTION_POLICY.MONTHLY_YEARS * 365 * 24 * 60 * 60 * 1000);
+
+  const initialCounts = {
+    recent: (stats.recent || []).length,
+    daily: Object.keys(stats.daily || {}).length,
+    monthly: Object.keys(stats.monthly || {}).length
+  };
 
   const newRecent = [];
   const newDaily = { ...stats.daily };
@@ -410,6 +635,29 @@ function aggregateStats(stats) {
     delete newMonthly[key];
   }
 
+  const finalCounts = {
+    recent: newRecent.length,
+    daily: Object.keys(newDaily).length,
+    monthly: Object.keys(newMonthly).length
+  };
+
+  const movedCounts = {
+    recent_to_daily: initialCounts.recent - finalCounts.recent - (stats.recent || []).filter(c => {
+      const timestamp = new Date(c.timestamp);
+      return timestamp < dailyCutoff;
+    }).length,
+    daily_to_monthly: oldDailyKeys.length,
+    monthly_pruned: oldMonthlyKeys.length
+  };
+
+  if (movedCounts.recent_to_daily > 0 || movedCounts.daily_to_monthly > 0 || movedCounts.monthly_pruned > 0) {
+    logger.debug('Stats aggregation performed', {
+      initial: initialCounts,
+      final: finalCounts,
+      moved: movedCounts
+    });
+  }
+
   return {
     ...stats,
     recent: newRecent,
@@ -423,15 +671,43 @@ function aggregateStats(stats) {
  * @param {Object} stats - Statistics object to save
  */
 async function saveStats(stats) {
+  const endTimer = logger.startTimer('save_stats');
+
   try {
+    await logger.debug('Saving stats file', {
+      path: STATS_FILE,
+      recent_count: (stats.recent || []).length,
+      total_compressions: stats.summary?.totalCompressions || 0
+    });
+
     // Aggregate old data before saving
     const aggregatedStats = aggregateStats(stats);
 
     // Ensure directory exists (cross-platform)
     await fs.mkdir(STATS_DIR, { recursive: true });
-    await fs.writeFile(STATS_FILE, JSON.stringify(aggregatedStats, null, 2), 'utf-8');
+
+    const statsJson = JSON.stringify(aggregatedStats, null, 2);
+    await fs.writeFile(STATS_FILE, statsJson, 'utf-8');
+
+    await logger.info('Stats file saved', {
+      path: STATS_FILE,
+      file_size: statsJson.length,
+      recent_count: aggregatedStats.recent.length,
+      daily_count: Object.keys(aggregatedStats.daily).length,
+      monthly_count: Object.keys(aggregatedStats.monthly).length,
+      total_compressions: aggregatedStats.summary.totalCompressions
+    });
+
+    await endTimer('completed', {
+      file_size: statsJson.length,
+      records_saved: aggregatedStats.recent.length
+    });
   } catch (error) {
-    console.error(`[ERROR] Failed to save statistics: ${error.message}`);
+    await logger.error('Failed to save statistics', {
+      error: error.message,
+      path: STATS_FILE
+    });
+    await endTimer('failed', { error: error.message });
   }
 }
 
@@ -487,6 +763,8 @@ function parseFlexibleDate(value) {
  * @param {Function} [costCalculator=calculateCostSavings] - Cost calculation function (for testing)
  */
 async function recordCompression(path, originalContent, compressedContent, level, format, costCalculator = calculateCostSavings) {
+  const endTimer = logger.startTimer('record_compression');
+
   try {
     const stats = await loadStats();
 
@@ -496,12 +774,25 @@ async function recordCompression(path, originalContent, compressedContent, level
     const compressionRatio = originalTokens > 0 ? (compressedTokens / originalTokens) : 0;
     const savingsPercentage = originalTokens > 0 ? ((tokensSaved / originalTokens) * 100) : 0;
 
+    await logger.debug('Recording compression statistics', {
+      path,
+      level,
+      format,
+      originalTokens,
+      compressedTokens,
+      tokensSaved,
+      savingsPercentage: Math.round(savingsPercentage)
+    });
+
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
       costInfo = await costCalculator(tokensSaved);
     } catch (error) {
-      console.error(`[WARN] Cost calculation failed: ${error.message}`);
+      await logger.warn('Cost calculation failed for compression record', {
+        error: error.message,
+        path
+      });
       // Continue without cost info - it's optional
     }
 
@@ -537,10 +828,27 @@ async function recordCompression(path, originalContent, compressedContent, level
 
     await saveStats(stats);
 
-    const costMsg = costInfo ? `, Cost saved: $${costInfo.costSavingsUSD.toFixed(2)} (${costInfo.modelName})` : '';
-    console.error(`[INFO] Recorded compression: ${path} - Original: ${originalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ${tokensSaved} tokens (${Math.round(savingsPercentage)}%)${costMsg}`);
+    await logger.info('Compression recorded', {
+      path,
+      originalTokens,
+      compressedTokens,
+      tokensSaved,
+      savingsPercentage: Math.round(savingsPercentage),
+      costSavingsUSD: costInfo?.costSavingsUSD || 0,
+      model: costInfo?.modelName || 'unknown'
+    });
+
+    await endTimer('completed', {
+      tokensSaved,
+      costSavingsUSD: costInfo?.costSavingsUSD || 0
+    });
   } catch (error) {
-    console.error(`[ERROR] Failed to record compression statistics: ${error.message}`);
+    await logger.error('Failed to record compression statistics', {
+      error: error.message,
+      path,
+      stack: error.stack
+    });
+    await endTimer('failed', { error: error.message });
   }
 }
 
@@ -555,23 +863,42 @@ async function recordCompression(path, originalContent, compressedContent, level
  * @param {number|null} limit - File limit used
  */
 async function recordCompressionWithFallback(filePath, compressedContent, level, format, include, exclude, limit) {
+  const endTimer = logger.startTimer('record_compression_with_fallback');
+
   try {
+    await logger.debug('Attempting to record compression with accurate token counts', {
+      path: filePath,
+      level,
+      format
+    });
+
     // Try to read original content for accurate statistics
     const originalContent = await readOriginalContent(filePath, include, exclude, limit);
 
     if (originalContent && originalContent.length > 0) {
       // Success: record with accurate token counts
+      await logger.debug('Recording compression with original content', {
+        path: filePath,
+        content_length: originalContent.length
+      });
       await recordCompression(filePath, originalContent, compressedContent, level, format);
+      await endTimer('completed', { method: 'accurate', path: filePath });
     } else {
       // Fallback: original content is empty (shouldn't happen, but handle gracefully)
-      console.error(`[WARN] Original content is empty for ${filePath}, using fallback estimation`);
+      await logger.warn('Original content is empty, using fallback estimation', {
+        path: filePath
+      });
       await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+      await endTimer('completed', { method: 'estimation_empty', path: filePath });
     }
   } catch (error) {
     // Fallback: estimate original tokens from compressed output
-    console.error(`[WARN] Could not read original content for ${filePath}: ${error.message}`);
-    console.error('[WARN] Using estimated token counts based on compression level');
+    await logger.warn('Could not read original content, using estimation', {
+      path: filePath,
+      error: error.message
+    });
     await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+    await endTimer('completed', { method: 'estimation_error', path: filePath });
   }
 }
 
@@ -584,6 +911,8 @@ async function recordCompressionWithFallback(filePath, compressedContent, level,
  * @param {Function} [costCalculator=calculateCostSavings] - Cost calculation function (for testing)
  */
 async function recordCompressionWithEstimation(filePath, compressedContent, level, format, costCalculator = calculateCostSavings) {
+  const endTimer = logger.startTimer('record_compression_with_estimation');
+
   try {
     const stats = await loadStats();
     const compressedTokens = countTokens(compressedContent);
@@ -602,12 +931,24 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
     const compressionRatio = compressedTokens / estimatedOriginalTokens;
     const savingsPercentage = (tokensSaved / estimatedOriginalTokens) * 100;
 
+    await logger.info('Using estimated token counts for compression record', {
+      path: filePath,
+      level,
+      multiplier,
+      compressedTokens,
+      estimatedOriginalTokens,
+      tokensSaved
+    });
+
     // Calculate cost savings with LLM detection
     let costInfo = null;
     try {
       costInfo = await costCalculator(tokensSaved);
     } catch (error) {
-      console.error(`[WARN] Cost calculation failed: ${error.message}`);
+      await logger.warn('Cost calculation failed for estimated compression', {
+        error: error.message,
+        path: filePath
+      });
       // Continue without cost info - it's optional
     }
 
@@ -644,11 +985,29 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
 
     await saveStats(stats);
 
-    const costMsg = costInfo ? `, Cost saved: ~$${costInfo.costSavingsUSD.toFixed(2)} (${costInfo.modelName})` : '';
-    console.error(`[INFO] Recorded compression (estimated): ${filePath} - Original: ~${estimatedOriginalTokens} tokens, Compressed: ${compressedTokens} tokens, Saved: ~${tokensSaved} tokens (${Math.round(savingsPercentage)}%)${costMsg}`);
+    await logger.info('Compression recorded with estimation', {
+      path: filePath,
+      estimated: true,
+      estimatedOriginalTokens,
+      compressedTokens,
+      tokensSaved,
+      savingsPercentage: Math.round(savingsPercentage),
+      costSavingsUSD: costInfo?.costSavingsUSD || 0,
+      model: costInfo?.modelName || 'unknown'
+    });
+
+    await endTimer('completed', {
+      tokensSaved,
+      estimated: true
+    });
   } catch (error) {
     // This is the last resort - log and throw
-    console.error(`[ERROR] Failed to record compression statistics even with estimation: ${error.message}`);
+    await logger.error('Failed to record compression statistics even with estimation', {
+      error: error.message,
+      path: filePath,
+      stack: error.stack
+    });
+    await endTimer('failed', { error: error.message });
     throw error;
   }
 }
@@ -662,18 +1021,29 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
  * @returns {Promise<string>} Original content
  */
 async function readOriginalContent(filePath, _include = null, _exclude = null, limit = null) {
+  const endTimer = logger.startTimer('read_original_content');
+
   try {
     const stats = await fs.stat(filePath);
 
     if (stats.isFile()) {
-      return await fs.readFile(filePath, 'utf-8');
+      await logger.debug('Reading single file for token counting', { path: filePath });
+      const content = await fs.readFile(filePath, 'utf-8');
+      await endTimer('completed', {
+        path: filePath,
+        is_file: true,
+        content_length: content.length
+      });
+      return content;
     }
 
     // For directories, read files matching criteria
+    await logger.debug('Reading directory for token counting', { path: filePath, limit });
     const { readdirSync, readFileSync } = require('fs');
     const pathModule = require('path');
     let content = '';
     let fileCount = 0;
+    let skippedCount = 0;
 
     const readDir = (dir) => {
       if (limit && fileCount >= limit) return;
@@ -694,15 +1064,35 @@ async function readOriginalContent(filePath, _include = null, _exclude = null, l
             fileCount++;
           } catch (_err) {
             // Skip files that can't be read
+            skippedCount++;
           }
         }
       }
     };
 
     readDir(filePath);
+
+    await logger.debug('Directory read complete', {
+      path: filePath,
+      files_read: fileCount,
+      files_skipped: skippedCount,
+      content_length: content.length
+    });
+
+    await endTimer('completed', {
+      path: filePath,
+      is_directory: true,
+      files_read: fileCount,
+      content_length: content.length
+    });
+
     return content;
   } catch (error) {
-    console.error(`[WARN] Could not read original content for token counting: ${error.message}`);
+    await logger.warn('Could not read original content for token counting', {
+      error: error.message,
+      path: filePath
+    });
+    await endTimer('failed', { error: error.message });
     return '';
   }
 }
@@ -711,6 +1101,21 @@ async function readOriginalContent(filePath, _include = null, _exclude = null, l
  * Execute ucpl-compress and return results
  */
 async function compressContext(filePath, level = 'full', language = null, format = 'text', include = null, exclude = null, limit = null, offset = 0) {
+  const endTimer = logger.startTimer('compress_context');
+
+  const logData = {
+    path: filePath,
+    level,
+    language,
+    format,
+    include: include ? include.length : 0,
+    exclude: exclude ? exclude.length : 0,
+    limit,
+    offset
+  };
+
+  await logger.info('Starting compression', logData);
+
   return new Promise((resolve, reject) => {
     const args = [filePath, '--level', level, '--format', format, '--offset', String(offset)];
 
@@ -734,27 +1139,52 @@ async function compressContext(filePath, level = 'full', language = null, format
       });
     }
 
+    logger.debug('Spawning ucpl-compress', { command: COMPRESS_SCRIPT, args });
+
     const proc = spawn(COMPRESS_SCRIPT, args);
     let stdout = '';
     let stderr = '';
+    let lastProgressLog = Date.now();
 
     proc.stdout.on('data', (data) => {
       stdout += data.toString();
+
+      // Log progress every 5 seconds
+      const now = Date.now();
+      if (now - lastProgressLog > 5000) {
+        logger.debug('Compression in progress', {
+          output_bytes: stdout.length,
+          elapsed_ms: now - lastProgressLog
+        });
+        lastProgressLog = now;
+      }
     });
 
     proc.stderr.on('data', (data) => {
-      stderr += data.toString();
+      const stderrChunk = data.toString();
+      stderr += stderrChunk;
+
+      // Log stderr immediately (Python script progress)
+      logger.debug('ucpl-compress stderr', { message: stderrChunk.trim() });
     });
 
-    proc.on('close', (code) => {
+    proc.on('close', async (code) => {
       if (code === 0) {
+        await endTimer('completed', {
+          output_bytes: stdout.length,
+          exit_code: code
+        });
         resolve(stdout);
       } else {
+        await endTimer('failed', { exit_code: code, stderr });
+        await logger.error('Compression failed', { code, stderr, ...logData });
         reject(new Error(`ucpl-compress failed: ${stderr}`));
       }
     });
 
-    proc.on('error', (err) => {
+    proc.on('error', async (err) => {
+      await endTimer('error', { error: err.message });
+      await logger.error('Failed to execute ucpl-compress', { error: err.message, ...logData });
       reject(new Error(`Failed to execute ucpl-compress: ${err.message}`));
     });
   });
@@ -1047,13 +1477,30 @@ class MCPServer {
 
   async handleToolCall(params) {
     const { name, arguments: args } = params;
+    const endTimer = logger.startTimer(`mcp_tool_${name}`);
 
-    if (name === 'get_compression_stats') {
-      return await this.handleGetStats(args);
-    } else if (name === 'compress_code_context') {
-      return await this.handleCompress(args);
-    } else {
-      throw new Error(`Unknown tool: ${name}`);
+    await logger.info(`MCP tool invoked: ${name}`, { tool: name, args });
+
+    try {
+      let result;
+      if (name === 'get_compression_stats') {
+        result = await this.handleGetStats(args);
+      } else if (name === 'compress_code_context') {
+        result = await this.handleCompress(args);
+      } else {
+        throw new Error(`Unknown tool: ${name}`);
+      }
+
+      await endTimer('completed', { tool: name });
+      return result;
+    } catch (error) {
+      await endTimer('error', { tool: name, error: error.message });
+      await logger.error(`MCP tool failed: ${name}`, {
+        tool: name,
+        error: error.message,
+        stack: error.stack
+      });
+      throw error;
     }
   }
 
@@ -1092,7 +1539,10 @@ class MCPServer {
 
         // Warn if endDate is in the future (likely a mistake)
         if (endDate > now) {
-          console.error('[WARN] endDate is in the future, using current time instead');
+          await logger.warn('endDate is in the future, using current time instead', {
+            requested_end_date: endDate.toISOString(),
+            adjusted_to: now.toISOString()
+          });
           endDate = now;
         }
 
@@ -1358,7 +1808,13 @@ class MCPServer {
             appliedLimit = 30;  // Summary shows stats for first 30 files + total count
           }
 
-          console.error(`[INFO] Auto-applied limit=${appliedLimit} for directory with ${fileCount}+ files (level=${level}, format=${args.format || 'text'})`);
+          await logger.info('Auto-applied file limit for directory compression', {
+            limit: appliedLimit,
+            file_count: fileCount,
+            level,
+            format: args.format || 'text',
+            path: filePath
+          });
         }
       }
 
@@ -1413,7 +1869,10 @@ SOLUTION - Use pagination:
         args.exclude,
         appliedLimit
       ).catch(err => {
-        console.error(`[ERROR] Failed to record compression statistics: ${err.message}`);
+        logger.error('Failed to record compression statistics', {
+          error: err.message,
+          path: filePath
+        });
       });
 
       // Track this promise so server waits for it before exiting
@@ -1457,6 +1916,13 @@ SOLUTION - Use pagination:
     // Track pending statistics recordings to ensure they complete before exit
     this.pendingStatsRecordings = [];
 
+    await logger.info('MCP Server starting', {
+      version: require('./package.json').version,
+      node_version: process.version,
+      platform: process.platform,
+      log_file: LOG_FILE
+    });
+
     // Read from stdin line by line (JSON-RPC over stdio)
     const readline = require('readline');
     const rl = readline.createInterface({
@@ -1468,6 +1934,11 @@ SOLUTION - Use pagination:
     rl.on('line', async (line) => {
       try {
         const request = JSON.parse(line);
+        await logger.debug('MCP request received', {
+          method: request.method,
+          id: request.id
+        });
+
         const response = await this.handleRequest(request);
 
         // Send JSON-RPC response
@@ -1491,10 +1962,13 @@ SOLUTION - Use pagination:
     rl.on('close', async () => {
       // Wait for any pending stats recordings to complete before exiting
       if (this.pendingStatsRecordings.length > 0) {
-        console.error(`[INFO] Waiting for ${this.pendingStatsRecordings.length} pending stats recordings...`);
+        await logger.info('Waiting for pending stats recordings', {
+          count: this.pendingStatsRecordings.length
+        });
         await Promise.allSettled(this.pendingStatsRecordings);
-        console.error('[INFO] All stats recordings complete');
+        await logger.info('All stats recordings complete');
       }
+      await logger.info('MCP Server shutting down');
       process.exit(0);
     });
   }
@@ -1514,8 +1988,11 @@ module.exports = {
 // Start server (only if running directly, not when imported)
 if (require.main === module) {
   const server = new MCPServer();
-  server.start().catch((error) => {
-    console.error('Fatal error:', error);
+  server.start().catch(async (error) => {
+    await logger.error('Fatal server error', {
+      error: error.message,
+      stack: error.stack
+    });
     process.exit(1);
   });
 }
