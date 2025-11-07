@@ -54,15 +54,15 @@ npm publish --access public
 
 ## Workflow Files
 
-### `.github/workflows/publish.yml`
-- **Triggers**: On version tags (`v*.*.*`)
+### `.github/workflows/publish-mcp-server.yml`
+- **Triggers**: On version tags (`mcp-server-v*.*.*`)
 - **Actions**:
   1. Runs tests
   2. Publishes to npm
   3. Creates GitHub release
 
-### `.github/workflows/test.yml`
-- **Triggers**: On push/PR to main/develop
+### `.github/workflows/test-mcp-server.yml`
+- **Triggers**: On push/PR to main/develop (only when mcp-server/ changes)
 - **Actions**:
   1. Tests on multiple OS (Ubuntu, macOS, Windows)
   2. Tests on multiple Node versions (18, 20, 22)
@@ -83,16 +83,20 @@ Follow [Semantic Versioning](https://semver.org/):
 git add .
 git commit -m "fix: resolve token counting issue"
 
-# 2. Bump version and create tag
+# 2. Bump version in package.json
+cd mcp-server
 npm version patch -m "chore: release v%s"
 
-# 3. Push changes and tag
+# 3. Create mcp-server-specific tag
+git tag mcp-server-v1.2.1
+
+# 4. Push changes and tag
 git push origin main --tags
 
-# 4. Watch the GitHub Action run
-# Visit: https://github.com/YOUR_USERNAME/ultra-compact-prompt-language/actions
+# 5. Watch the GitHub Action run
+# Visit: https://github.com/dimitritholen/ultra-compact-prompt-language/actions
 
-# 5. Verify on npm
+# 6. Verify on npm
 # Visit: https://www.npmjs.com/package/ucpl-compress-mcp
 ```
 

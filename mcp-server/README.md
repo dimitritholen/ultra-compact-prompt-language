@@ -1,6 +1,6 @@
 # UCPL Compress MCP Server
 
-[![Tests](https://github.com/dimitritholen/ultra-compact-prompt-language/actions/workflows/test.yml/badge.svg)](https://github.com/dimitritholen/ultra-compact-prompt-language/actions/workflows/test.yml)
+[![Tests](https://github.com/dimitritholen/ultra-compact-prompt-language/actions/workflows/test-mcp-server.yml/badge.svg)](https://github.com/dimitritholen/ultra-compact-prompt-language/actions/workflows/test-mcp-server.yml)
 [![npm version](https://badge.fury.io/js/ucpl-compress-mcp.svg)](https://www.npmjs.com/package/ucpl-compress-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/ucpl-compress-mcp.svg)](https://www.npmjs.com/package/ucpl-compress-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
