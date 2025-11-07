@@ -129,7 +129,7 @@ describe("Cost Calculation", () => {
       const tokensSaved = 1_000_000; // 1 million tokens
       const result = await calculateCostSavings(tokensSaved, "claude-sonnet-4");
       assert.strictEqual(result.costSavingsUSD, 3.0);
-      assert.strictEqual(result.model, "claude-sonnet-4-5");
+      assert.strictEqual(result.model, "claude-sonnet-4"); // Should return the model passed in
       assert.strictEqual(result.pricePerMTok, 3.0);
     });
 
