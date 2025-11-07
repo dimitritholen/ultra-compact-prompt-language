@@ -10,8 +10,11 @@
  * 4. Exceptions in tests are caught and reported
  */
 
-const { spawn } = require("child_process");
-const path = require("path");
+import { spawn } from "child_process";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Run test-stats-retention.js and capture output

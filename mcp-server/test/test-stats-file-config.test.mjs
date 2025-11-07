@@ -9,9 +9,9 @@
  * 3. Statistics file path cannot be configured via environment variables
  */
 
-const fs = require("fs").promises;
-const path = require("path");
-const os = require("os");
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
 
 // Expected hardcoded paths (from server.js lines 20-21)
 const EXPECTED_STATS_DIR = path.join(os.homedir(), ".ucpl", "compress");

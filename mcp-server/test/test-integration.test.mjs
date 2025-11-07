@@ -30,10 +30,10 @@ const { generateStatsWithCost } = require("./test-utils/fixtures.js");
 // Helper to get fresh imports (clears cache)
 function getServerModule() {
   delete require.cache[SERVER_PATH];
-  return require("./server.js");
+  return require(SERVER_PATH);
 }
 
-const { parseFlexibleDate, MODEL_PRICING } = require("./server.js");
+const { parseFlexibleDate, MODEL_PRICING } = require(SERVER_PATH);
 
 const DEFAULT_MODEL = "claude-sonnet-4";
 

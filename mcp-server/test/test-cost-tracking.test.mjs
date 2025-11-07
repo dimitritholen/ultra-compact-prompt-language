@@ -35,14 +35,14 @@ const SERVER_PATH = path.join(__dirname, "../server.js");
 // Helper to get fresh imports (clears cache)
 function getServerModule() {
   delete require.cache[SERVER_PATH];
-  return require("./server.js");
+  return require(SERVER_PATH);
 }
 
 const {
   detectLLMClient,
   calculateCostSavings,
   MODEL_PRICING,
-} = require("./server.js");
+} = require(SERVER_PATH);
 
 const DEFAULT_MODEL = "claude-sonnet-4";
 

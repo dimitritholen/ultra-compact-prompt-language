@@ -8,10 +8,14 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
 
 // Import production function from server.js
 const require = createRequire(import.meta.url);
-const { parseFlexibleDate } = require("./server.js");
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SERVER_PATH = path.join(__dirname, "../server.js");
+const { parseFlexibleDate } = require(SERVER_PATH);
 
 describe("parseFlexibleDate() Function", () => {
   describe("Special Keywords", () => {

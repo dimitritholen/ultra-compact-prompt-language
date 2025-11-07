@@ -6,10 +6,13 @@
  * JSON-RPC responses without using fixed timeouts.
  */
 
-const { spawn } = require("child_process");
-const path = require("path");
-const readline = require("readline");
-const { once } = require("events");
+import { spawn } from "child_process";
+import path from "path";
+import readline from "readline";
+import { once } from "events";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const RESPONSE_TIMEOUT_MS = 30000; // 30 seconds
 

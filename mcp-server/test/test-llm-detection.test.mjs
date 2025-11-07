@@ -26,10 +26,10 @@ const SERVER_PATH = path.join(__dirname, "../server.js");
 // Helper to get fresh imports (clears cache)
 function getServerModule() {
   delete require.cache[SERVER_PATH];
-  return require("./server.js");
+  return require(SERVER_PATH);
 }
 
-const { MODEL_PRICING } = require("./server.js");
+const { MODEL_PRICING } = require(SERVER_PATH);
 
 const DEFAULT_MODEL = "claude-sonnet-4";
 const CONFIG_FILE = path.join(os.homedir(), ".ucpl", "compress", "config.json");

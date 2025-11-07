@@ -9,9 +9,9 @@
  * 3. Test isolation is maintained
  */
 
-const fs = require("fs").promises;
-const path = require("path");
-const os = require("os");
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
 
 const TEST_DIR = path.join(os.tmpdir(), `lifecycle-verify-${Date.now()}`);
 const TEST_MARKER = path.join(TEST_DIR, "test-marker.txt");
