@@ -2,7 +2,7 @@
   "name": "ucpl-language",
   "displayName": "UCPL - Ultra-Compact Prompt Language",
   "description": "Language support for UCPL with syntax highlighting, IntelliSense, and snippets",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "dimitritholen",
   "license": "MIT",
   "icon": "icon.png",
