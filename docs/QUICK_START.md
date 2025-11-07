@@ -9,13 +9,15 @@
 ### 1. Create a UCPL File
 
 ```markdown
-<!-- UCPL: Expand with UUIP v1.0 | https://your-repo/ucpl/docs/ucpl-interpreter-prompt.md -->
----
+## <!-- UCPL: Expand with UUIP v1.0 | https://your-repo/ucpl/docs/ucpl-interpreter-prompt.md -->
+
 format: ucpl
 version: 1.0
 parser: ucpl-standard
 description: "Code reviewer with quality scoring"
+
 ---
+
 @role:senior_engineer
 @task:review|security|performance
 @scope:auth_module
@@ -33,6 +35,7 @@ This ~800-token prompt teaches any LLM to read UCPL.
 ### 3. Use It
 
 **Copy-paste method:**
+
 ```
 [Paste entire UUIP document]
 
@@ -41,6 +44,7 @@ Now expand this UCPL file:
 ```
 
 **Programmatic method:**
+
 ```python
 uuip = open("docs/ucpl-interpreter-prompt.md").read()
 ucpl = open("my-prompt.md").read()
@@ -61,6 +65,7 @@ python scripts/validate_ucpl.py my-prompt.md
 The UUIP expands your compact UCPL into full natural language:
 
 **UCPL Input (14 lines)**
+
 ```
 @role:senior_engineer
 @task:review|security|performance
@@ -70,6 +75,7 @@ The UUIP expands your compact UCPL into full natural language:
 ```
 
 **Natural Language Output (~50 words)**
+
 ```
 You are a senior engineer. Your task is to review code with focus
 on security and performance. Limit your review to the auth_module.
@@ -100,17 +106,17 @@ your-ucpl-file.md
 
 ## Core Syntax (Reminder)
 
-| Syntax | Meaning | Example |
-|--------|---------|---------|
-| `@role:X` | Set role | `@role:architect` |
-| `@task:X` | Define task | `@task:debug\|optimize` |
-| `!X` | MUST requirement | `!preserve_api` |
-| `?X` | Optional | `?add_comments` |
-| `~X` | Avoid | `~premature_optimization` |
-| `@out:X` | Output format | `@out:code+tests` |
-| `&` | AND | `security&performance` |
-| `\|\|` | OR | `refactor\|\|document` |
-| `^X` | Focus/priority | `^readability` |
+| Syntax    | Meaning          | Example                   |
+| --------- | ---------------- | ------------------------- |
+| `@role:X` | Set role         | `@role:architect`         |
+| `@task:X` | Define task      | `@task:debug\|optimize`   |
+| `!X`      | MUST requirement | `!preserve_api`           |
+| `?X`      | Optional         | `?add_comments`           |
+| `~X`      | Avoid            | `~premature_optimization` |
+| `@out:X`  | Output format    | `@out:code+tests`         |
+| `&`       | AND              | `security&performance`    |
+| `\|\|`    | OR               | `refactor\|\|document`    |
+| `^X`      | Focus/priority   | `^readability`            |
 
 Full syntax: [README.md](../README.md)
 
@@ -128,6 +134,7 @@ Full syntax: [README.md](../README.md)
 ## Common Use Cases
 
 ### Development Workflows
+
 ```yaml
 @role:staff_engineer
 @workflow:
@@ -139,6 +146,7 @@ Full syntax: [README.md](../README.md)
 ```
 
 ### Research Tasks
+
 ```yaml
 @role:researcher
 @task:investigate|comprehensive
@@ -149,6 +157,7 @@ Full syntax: [README.md](../README.md)
 ```
 
 ### Code Review
+
 ```yaml
 @role:senior_dev
 @task:review|security|style

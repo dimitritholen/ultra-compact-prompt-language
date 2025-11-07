@@ -13,13 +13,20 @@
  * - Test context for diagnostic output
  */
 
-import { describe, test, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
+import {
+  describe,
+  test,
+  before,
+  after,
+  beforeEach,
+  afterEach,
+} from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 
-describe('Example Test Suite', () => {
+describe("Example Test Suite", () => {
   // Suite-level variables
   let testDir;
   let testFile;
@@ -49,7 +56,7 @@ describe('Example Test Suite', () => {
    */
   beforeEach(async () => {
     testFile = path.join(testDir, `test-${Date.now()}.txt`);
-    await fs.writeFile(testFile, 'initial content', 'utf8');
+    await fs.writeFile(testFile, "initial content", "utf8");
   });
 
   /**
@@ -61,140 +68,136 @@ describe('Example Test Suite', () => {
       await fs.unlink(testFile);
     } catch (error) {
       // File might not exist if test deleted it - that's ok
-      if (error.code !== 'ENOENT') {
+      if (error.code !== "ENOENT") {
         throw error;
       }
     }
   });
 
-  describe('File Operations', () => {
-    test('should read file content', async () => {
-      const content = await fs.readFile(testFile, 'utf8');
-      assert.strictEqual(content, 'initial content');
+  describe("File Operations", () => {
+    test("should read file content", async () => {
+      const content = await fs.readFile(testFile, "utf8");
+      assert.strictEqual(content, "initial content");
     });
 
-    test('should write file content', async () => {
-      const newContent = 'updated content';
-      await fs.writeFile(testFile, newContent, 'utf8');
-      const content = await fs.readFile(testFile, 'utf8');
+    test("should write file content", async () => {
+      const newContent = "updated content";
+      await fs.writeFile(testFile, newContent, "utf8");
+      const content = await fs.readFile(testFile, "utf8");
       assert.strictEqual(content, newContent);
     });
 
-    test('should delete file', async () => {
+    test("should delete file", async () => {
       await fs.unlink(testFile);
-      await assert.rejects(
-        async () => await fs.readFile(testFile, 'utf8'),
-        { code: 'ENOENT' }
-      );
+      await assert.rejects(async () => await fs.readFile(testFile, "utf8"), {
+        code: "ENOENT",
+      });
     });
   });
 
-  describe('Assertions Examples', () => {
-    test('should use strict equality', () => {
+  describe("Assertions Examples", () => {
+    test("should use strict equality", () => {
       assert.strictEqual(1 + 1, 2);
-      assert.strictEqual('hello', 'hello');
+      assert.strictEqual("hello", "hello");
     });
 
-    test('should use deep strict equality for objects', () => {
-      const obj1 = { name: 'test', value: 42 };
-      const obj2 = { name: 'test', value: 42 };
+    test("should use deep strict equality for objects", () => {
+      const obj1 = { name: "test", value: 42 };
+      const obj2 = { name: "test", value: 42 };
       assert.deepStrictEqual(obj1, obj2);
     });
 
-    test('should check truthiness', () => {
+    test("should check truthiness", () => {
       assert.ok(true);
       assert.ok(1);
-      assert.ok('non-empty string');
+      assert.ok("non-empty string");
     });
 
-    test('should check for exceptions', () => {
+    test("should check for exceptions", () => {
       assert.throws(() => {
-        throw new Error('Expected error');
+        throw new Error("Expected error");
       }, Error);
     });
 
-    test('should check for async rejections', async () => {
+    test("should check for async rejections", async () => {
       await assert.rejects(
         async () => {
-          throw new Error('Async error');
+          throw new Error("Async error");
         },
-        { message: 'Async error' }
+        { message: "Async error" },
       );
     });
 
-    test('should use not equal assertions', () => {
+    test("should use not equal assertions", () => {
       assert.notStrictEqual(1, 2);
       assert.notDeepStrictEqual({ a: 1 }, { a: 2 });
     });
   });
 
-  describe('Async Patterns', () => {
-    test('should handle promises', async () => {
-      const result = await Promise.resolve('success');
-      assert.strictEqual(result, 'success');
+  describe("Async Patterns", () => {
+    test("should handle promises", async () => {
+      const result = await Promise.resolve("success");
+      assert.strictEqual(result, "success");
     });
 
-    test('should handle async/await', async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
-      assert.ok(true, 'Async operation completed');
+    test("should handle async/await", async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      assert.ok(true, "Async operation completed");
     });
 
-    test('should handle multiple async operations', async () => {
+    test("should handle multiple async operations", async () => {
       const [result1, result2] = await Promise.all([
-        Promise.resolve('first'),
-        Promise.resolve('second')
+        Promise.resolve("first"),
+        Promise.resolve("second"),
       ]);
-      assert.strictEqual(result1, 'first');
-      assert.strictEqual(result2, 'second');
+      assert.strictEqual(result1, "first");
+      assert.strictEqual(result2, "second");
     });
   });
 
-  describe('Test Context Usage', () => {
-    test('should use test context for diagnostics', (t) => {
-      t.diagnostic('This is a diagnostic message for debugging');
+  describe("Test Context Usage", () => {
+    test("should use test context for diagnostics", (t) => {
+      t.diagnostic("This is a diagnostic message for debugging");
       assert.ok(true);
     });
 
-    test('should access test name from context', (t) => {
-      assert.ok(t.name.includes('should access test name'));
+    test("should access test name from context", (t) => {
+      assert.ok(t.name.includes("should access test name"));
     });
   });
 
-  describe('Edge Cases and Error Handling', () => {
-    test('should handle null and undefined', () => {
+  describe("Edge Cases and Error Handling", () => {
+    test("should handle null and undefined", () => {
       assert.strictEqual(null, null);
       assert.strictEqual(undefined, undefined);
       assert.notStrictEqual(null, undefined);
     });
 
-    test('should handle empty collections', () => {
+    test("should handle empty collections", () => {
       assert.deepStrictEqual([], []);
       assert.deepStrictEqual({}, {});
     });
 
-    test('should validate error messages', () => {
+    test("should validate error messages", () => {
       assert.throws(
         () => {
-          throw new Error('Specific error message');
+          throw new Error("Specific error message");
         },
-        { message: 'Specific error message' }
+        { message: "Specific error message" },
       );
     });
 
-    test('should validate error types', () => {
+    test("should validate error types", () => {
       class CustomError extends Error {
         constructor(message) {
           super(message);
-          this.name = 'CustomError';
+          this.name = "CustomError";
         }
       }
 
-      assert.throws(
-        () => {
-          throw new CustomError('Custom error');
-        },
-        CustomError
-      );
+      assert.throws(() => {
+        throw new CustomError("Custom error");
+      }, CustomError);
     });
   });
 });
@@ -203,23 +206,23 @@ describe('Example Test Suite', () => {
  * Top-level test (not in describe block)
  * These are valid but less organized - prefer describe blocks for grouping
  */
-test('standalone test example', () => {
-  assert.strictEqual(typeof test, 'function');
-  assert.strictEqual(typeof describe, 'function');
+test("standalone test example", () => {
+  assert.strictEqual(typeof test, "function");
+  assert.strictEqual(typeof describe, "function");
 });
 
 /**
  * Nested describe blocks for hierarchical organization
  */
-describe('Parent Suite', () => {
-  describe('Child Suite 1', () => {
-    test('should run in child suite 1', () => {
+describe("Parent Suite", () => {
+  describe("Child Suite 1", () => {
+    test("should run in child suite 1", () => {
       assert.ok(true);
     });
   });
 
-  describe('Child Suite 2', () => {
-    test('should run in child suite 2', () => {
+  describe("Child Suite 2", () => {
+    test("should run in child suite 2", () => {
       assert.ok(true);
     });
   });

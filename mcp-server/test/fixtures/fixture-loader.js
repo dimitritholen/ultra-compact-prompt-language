@@ -4,8 +4,8 @@
  * Provides helpers to load production stats samples from fixtures directory
  */
 
-const fs = require('fs').promises;
-const path = require('path');
+const fs = require("fs").promises;
+const path = require("path");
 
 /**
  * Load a fixture file from the stats-samples directory
@@ -15,9 +15,9 @@ const path = require('path');
  * @throws {Error} If fixture file cannot be read or parsed
  */
 async function loadFixture(filename) {
-  const fixturePath = path.join(__dirname, 'stats-samples', filename);
+  const fixturePath = path.join(__dirname, "stats-samples", filename);
   try {
-    const data = await fs.readFile(fixturePath, 'utf-8');
+    const data = await fs.readFile(fixturePath, "utf-8");
     return JSON.parse(data);
   } catch (error) {
     throw new Error(`Failed to load fixture ${filename}: ${error.message}`);
@@ -36,5 +36,5 @@ function cloneFixture(fixtureData) {
 
 module.exports = {
   loadFixture,
-  cloneFixture
+  cloneFixture,
 };

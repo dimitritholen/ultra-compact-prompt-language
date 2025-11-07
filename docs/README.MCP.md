@@ -7,6 +7,7 @@ Model Context Protocol server that provides **semantic code compression** for Cl
 Compresses code context by **70-98%** using semantic summaries that LLMs can read directly—no decompression needed.
 
 Instead of sending this (850 tokens):
+
 ```python
 class UserAuthenticator:
     """Handles user authentication with JWT tokens."""
@@ -18,6 +19,7 @@ class UserAuthenticator:
 ```
 
 You send this (180 tokens):
+
 ```
 # UserAuthenticator (auth/user.py:15-45)
 Class: JWT-based user authentication
@@ -78,6 +80,7 @@ Auto-detects MCP servers from Claude Desktop config. No additional setup needed.
 #### Other MCP Clients
 
 Refer to your client's documentation. Use the same pattern:
+
 ```json
 {
   "command": "ucpl-compress-mcp"
@@ -92,11 +95,11 @@ Once configured, Claude can automatically use the `compress_code_context` tool.
 
 **User**: "What does src/auth/ do?"
 
-**Claude**: *Automatically compresses src/auth/* → Reads 10K tokens instead of 100K → "The auth module handles JWT authentication with UserAuthenticator and SessionManager classes..."
+**Claude**: _Automatically compresses src/auth/_ → Reads 10K tokens instead of 100K → "The auth module handles JWT authentication with UserAuthenticator and SessionManager classes..."
 
 **User**: "Show me the API surface of the entire codebase"
 
-**Claude**: *Compresses at 'minimal' level* → Gets function signatures only → "Here are all the public APIs available..."
+**Claude**: _Compresses at 'minimal' level_ → Gets function signatures only → "Here are all the public APIs available..."
 
 ### Tool Parameters
 
@@ -147,30 +150,34 @@ See [USECASES.md](./USECASES.md) for detailed use case guidance.
 
 ## Compression Levels
 
-| Level | Reduction | What's Included | Use For |
-|-------|-----------|----------------|---------|
-| **full** | 70-80% | Signatures + docstrings + key logic | Detailed understanding |
-| **signatures** | 80-85% | Signatures + type hints only | API exploration |
-| **minimal** | 85-90% | Function/class names only | High-level structure |
+| Level          | Reduction | What's Included                     | Use For                |
+| -------------- | --------- | ----------------------------------- | ---------------------- |
+| **full**       | 70-80%    | Signatures + docstrings + key logic | Detailed understanding |
+| **signatures** | 80-85%    | Signatures + type hints only        | API exploration        |
+| **minimal**    | 85-90%    | Function/class names only           | High-level structure   |
 
 ## Workflow Integration
 
 ### Two-Phase Approach (Recommended)
 
 **Phase 1: Exploration (Compressed)**
+
 ```
 "What does this project do?"
 "Where is authentication handled?"
 "Which modules depend on the database?"
 ```
+
 → Use compression to explore and orient
 
 **Phase 2: Implementation (Full Code)**
+
 ```
 "Fix the bug in auth/user.py:45"
 "Refactor the calculate_discount function"
 "Add error handling to API routes"
 ```
+
 → Read full files for actual work
 
 ### Smart Strategy
@@ -246,8 +253,9 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node mcp-server/server.j
 ### Debugging
 
 Add to `server.js`:
+
 ```javascript
-console.error('DEBUG:', message);  // Logs to stderr
+console.error("DEBUG:", message); // Logs to stderr
 ```
 
 ## Limitations

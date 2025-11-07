@@ -7,8 +7,10 @@ These fixtures contain anonymized production statistics samples for realistic te
 ## Fixture Files
 
 ### `cost-reporting.json`
+
 **Purpose**: Testing cost aggregation and reporting functionality
 **Scenarios**:
+
 - Multiple LLM models (Claude Sonnet 4, GPT-4o, Claude Opus 4, Gemini 2.0 Flash)
 - Various compression levels (full, signatures, minimal)
 - Different output formats (text, summary)
@@ -19,8 +21,10 @@ These fixtures contain anonymized production statistics samples for realistic te
 **Total Cost Savings**: $0.18133 USD across 5 compressions
 
 ### `retention-recent.json`
+
 **Purpose**: Testing recent compression tracking (last 30 days)
 **Scenarios**:
+
 - All records within RECENT_DAYS threshold (30 days)
 - Multiple programming languages (Rust, JavaScript, Python, TypeScript)
 - Different models and clients
@@ -29,8 +33,10 @@ These fixtures contain anonymized production statistics samples for realistic te
 **Total**: 4 recent compressions
 
 ### `retention-mixed.json`
+
 **Purpose**: Testing multi-tier aggregation (recent → daily → monthly)
 **Scenarios**:
+
 - **Recent tier**: 2 compressions (last 30 days)
 - **Daily tier**: 2 compressions (31-365 days ago)
 - **Monthly tier**: 3 compressions (>365 days ago, up to 5 years)
@@ -40,8 +46,10 @@ These fixtures contain anonymized production statistics samples for realistic te
 **Total**: 7 compressions across all tiers
 
 ### `retention-old-format.json`
+
 **Purpose**: Testing migration from legacy stats format (v1.0 → v2.0)
 **Scenarios**:
+
 - Old `compressions` array format (pre-aggregation)
 - Records spanning multiple retention tiers
 - No `version`, `daily`, or `monthly` fields (legacy structure)
@@ -52,9 +60,11 @@ These fixtures contain anonymized production statistics samples for realistic te
 ## Data Generation Process
 
 ### Source
+
 Fixtures are based on actual production usage patterns from `~/.ucpl/compress/compression-stats.json` with the following modifications:
 
 ### Anonymization
+
 1. **File paths**: Real paths replaced with generic patterns
    - `/home/user/projects/...` → `/projects/...`
    - Remove user-specific identifiers
@@ -63,6 +73,7 @@ Fixtures are based on actual production usage patterns from `~/.ucpl/compress/co
 2. **Sensitive data**: No API keys, credentials, or personal information
 
 ### Realistic Patterns
+
 1. **Token counts**: Based on actual compression results
    - Original: 2,450 - 15,680 tokens (typical code files)
    - Compressed: 150 - 1,800 tokens (70-99% reduction)
@@ -89,18 +100,22 @@ Fixtures are based on actual production usage patterns from `~/.ucpl/compress/co
 ### Loading Fixtures
 
 ```javascript
-const fs = require('fs').promises;
-const path = require('path');
+const fs = require("fs").promises;
+const path = require("path");
 
 async function loadFixture(filename) {
-  const fixturePath = path.join(__dirname, 'test/fixtures/stats-samples', filename);
-  const data = await fs.readFile(fixturePath, 'utf-8');
+  const fixturePath = path.join(
+    __dirname,
+    "test/fixtures/stats-samples",
+    filename,
+  );
+  const data = await fs.readFile(fixturePath, "utf-8");
   return JSON.parse(data);
 }
 
 // Example usage
-const costData = await loadFixture('cost-reporting.json');
-const recentData = await loadFixture('retention-recent.json');
+const costData = await loadFixture("cost-reporting.json");
+const recentData = await loadFixture("retention-recent.json");
 ```
 
 ### Test Coverage
@@ -120,6 +135,7 @@ const recentData = await loadFixture('retention-recent.json');
 ### Validation
 
 All fixtures should:
+
 - Match the current stats schema version
 - Have accurate cost calculations (`tokensSaved * pricePerMTok / 1,000,000`)
 - Use realistic compression ratios (0.06 - 0.20 for production code)
@@ -129,6 +145,7 @@ All fixtures should:
 ## Privacy Guarantee
 
 These fixtures contain:
+
 - ✅ Generic file paths
 - ✅ Anonymized project structures
 - ✅ Realistic token counts
@@ -136,6 +153,7 @@ These fixtures contain:
 - ✅ Representative time distributions
 
 These fixtures DO NOT contain:
+
 - ❌ Real file paths with user identifiers
 - ❌ Actual code or file contents
 - ❌ API keys or credentials

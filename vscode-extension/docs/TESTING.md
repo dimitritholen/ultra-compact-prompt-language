@@ -85,6 +85,7 @@ $variable_test
 ### Step 6: Test with Sample File
 
 Open the included `test-sample.ucpl` file and verify:
+
 - All syntax elements are highlighted correctly
 - IntelliSense works throughout the file
 - Hover tooltips appear for all directives
@@ -93,6 +94,7 @@ Open the included `test-sample.ucpl` file and verify:
 ## Expected Results
 
 ### Syntax Highlighting
+
 - ✓ YAML frontmatter is highlighted
 - ✓ Directives (@role, @task, etc.) are highlighted as keywords
 - ✓ Tool invocations (@@search:web) are highlighted distinctly
@@ -103,6 +105,7 @@ Open the included `test-sample.ucpl` file and verify:
 - ✓ Comments (#) are highlighted
 
 ### IntelliSense
+
 - ✓ Directive completions after @
 - ✓ Role completions after @role:
 - ✓ Task completions after @task:
@@ -111,12 +114,14 @@ Open the included `test-sample.ucpl` file and verify:
 - ✓ Tool completions after @@
 
 ### Snippets
+
 - ✓ All snippets insert correctly
 - ✓ Tabstops navigate properly
 - ✓ Choice selections work
 - ✓ Variable placeholders are functional
 
 ### Hover Documentation
+
 - ✓ All directives show documentation
 - ✓ Documentation is formatted correctly
 - ✓ No JavaScript errors in console
@@ -141,6 +146,7 @@ Open the included `test-sample.ucpl` file and verify:
 ### Verify File Paths
 
 Run from terminal:
+
 ```bash
 cd vscode-extension
 ls -la syntaxes/ucpl.tmGrammar.json
@@ -172,25 +178,33 @@ Both should print "OK" messages.
 ## Common Issues and Solutions
 
 ### Issue: Extension doesn't activate
+
 **Solution**:
+
 - Check that `.ucpl` file extension is recognized
 - Verify `contributes.languages` in package.json
 - Restart Extension Development Host
 
 ### Issue: Syntax highlighting not working
+
 **Solution**:
+
 - Verify `syntaxes/ucpl.tmGrammar.json` exists
 - Check `contributes.grammars` in package.json
 - Validate JSON syntax
 
 ### Issue: IntelliSense not appearing
+
 **Solution**:
+
 - Verify `out/extension.js` exists (run `npm run compile`)
 - Check Developer Console for activation errors
 - Try triggering manually with Ctrl+Space
 
 ### Issue: Snippets not showing
+
 **Solution**:
+
 - Verify `snippets/ucpl.code-snippets.json` exists
 - Check `contributes.snippets` in package.json
 - Try typing full prefix (e.g., `ucpl-task`)

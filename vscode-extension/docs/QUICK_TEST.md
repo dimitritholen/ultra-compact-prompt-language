@@ -3,11 +3,13 @@
 ## Launch Extension (2 minutes)
 
 ### Option 1: VS Code GUI
+
 1. Open `/home/dimitri/dev/ultra-compact-prompt-language/vscode-extension` in VS Code
 2. Press **F5**
 3. A new VS Code window opens with the extension loaded
 
 ### Option 2: Command Line
+
 ```bash
 cd /home/dimitri/dev/ultra-compact-prompt-language/vscode-extension
 code .
@@ -17,9 +19,11 @@ code .
 ## Quick Feature Test (5 minutes)
 
 ### 1. Test Syntax Highlighting (30 seconds)
+
 Open `test-sample.ucpl` in the Extension Development Host window.
 
 **Expected**:
+
 - YAML header has different colors
 - `@role`, `@task` are highlighted
 - `@@search:web` is highlighted differently
@@ -27,6 +31,7 @@ Open `test-sample.ucpl` in the Extension Development Host window.
 - `!` constraint is highlighted
 
 ### 2. Test IntelliSense (1 minute)
+
 In Extension Development Host, create new file `quick-test.ucpl`:
 
 ```ucpl
@@ -78,14 +83,17 @@ Quick 2-minute checklist:
 ## Troubleshooting
 
 ### Extension doesn't activate
+
 Check: View > Output > Extension Host
 Look for: "UCPL extension is now active"
 
 ### No syntax highlighting
+
 Check: File has `.ucpl` extension
 Check: Bottom-right corner shows "UCPL" language
 
 ### IntelliSense doesn't work
+
 Try: Ctrl+Space to manually trigger
 Check: Developer Console (Help > Toggle Developer Tools) for errors
 

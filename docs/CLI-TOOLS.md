@@ -39,16 +39,19 @@ ucpl-compress file.py --level minimal     # Public API only
 ### Output Formats
 
 **Text (default)** - Human-readable compressed content:
+
 ```bash
 ucpl-compress file.py
 ```
 
 **Summary** - Token savings table:
+
 ```bash
 ucpl-compress src/ --format summary
 ```
 
 Output:
+
 ```
 File                          Original    Compressed   Savings
 ================================================================
@@ -59,21 +62,25 @@ TOTAL                         2050        310          84.9%
 ```
 
 **JSON** - Machine-readable (for LLMs):
+
 ```bash
 ucpl-compress file.py --format json
 ```
 
 Output:
+
 ```json
 {
   "version": "1.0.0",
-  "results": [{
-    "file": "file.py",
-    "original_tokens": 1200,
-    "compressed_tokens": 180,
-    "savings_pct": 85.0,
-    "compressed_content": "# file.py\n\n..."
-  }],
+  "results": [
+    {
+      "file": "file.py",
+      "original_tokens": 1200,
+      "compressed_tokens": 180,
+      "savings_pct": 85.0,
+      "compressed_content": "# file.py\n\n..."
+    }
+  ],
   "summary": {
     "total_files": 1,
     "total_original_tokens": 1200,
@@ -86,32 +93,38 @@ Output:
 ### Compression Levels
 
 **Full (default)** - Signatures + docstrings + key logic:
+
 ```bash
 ucpl-compress file.py --level full
 ```
 
 Output preserves:
+
 - Function/class signatures
 - Docstrings (first 3 lines)
 - Method signatures
 - Dependencies
 
 **Signatures** - Just function/class signatures:
+
 ```bash
 ucpl-compress file.py --level signatures
 ```
 
 Output preserves:
+
 - Function/class signatures
 - Type hints
 - Method names
 
 **Minimal** - Only public API:
+
 ```bash
 ucpl-compress file.py --level minimal
 ```
 
 Output preserves:
+
 - Public functions/classes only (no `_` prefix)
 - Signatures only
 - No docstrings
@@ -199,6 +212,7 @@ LLMs can invoke `ucpl-compress` via the `@@compress:context` directive in UCPL.
 ```
 
 The LLM will:
+
 1. Recognize the `@@compress:context` directive
 2. Execute `ucpl-compress src/auth.py --level full --format json`
 3. Parse the compressed content
@@ -219,6 +233,7 @@ Review the codebase architecture focusing on:
 ```
 
 The LLM will:
+
 1. Compress `src/` directory (signatures level)
 2. Use compressed context (90% token savings)
 3. Perform architecture review
@@ -228,11 +243,11 @@ The LLM will:
 
 When LLMs see `@@compress:context`, they map it to available tools:
 
-| Environment | Tool Used |
-|-------------|-----------|
-| Claude Code | Bash tool → `ucpl-compress` |
-| API clients | Subprocess → `ucpl-compress` |
-| Custom tools | Direct Python import |
+| Environment  | Tool Used                    |
+| ------------ | ---------------------------- |
+| Claude Code  | Bash tool → `ucpl-compress`  |
+| API clients  | Subprocess → `ucpl-compress` |
+| Custom tools | Direct Python import         |
 
 ### JSON Response Format
 
@@ -259,6 +274,7 @@ LLMs receive structured JSON:
 ```
 
 LLMs can then:
+
 - Extract `compressed_content` for context
 - Report token savings to user
 - Adjust response based on available tokens
@@ -269,22 +285,24 @@ LLMs can then:
 
 Tested on diverse codebases:
 
-| Project Type | Original Tokens | Compressed | Savings |
-|--------------|----------------|------------|---------|
-| Django app | 45,000 | 6,200 | 86.2% |
-| FastAPI service | 28,000 | 3,800 | 86.4% |
-| React components | 32,000 | 4,500 | 85.9% |
-| Python CLI tool | 15,000 | 1,900 | 87.3% |
+| Project Type     | Original Tokens | Compressed | Savings |
+| ---------------- | --------------- | ---------- | ------- |
+| Django app       | 45,000          | 6,200      | 86.2%   |
+| FastAPI service  | 28,000          | 3,800      | 86.4%   |
+| React components | 32,000          | 4,500      | 85.9%   |
+| Python CLI tool  | 15,000          | 1,900      | 87.3%   |
 
 **Average savings**: 85-87% across all projects
 
 **Quality**: No degradation for:
+
 - Architecture review
 - Code review
 - API design
 - Refactoring suggestions
 
 **Limitations**: Less effective for:
+
 - Bug fixing (needs full implementation)
 - Algorithm optimization (needs logic details)
 - Performance profiling (needs measurements)
@@ -296,6 +314,7 @@ Tested on diverse codebases:
 ### When to Use Compression
 
 ✅ **Good candidates**:
+
 - Large codebases (>10,000 tokens)
 - Architecture discussions
 - API reviews
@@ -303,6 +322,7 @@ Tested on diverse codebases:
 - Dependency analysis
 
 ❌ **Poor candidates**:
+
 - Single small files (<500 tokens)
 - Bug fixing (need full code)
 - Algorithm optimization
@@ -311,16 +331,19 @@ Tested on diverse codebases:
 ### Choosing Compression Level
 
 **Use `full`** (default) for:
+
 - First-time analysis
 - Architecture review
 - Documentation tasks
 
 **Use `signatures`** for:
+
 - API review
 - Interface design
 - Type checking tasks
 
 **Use `minimal`** for:
+
 - Quick overview
 - Public API audit
 - Module structure review
@@ -344,6 +367,7 @@ Focus on:
 ```
 
 This approach:
+
 1. Reduces context tokens (85%+ savings)
 2. Keeps prompt instructions compact (UCPL)
 3. Gets focused, high-quality analysis
@@ -355,6 +379,7 @@ This approach:
 **Issue**: `ucpl-compress: command not found`
 
 **Solution**: Add to PATH or use full path:
+
 ```bash
 python scripts/ucpl-compress file.py
 ```
@@ -362,6 +387,7 @@ python scripts/ucpl-compress file.py
 **Issue**: Parse errors on non-Python files
 
 **Solution**: Specify language:
+
 ```bash
 ucpl-compress file.js --language javascript
 ```
@@ -369,6 +395,7 @@ ucpl-compress file.js --language javascript
 **Issue**: Output too compressed, missing details
 
 **Solution**: Use less aggressive level:
+
 ```bash
 ucpl-compress file.py --level full  # Instead of minimal
 ```
@@ -376,6 +403,7 @@ ucpl-compress file.py --level full  # Instead of minimal
 **Issue**: Want to see token savings
 
 **Solution**: Use summary format:
+
 ```bash
 ucpl-compress src/ --format summary
 ```
@@ -439,6 +467,7 @@ print(f"\nContent:\n{result.compressed_content}")
 ## Version History
 
 **v1.0.0** (2025-01-04)
+
 - Initial release
 - Python support
 - Three compression levels
@@ -456,6 +485,7 @@ Found a bug or want to add a feature?
 3. Submit issues/PRs to GitHub repo
 
 Target metrics:
+
 - 80%+ token savings
 - No quality degradation for supported tasks
 - Sub-second compression for files <1000 lines

@@ -14,12 +14,12 @@ UCPL is a comprehensive token compression initiative providing three tools to op
 
 Modern LLM interactions consume massive amounts of tokens:
 
-| Component | Typical Usage | Current Solution |
-|-----------|--------------|------------------|
-| **Prompt instructions** | 500-2,000 tokens | ❌ Verbose natural language |
-| **Code context** | 20,000-50,000 tokens | ❌ Send entire files |
-| **Conversation history** | 5,000-15,000 tokens | ❌ No compression |
-| **AI responses** | 2,000-5,000 tokens | ❌ No control |
+| Component                | Typical Usage        | Current Solution            |
+| ------------------------ | -------------------- | --------------------------- |
+| **Prompt instructions**  | 500-2,000 tokens     | ❌ Verbose natural language |
+| **Code context**         | 20,000-50,000 tokens | ❌ Send entire files        |
+| **Conversation history** | 5,000-15,000 tokens  | ❌ No compression           |
+| **AI responses**         | 2,000-5,000 tokens   | ❌ No control               |
 
 **UCPL addresses the first two problems with specialized tools.**
 
@@ -28,11 +28,13 @@ Modern LLM interactions consume massive amounts of tokens:
 ## 🚀 Quick Start
 
 ### Option 1: Just the Language
+
 Write more efficient prompts with UCPL syntax.
 
 **Install**: Add the [UCPL interpreter prompt](./docs/ucpl-interpreter-prompt.md) to your `CLAUDE.md`
 
 **Example**:
+
 ```ucpl
 ---
 format: ucpl
@@ -50,14 +52,17 @@ version: 1.1
 → [Full Language Documentation](./docs/README.LANGUAGE.md)
 
 ### Option 2: Context Compression (MCP Server)
+
 Compress code context by 70-98% automatically.
 
 **Install**:
+
 ```bash
 npm install -g ucpl-compress-mcp
 ```
 
 Add to Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
+
 ```json
 {
   "mcpServers": {
@@ -75,11 +80,13 @@ Add to Claude Desktop config (`~/.config/claude/claude_desktop_config.json`):
 → [Full MCP Server Documentation](./docs/README.MCP.md)
 
 ### Option 3: VS Code Extension
+
 Get IDE support for writing UCPL prompts.
 
 **Install**: Search "UCPL" in VS Code Extensions (`Ctrl+Shift+X`)
 
 **Features**:
+
 - Syntax highlighting
 - IntelliSense autocomplete
 - Code snippets
@@ -91,11 +98,11 @@ Get IDE support for writing UCPL prompts.
 
 ## Tool Comparison
 
-| Tool | Compresses | Token Reduction | Use For |
-|------|-----------|----------------|---------|
-| **UCPL Language** | Prompt instructions | 50-85% | Writing better prompts |
-| **MCP Server** | Code context | 70-98% | Exploring codebases |
-| **VS Code Extension** | — | — | Authoring UCPL files |
+| Tool                  | Compresses          | Token Reduction | Use For                |
+| --------------------- | ------------------- | --------------- | ---------------------- |
+| **UCPL Language**     | Prompt instructions | 50-85%          | Writing better prompts |
+| **MCP Server**        | Code context        | 70-98%          | Exploring codebases    |
+| **VS Code Extension** | —                   | —               | Authoring UCPL files   |
 
 **Use them together**: Write prompts in UCPL (language + extension), compress code context with MCP server.
 
@@ -108,6 +115,7 @@ Get IDE support for writing UCPL prompts.
 A structured syntax for token-efficient prompts.
 
 **Natural Language** (42 tokens):
+
 ```
 You are an expert Python developer. Analyze the following code
 for security vulnerabilities. Focus on SQL injection and XSS.
@@ -115,6 +123,7 @@ Provide output as a bulleted list with severity ratings.
 ```
 
 **UCPL** (18 tokens):
+
 ```ucpl
 @role:sec_auditor
 @task:analyze|sql_inj|xss
@@ -122,6 +131,7 @@ Provide output as a bulleted list with severity ratings.
 ```
 
 **Core Features**:
+
 - Directives: `@role`, `@task`, `@scope`, `@out`
 - Constraints: `!must`, `?optional`, `~avoid`
 - Workflows: Multi-step task chains
@@ -139,6 +149,7 @@ Semantic code compression for LLM context.
 **What it does**: Converts full code to semantic summaries LLMs can read directly.
 
 **Full Code** (850 tokens):
+
 ```python
 class UserAuthenticator:
     """Handles user authentication with JWT tokens."""
@@ -148,6 +159,7 @@ class UserAuthenticator:
 ```
 
 **Compressed** (180 tokens - 79% reduction):
+
 ```
 # UserAuthenticator (auth/user.py:15-45)
 JWT-based authentication
@@ -158,6 +170,7 @@ Methods:
 ```
 
 **Core Features**:
+
 - 16 language support
 - 3 compression levels (full, signatures, minimal)
 - File filtering (include/exclude patterns)
@@ -174,6 +187,7 @@ Methods:
 Full IDE support for UCPL syntax.
 
 **Features**:
+
 - Syntax highlighting for `.ucpl` files
 - IntelliSense autocomplete
 - Code snippets (`ucpl-task`, `ucpl-workflow`, etc.)
@@ -192,13 +206,13 @@ Full IDE support for UCPL syntax.
 
 Testing across 50 diverse prompts:
 
-| Task Type | Token Reduction | Quality Impact |
-|-----------|----------------|----------------|
-| Code review | 66% | 0% |
-| Simple refactoring | 65% | 0% |
-| Complex analysis | 38% | -5% |
-| Documentation | 52% | 0% |
-| Multi-step workflows | 45% | -3% |
+| Task Type            | Token Reduction | Quality Impact |
+| -------------------- | --------------- | -------------- |
+| Code review          | 66%             | 0%             |
+| Simple refactoring   | 65%             | 0%             |
+| Complex analysis     | 38%             | -5%            |
+| Documentation        | 52%             | 0%             |
+| Multi-step workflows | 45%             | -3%            |
 
 **Key finding**: 50-60% compression optimal for complex tasks without quality loss.
 
@@ -206,13 +220,13 @@ Testing across 50 diverse prompts:
 
 Testing across 20 codebases:
 
-| Language | Compression | Semantic Preservation |
-|----------|------------|----------------------|
-| Python | 75-85% | ✅ High |
-| TypeScript | 70-80% | ✅ High |
-| JavaScript | 65-75% | ✅ High |
-| Java | 80-90% | ✅ High |
-| Go | 75-85% | ✅ High |
+| Language   | Compression | Semantic Preservation |
+| ---------- | ----------- | --------------------- |
+| Python     | 75-85%      | ✅ High               |
+| TypeScript | 70-80%      | ✅ High               |
+| JavaScript | 65-75%      | ✅ High               |
+| Java       | 80-90%      | ✅ High               |
+| Go         | 75-85%      | ✅ High               |
 
 **Key finding**: Typed languages compress better while preserving semantics.
 
@@ -223,12 +237,14 @@ Testing across 20 codebases:
 ### UCPL Language
 
 **✅ Use for**:
+
 - Repeated workflows (code reviews, refactoring)
 - API/automation (predictable parsing)
 - Fast iteration (less typing)
 - Team collaboration (shared templates)
 
 **❌ Avoid for**:
+
 - High-stakes precision work (medical, legal)
 - Initial problem exploration
 - One-off complex requests
@@ -236,12 +252,14 @@ Testing across 20 codebases:
 ### MCP Server
 
 **✅ Use for**:
+
 - Exploring large codebases (>5K lines)
 - API surface understanding
 - Multi-file analysis
 - Cost optimization
 
 **❌ Avoid for**:
+
 - Code editing/modification
 - Algorithm debugging
 - Security audits
@@ -250,6 +268,7 @@ Testing across 20 codebases:
 ### VS Code Extension
 
 **✅ Use for**:
+
 - Writing UCPL files comfortably
 - Learning UCPL syntax
 - Building prompt templates
@@ -374,6 +393,7 @@ See [CLI Tools Documentation](./docs/CLI-TOOLS.md) for complete reference.
 ### What Works Today
 
 **UCPL Language**:
+
 - ✅ 50-85% token reduction on prompts
 - ✅ More consistent results
 - ✅ Faster authoring
@@ -381,6 +401,7 @@ See [CLI Tools Documentation](./docs/CLI-TOOLS.md) for complete reference.
 - ⚠️ Not human-readable for non-practitioners
 
 **MCP Server**:
+
 - ✅ 70-98% context compression
 - ✅ Perfect for code exploration
 - ✅ Works automatically in Claude
@@ -388,6 +409,7 @@ See [CLI Tools Documentation](./docs/CLI-TOOLS.md) for complete reference.
 - ⚠️ Overhead for small codebases
 
 **VS Code Extension**:
+
 - ✅ Full syntax support
 - ✅ Makes UCPL comfortable to write
 - ⚠️ Syntax only, no semantic validation
@@ -415,23 +437,27 @@ UCPL is experimental and needs community validation:
 ## Documentation
 
 ### Core Docs
+
 - [UCPL Language](./docs/README.LANGUAGE.md) - Full language specification
 - [MCP Server](./docs/README.MCP.md) - Context compression server
 - [VS Code Extension](./docs/README.EXTENSION.md) - IDE support
 
 ### Guides
+
 - [Quick Start](./docs/QUICK_START.md) - 5-minute intro
 - [Quick Reference](./docs/QUICK-REFERENCE.md) - Syntax cheat sheet
 - [Bootstrapping](./docs/BOOTSTRAPPING.md) - Getting started
 - [Use Cases](./docs/USECASES.md) - When to use what
 
 ### Technical
+
 - [Tool Syntax](./docs/TOOL_SYNTAX.md) - `@@` invocation spec
 - [Context Compression](./docs/CONTEXT-COMPRESSION.md) - How compression works
 - [CLI Tools](./docs/CLI-TOOLS.md) - Command-line tools
 - [YAML Header](./docs/YAML_HEADER_SPEC.md) - File format
 
 ### Examples
+
 - [Examples Directory](./examples/) - Real-world UCPL prompts
 - [Code Review](./examples/code-review-ucpl.md)
 - [Parallel Workflows](./examples/worktrees-parallel-ucpl.md)
@@ -463,6 +489,7 @@ Start with what you need. Scale as you grow.
 ---
 
 **Ready to start?** Choose your path:
+
 - [Learn the Language](./docs/README.LANGUAGE.md)
 - [Install MCP Server](./docs/README.MCP.md)
 - [Get VS Code Extension](./docs/README.EXTENSION.md)

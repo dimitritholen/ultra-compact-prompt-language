@@ -8,16 +8,16 @@
  * 4. Missing backup files are handled gracefully
  */
 
-import { test, describe, beforeEach, afterEach } from 'node:test';
-import { promises as fs } from 'fs';
-import path from 'path';
-import os from 'os';
-import assert from 'node:assert';
+import { test, describe, beforeEach, afterEach } from "node:test";
+import { promises as fs } from "fs";
+import path from "path";
+import os from "os";
+import assert from "node:assert";
 
-const STATS_DIR = path.join(os.homedir(), '.ucpl', 'compress');
-const STATS_FILE = path.join(STATS_DIR, 'compression-stats.json');
-const BACKUP_FILE = path.join(STATS_DIR, 'compression-stats.json.backup');
-const TEST_MARKER_FILE = path.join(STATS_DIR, 'test-marker.json');
+const STATS_DIR = path.join(os.homedir(), ".ucpl", "compress");
+const STATS_FILE = path.join(STATS_DIR, "compression-stats.json");
+const BACKUP_FILE = path.join(STATS_DIR, "compression-stats.json.backup");
+const TEST_MARKER_FILE = path.join(STATS_DIR, "test-marker.json");
 
 /**
  * Check if a file exists
@@ -42,7 +42,7 @@ async function createTestStats(marker) {
   const testData = {
     test: true,
     marker,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
   await fs.writeFile(STATS_FILE, JSON.stringify(testData, null, 2));
 }
@@ -53,7 +53,7 @@ async function createTestStats(marker) {
  */
 async function readStatsMarker() {
   try {
-    const data = await fs.readFile(STATS_FILE, 'utf-8');
+    const data = await fs.readFile(STATS_FILE, "utf-8");
     const parsed = JSON.parse(data);
     return parsed.marker || null;
   } catch {
@@ -67,9 +67,9 @@ async function readStatsMarker() {
 async function backupStats() {
   try {
     await fs.copyFile(STATS_FILE, BACKUP_FILE);
-    console.log('  ✅ Created backup');
+    console.log("  ✅ Created backup");
   } catch {
-    console.log('  ℹ️  No existing stats to backup');
+    console.log("  ℹ️  No existing stats to backup");
   }
 }
 
@@ -80,9 +80,9 @@ async function restoreStats() {
   try {
     await fs.copyFile(BACKUP_FILE, STATS_FILE);
     await fs.unlink(BACKUP_FILE);
-    console.log('  ✅ Restored from backup');
+    console.log("  ✅ Restored from backup");
   } catch {
-    console.log('  ℹ️  No backup to restore');
+    console.log("  ℹ️  No backup to restore");
   }
 }
 
@@ -100,7 +100,7 @@ async function cleanup() {
   }
 }
 
-describe('Backup/Restore Safety Tests', () => {
+describe("Backup/Restore Safety Tests", () => {
   beforeEach(async () => {
     await cleanup();
   });
@@ -109,79 +109,94 @@ describe('Backup/Restore Safety Tests', () => {
     await cleanup();
   });
 
-  test('beforeEach creates backup successfully', async () => {
+  test("beforeEach creates backup successfully", async () => {
     // Arrange: Create original stats
-    const originalMarker = 'original-data-123';
+    const originalMarker = "original-data-123";
     await createTestStats(originalMarker);
 
     // Act: Simulate beforeEach
     await backupStats();
 
     // Assert: Backup exists and contains original data
-    assert.ok(await fileExists(BACKUP_FILE), 'Backup file should exist');
+    assert.ok(await fileExists(BACKUP_FILE), "Backup file should exist");
 
-    const backupData = JSON.parse(await fs.readFile(BACKUP_FILE, 'utf-8'));
-    assert.strictEqual(backupData.marker, originalMarker, 'Backup should contain original marker');
+    const backupData = JSON.parse(await fs.readFile(BACKUP_FILE, "utf-8"));
+    assert.strictEqual(
+      backupData.marker,
+      originalMarker,
+      "Backup should contain original marker",
+    );
   });
 
-  test('afterEach restores backup even when test fails', async () => {
+  test("afterEach restores backup even when test fails", async () => {
     // Arrange: Create original stats and backup
-    const originalMarker = 'original-data-456';
+    const originalMarker = "original-data-456";
     await createTestStats(originalMarker);
     await backupStats();
 
     // Act: Simulate test modifying stats
-    const modifiedMarker = 'modified-data-789';
+    const modifiedMarker = "modified-data-789";
     await createTestStats(modifiedMarker);
 
     // Verify modification
     const modifiedData = await readStatsMarker();
-    assert.strictEqual(modifiedData, modifiedMarker, 'Stats should be modified');
+    assert.strictEqual(
+      modifiedData,
+      modifiedMarker,
+      "Stats should be modified",
+    );
 
     // Act: Simulate afterEach (restore)
     await restoreStats();
 
     // Assert: Original data is restored
     const restoredData = await readStatsMarker();
-    assert.strictEqual(restoredData, originalMarker, 'Stats should be restored to original');
-    assert.ok(!(await fileExists(BACKUP_FILE)), 'Backup file should be cleaned up');
+    assert.strictEqual(
+      restoredData,
+      originalMarker,
+      "Stats should be restored to original",
+    );
+    assert.ok(
+      !(await fileExists(BACKUP_FILE)),
+      "Backup file should be cleaned up",
+    );
   });
 
-  test('afterEach handles missing backup gracefully', async () => {
+  test("afterEach handles missing backup gracefully", async () => {
     // Arrange: No backup file exists
-    assert.ok(!(await fileExists(BACKUP_FILE)), 'No backup should exist');
+    assert.ok(!(await fileExists(BACKUP_FILE)), "No backup should exist");
 
     // Act: Call restore (should not throw)
     await assert.doesNotReject(
       async () => await restoreStats(),
-      'Restore should handle missing backup gracefully'
+      "Restore should handle missing backup gracefully",
     );
   });
 
-  test('beforeEach handles missing stats file gracefully', async () => {
+  test("beforeEach handles missing stats file gracefully", async () => {
     // Arrange: No stats file exists
-    assert.ok(!(await fileExists(STATS_FILE)), 'No stats file should exist');
+    assert.ok(!(await fileExists(STATS_FILE)), "No stats file should exist");
 
     // Act: Call backup (should not throw)
     await assert.doesNotReject(
       async () => await backupStats(),
-      'Backup should handle missing stats gracefully'
+      "Backup should handle missing stats gracefully",
     );
   });
 
-  test('restore executes in try/finally even on exception', async () => {
+  test("restore executes in try/finally even on exception", async () => {
     // Arrange: Create backup
-    const originalMarker = 'original-for-exception-test';
+    const originalMarker = "original-for-exception-test";
     await createTestStats(originalMarker);
     await backupStats();
 
     // Act: Simulate test that modifies data and throws
     let exceptionThrown = false;
     try {
-      await createTestStats('corrupted-data');
+      await createTestStats("corrupted-data");
 
       // Simulate exception (test failure)
-      throw new Error('Simulated test failure');
+      throw new Error("Simulated test failure");
     } catch (error) {
       exceptionThrown = true;
     } finally {
@@ -190,31 +205,43 @@ describe('Backup/Restore Safety Tests', () => {
     }
 
     // Assert: Exception was thrown AND restore happened
-    assert.ok(exceptionThrown, 'Exception should have been thrown');
+    assert.ok(exceptionThrown, "Exception should have been thrown");
 
     const restoredData = await readStatsMarker();
-    assert.strictEqual(restoredData, originalMarker, 'Data should be restored despite exception');
+    assert.strictEqual(
+      restoredData,
+      originalMarker,
+      "Data should be restored despite exception",
+    );
   });
 
-  test('multiple backup/restore cycles work correctly', async () => {
+  test("multiple backup/restore cycles work correctly", async () => {
     // Test 1: First cycle
-    const marker1 = 'cycle-1';
+    const marker1 = "cycle-1";
     await createTestStats(marker1);
     await backupStats();
-    await createTestStats('modified-1');
+    await createTestStats("modified-1");
     await restoreStats();
 
     let restored1 = await readStatsMarker();
-    assert.strictEqual(restored1, marker1, 'First cycle should restore correctly');
+    assert.strictEqual(
+      restored1,
+      marker1,
+      "First cycle should restore correctly",
+    );
 
     // Test 2: Second cycle
-    const marker2 = 'cycle-2';
+    const marker2 = "cycle-2";
     await createTestStats(marker2);
     await backupStats();
-    await createTestStats('modified-2');
+    await createTestStats("modified-2");
     await restoreStats();
 
     let restored2 = await readStatsMarker();
-    assert.strictEqual(restored2, marker2, 'Second cycle should restore correctly');
+    assert.strictEqual(
+      restored2,
+      marker2,
+      "Second cycle should restore correctly",
+    );
   });
 });

@@ -27,6 +27,7 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Components**:
+
 - `@@` - Tool invocation prefix (double at-sign)
 - `capability` - Abstract tool category (search, think, read, write, etc.)
 - `:subcategory` - Optional refinement (web, code, deep, etc.)
@@ -50,18 +51,21 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Find information in various domains
 
 **Subcategories**:
+
 - `@@search:web` - Web/internet search
 - `@@search:code` - Code pattern search in files
 - `@@search:docs` - Documentation search
 - `@@search:semantic` - Semantic/similarity search
 
 **Parameters**:
+
 - `query` - Search query string
 - `recent` - Filter for recent results (true/false)
 - `sources` - Preferred sources (academic, official, community)
 - `limit` - Maximum number of results
 
 **Examples**:
+
 ```ucpl
 @@search:web[query="UCPL syntax", recent=true]
 @@search:code[query="function.*Error", pattern=*.js]
@@ -69,6 +73,7 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Maps To**:
+
 - Claude Code: WebSearch, Grep
 - GPT: browser, web_search
 - Gemini: Google Search
@@ -81,16 +86,19 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Engage reasoning/analysis capabilities
 
 **Subcategories**:
+
 - `@@think:deep` - Extended reasoning with step-by-step analysis
 - `@@think:cot` - Chain-of-thought reasoning
 - `@@think:systematic` - Systematic problem decomposition
 
 **Parameters**:
+
 - `steps` - Number of reasoning steps
 - `complexity` - Problem complexity (low, medium, high)
 - `approach` - Reasoning approach (analytical, creative, critical)
 
 **Examples**:
+
 ```ucpl
 @@think:deep[steps=15]
 @@think:cot[approach=analytical]
@@ -98,7 +106,8 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Maps To**:
-- Claude Code: mcp__sequential-thinking__sequentialthinking
+
+- Claude Code: mcp**sequential-thinking**sequentialthinking
 - OpenAI: o1-preview, o1-mini (reasoning models)
 - Gemini: Gemini 2.0 thinking mode
 - Generic: Extended context window analysis
@@ -110,20 +119,24 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Read/write files in the workspace
 
 **Read Subcategories**:
+
 - `@@read:files` - Read file contents
 - `@@read:structure` - Analyze directory structure
 
 **Write Subcategories**:
+
 - `@@write:files` - Create or overwrite files
 - `@@edit:files` - Edit existing files
 
 **Parameters**:
+
 - `path` - File or directory path
 - `pattern` - Glob pattern for multiple files
 - `recursive` - Include subdirectories (true/false)
 - `encoding` - File encoding (default: utf-8)
 
 **Examples**:
+
 ```ucpl
 @@read:files[pattern=src/**/*.py]
 @@write:files[path=output.md, encoding=utf-8]
@@ -131,6 +144,7 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Maps To**:
+
 - Claude Code: Read, Write, Edit, Glob
 - GPT Code Interpreter: file operations
 - Generic: File system APIs
@@ -142,23 +156,27 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Retrieve content from URLs or external resources
 
 **Subcategories**:
+
 - `@@fetch:url` - Fetch URL content
 - `@@fetch:api` - Call REST APIs
 - `@@fetch:docs` - Fetch documentation
 
 **Parameters**:
+
 - `url` - Target URL
 - `format` - Expected format (html, json, markdown, pdf)
 - `headers` - Custom HTTP headers
 - `timeout` - Request timeout in seconds
 
 **Examples**:
+
 ```ucpl
 @@fetch:url[url=https://example.com/api/data, format=json]
 @@fetch:docs[url=https://docs.python.org/3/library/asyncio.html]
 ```
 
 **Maps To**:
+
 - Claude Code: WebFetch
 - GPT: browser tool
 - Generic: curl, requests library
@@ -170,17 +188,20 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Run shell commands or scripts
 
 **Subcategories**:
+
 - `@@execute:shell` - Run shell commands
 - `@@execute:script` - Run scripts
 - `@@execute:test` - Run test suites
 
 **Parameters**:
+
 - `command` - Command to execute
 - `cwd` - Working directory
 - `env` - Environment variables
 - `timeout` - Execution timeout
 
 **Examples**:
+
 ```ucpl
 @@execute:shell[command="npm test"]
 @@execute:script[path=scripts/build.sh, cwd=/project]
@@ -188,6 +209,7 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Maps To**:
+
 - Claude Code: Bash
 - GPT Code Interpreter: python, bash
 - Generic: subprocess, shell
@@ -199,17 +221,20 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 **Purpose**: Persist and retrieve data across sessions
 
 **Subcategories**:
+
 - `@@memory:save` - Save data
 - `@@memory:load` - Retrieve data
 - `@@memory:search` - Search saved data
 
 **Parameters**:
+
 - `key` - Storage key
 - `value` - Data to store
 - `category` - Data category (decision, progress, note)
 - `channel` - Organization channel
 
 **Examples**:
+
 ```ucpl
 @@memory:save[key=architecture_decision, value=$design, category=decision]
 @@memory:load[key=architecture_decision]
@@ -217,6 +242,7 @@ The `@@` syntax allows UCPL prompts to explicitly trigger tool usage without har
 ```
 
 **Maps To**:
+
 - Claude Code: memory-keeper MCP
 - GPT: Memory feature
 - Generic: Any persistence tool/database
@@ -270,6 +296,7 @@ MUST: Use any available web search tool (examples: WebSearch, browser, search AP
 ### Execution Phase (LLM)
 
 The executing LLM:
+
 1. Reads the expanded "MUST use" instruction
 2. Checks available tools in its environment
 3. Selects the best matching tool (WebSearch, browser, etc.)
@@ -278,16 +305,19 @@ The executing LLM:
 ### Example Flow
 
 **UCPL**:
+
 ```ucpl
 @@search:web[query="async programming", recent=true]
 ```
 
 **UUIP Expands To**:
+
 ```
 MUST: Use any available web search tool (WebSearch, browser, search API, etc.) to search for "async programming". Filter for recent results.
 ```
 
 **Claude Code Executes**:
+
 ```xml
 <use_tool>
   <tool_name>WebSearch</tool_name>
@@ -299,6 +329,7 @@ MUST: Use any available web search tool (WebSearch, browser, search API, etc.) t
 ```
 
 **GPT Executes**:
+
 ```json
 {
   "tool": "web_search",

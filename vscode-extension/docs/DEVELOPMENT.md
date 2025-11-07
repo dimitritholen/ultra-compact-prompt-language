@@ -100,23 +100,25 @@ my-extension/
   "engines": {
     "vscode": "^1.74.0"
   },
-  "categories": [
-    "Programming Languages"
-  ],
+  "categories": ["Programming Languages"],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
-    "languages": [{
-      "id": "ucpl",
-      "aliases": ["UCPL", "ucpl"],
-      "extensions": [".ucpl"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "ucpl",
-      "scopeName": "source.ucpl",
-      "path": "./syntaxes/ucpl.tmGrammar.json"
-    }]
+    "languages": [
+      {
+        "id": "ucpl",
+        "aliases": ["UCPL", "ucpl"],
+        "extensions": [".ucpl"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ucpl",
+        "scopeName": "source.ucpl",
+        "path": "./syntaxes/ucpl.tmGrammar.json"
+      }
+    ]
   }
 }
 ```
@@ -129,6 +131,7 @@ my-extension/
 - `icon` - 128x128px PNG (no SVG for security)
 
 **Image constraints**:
+
 - README/CHANGELOG images must use HTTPS URLs
 - Relative paths supported in README
 
@@ -208,11 +211,13 @@ VS Code uses TextMate grammars with two steps:
 ```json
 {
   "contributes": {
-    "grammars": [{
-      "language": "ucpl",
-      "scopeName": "source.ucpl",
-      "path": "./syntaxes/ucpl.tmGrammar.json"
-    }]
+    "grammars": [
+      {
+        "language": "ucpl",
+        "scopeName": "source.ucpl",
+        "path": "./syntaxes/ucpl.tmGrammar.json"
+      }
+    ]
   }
 }
 ```
@@ -235,6 +240,7 @@ VS Code uses TextMate grammars with two steps:
 **Theme mapping**: Themes cascade through parent scopes unless overridden
 
 **Example scope**: `keyword.operator.arithmetic.js` where:
+
 - `keyword` - Parent scope
 - `operator` - Type
 - `arithmetic` - Specific category
@@ -249,14 +255,16 @@ Extend existing grammars by injecting into specific scopes.
 ```json
 {
   "contributes": {
-    "grammars": [{
-      "injectTo": ["source.markdown"],
-      "scopeName": "markdown.ucpl.codeblock",
-      "path": "./syntaxes/ucpl-injection.json",
-      "embeddedLanguages": {
-        "meta.embedded.block.ucpl": "ucpl"
+    "grammars": [
+      {
+        "injectTo": ["source.markdown"],
+        "scopeName": "markdown.ucpl.codeblock",
+        "path": "./syntaxes/ucpl-injection.json",
+        "embeddedLanguages": {
+          "meta.embedded.block.ucpl": "ucpl"
+        }
       }
-    }]
+    ]
   }
 }
 ```
@@ -289,11 +297,11 @@ Extend existing grammars by injecting into specific scopes.
 **YAML support**: Use `js-yaml` to convert complex grammars:
 
 ```javascript
-const yaml = require('js-yaml');
-const fs = require('fs');
+const yaml = require("js-yaml");
+const fs = require("fs");
 
-const grammar = yaml.load(fs.readFileSync('grammar.yaml', 'utf8'));
-fs.writeFileSync('grammar.json', JSON.stringify(grammar, null, 2));
+const grammar = yaml.load(fs.readFileSync("grammar.yaml", "utf8"));
+fs.writeFileSync("grammar.json", JSON.stringify(grammar, null, 2));
 ```
 
 **Source**: [Syntax Highlight Guide](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide)
@@ -356,6 +364,7 @@ Declarative editing behavior without code.
 **wordPattern**: Defines word boundaries for double-click selection
 
 **Folding modes**:
+
 1. Indentation-based (default fallback)
 2. Folding range provider (via LSP)
 3. Marker-based (via `folding.markers`)
@@ -429,10 +438,12 @@ variable    ::= '$' var | '${' var '}' | '${' var ':' any '}' | '${' var transfo
 ```json
 {
   "contributes": {
-    "snippets": [{
-      "language": "ucpl",
-      "path": "./snippets/ucpl.code-snippets.json"
-    }]
+    "snippets": [
+      {
+        "language": "ucpl",
+        "path": "./snippets/ucpl.code-snippets.json"
+      }
+    ]
   }
 }
 ```
@@ -448,54 +459,69 @@ variable    ::= '$' var | '${' var '}' | '${' var ':' any '}' | '${' var transfo
 **Basic implementation** (`src/extension.ts`):
 
 ```typescript
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
   const provider = vscode.languages.registerCompletionItemProvider(
-    'ucpl',
+    "ucpl",
     {
       provideCompletionItems(
         document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken,
-        context: vscode.CompletionContext
+        context: vscode.CompletionContext,
       ): vscode.CompletionItem[] {
-
         // Get current line
         const line = document.lineAt(position).text;
         const linePrefix = line.substring(0, position.character);
 
         // Directive completion
-        if (linePrefix.endsWith('@')) {
+        if (linePrefix.endsWith("@")) {
           return [
-            new vscode.CompletionItem('role', vscode.CompletionItemKind.Keyword),
-            new vscode.CompletionItem('task', vscode.CompletionItemKind.Keyword),
-            new vscode.CompletionItem('scope', vscode.CompletionItemKind.Keyword),
-            new vscode.CompletionItem('out', vscode.CompletionItemKind.Keyword),
+            new vscode.CompletionItem(
+              "role",
+              vscode.CompletionItemKind.Keyword,
+            ),
+            new vscode.CompletionItem(
+              "task",
+              vscode.CompletionItemKind.Keyword,
+            ),
+            new vscode.CompletionItem(
+              "scope",
+              vscode.CompletionItemKind.Keyword,
+            ),
+            new vscode.CompletionItem("out", vscode.CompletionItemKind.Keyword),
           ];
         }
 
         // Role values after @role:
         if (linePrefix.match(/@role:$/)) {
           return [
-            createCompletionItem('dev', 'Developer role'),
-            createCompletionItem('audit', 'Auditor role'),
-            createCompletionItem('teach', 'Teacher role'),
-            createCompletionItem('analyze', 'Analyst role'),
+            createCompletionItem("dev", "Developer role"),
+            createCompletionItem("audit", "Auditor role"),
+            createCompletionItem("teach", "Teacher role"),
+            createCompletionItem("analyze", "Analyst role"),
           ];
         }
 
         return [];
-      }
+      },
     },
-    '@', ':' // Trigger characters
+    "@",
+    ":", // Trigger characters
   );
 
   context.subscriptions.push(provider);
 }
 
-function createCompletionItem(label: string, detail: string): vscode.CompletionItem {
-  const item = new vscode.CompletionItem(label, vscode.CompletionItemKind.Value);
+function createCompletionItem(
+  label: string,
+  detail: string,
+): vscode.CompletionItem {
+  const item = new vscode.CompletionItem(
+    label,
+    vscode.CompletionItemKind.Value,
+  );
   item.detail = detail;
   return item;
 }
@@ -518,30 +544,29 @@ function createCompletionItem(label: string, detail: string): vscode.CompletionI
 ### 6.2 HoverProvider (Tooltips)
 
 ```typescript
-const hoverProvider = vscode.languages.registerHoverProvider('ucpl', {
+const hoverProvider = vscode.languages.registerHoverProvider("ucpl", {
   provideHover(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
   ): vscode.Hover | undefined {
-
     const range = document.getWordRangeAtPosition(position, /@\w+/);
     if (!range) return;
 
     const word = document.getText(range);
 
     const hoverMap: { [key: string]: string } = {
-      '@role': '**Role directive**: Defines the persona/role for the LLM',
-      '@task': '**Task directive**: Specifies the primary task with modifiers',
-      '@scope': '**Scope directive**: Limits work to specific modules/files',
-      '@out': '**Output directive**: Defines output format',
+      "@role": "**Role directive**: Defines the persona/role for the LLM",
+      "@task": "**Task directive**: Specifies the primary task with modifiers",
+      "@scope": "**Scope directive**: Limits work to specific modules/files",
+      "@out": "**Output directive**: Defines output format",
     };
 
     const hoverText = hoverMap[word];
     if (hoverText) {
       return new vscode.Hover(new vscode.MarkdownString(hoverText));
     }
-  }
+  },
 });
 
 context.subscriptions.push(hoverProvider);
@@ -554,28 +579,27 @@ context.subscriptions.push(hoverProvider);
 ### 6.3 DefinitionProvider (Go to Definition)
 
 ```typescript
-const definitionProvider = vscode.languages.registerDefinitionProvider('ucpl', {
+const definitionProvider = vscode.languages.registerDefinitionProvider("ucpl", {
   provideDefinition(
     document: vscode.TextDocument,
     position: vscode.Position,
-    token: vscode.CancellationToken
+    token: vscode.CancellationToken,
   ): vscode.Definition | undefined {
-
     const range = document.getWordRangeAtPosition(position, /@use\s+(\w+)/);
     if (!range) return;
 
-    const macroName = document.getText(range).replace('@use ', '');
+    const macroName = document.getText(range).replace("@use ", "");
 
     // Search for @def macroName in document
     const text = document.getText();
-    const defPattern = new RegExp(`@def\\s+${macroName}:`, 'g');
+    const defPattern = new RegExp(`@def\\s+${macroName}:`, "g");
     const match = defPattern.exec(text);
 
     if (match) {
       const defPosition = document.positionAt(match.index);
       return new vscode.Location(document.uri, defPosition);
     }
-  }
+  },
 });
 
 context.subscriptions.push(definitionProvider);
@@ -644,21 +668,21 @@ context.subscriptions.push(definitionProvider);
 **Client setup** (`client/src/extension.ts`):
 
 ```typescript
-import * as path from 'path';
-import { ExtensionContext } from 'vscode';
+import * as path from "path";
+import { ExtensionContext } from "vscode";
 import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
-  TransportKind
-} from 'vscode-languageclient/node';
+  TransportKind,
+} from "vscode-languageclient/node";
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
   // Server module path
   const serverModule = context.asAbsolutePath(
-    path.join('server', 'out', 'server.js')
+    path.join("server", "out", "server.js"),
   );
 
   // Server options
@@ -667,24 +691,24 @@ export function activate(context: ExtensionContext) {
     debug: {
       module: serverModule,
       transport: TransportKind.ipc,
-      options: { execArgv: ['--nolazy', '--inspect=6009'] }
-    }
+      options: { execArgv: ["--nolazy", "--inspect=6009"] },
+    },
   };
 
   // Client options
   const clientOptions: LanguageClientOptions = {
-    documentSelector: [{ scheme: 'file', language: 'ucpl' }],
+    documentSelector: [{ scheme: "file", language: "ucpl" }],
     synchronize: {
-      fileEvents: workspace.createFileSystemWatcher('**/.ucpl')
-    }
+      fileEvents: workspace.createFileSystemWatcher("**/.ucpl"),
+    },
   };
 
   // Create and start client
   client = new LanguageClient(
-    'ucplLanguageServer',
-    'UCPL Language Server',
+    "ucplLanguageServer",
+    "UCPL Language Server",
     serverOptions,
-    clientOptions
+    clientOptions,
   );
 
   client.start();
@@ -720,10 +744,10 @@ import {
   InitializeResult,
   TextDocumentSyncKind,
   CompletionItem,
-  CompletionItemKind
-} from 'vscode-languageserver/node';
+  CompletionItemKind,
+} from "vscode-languageserver/node";
 
-import { TextDocument } from 'vscode-languageserver-textdocument';
+import { TextDocument } from "vscode-languageserver-textdocument";
 
 // Create connection
 const connection = createConnection(ProposedFeatures.all);
@@ -737,45 +761,41 @@ connection.onInitialize((params: InitializeParams): InitializeResult => {
       textDocumentSync: TextDocumentSyncKind.Incremental,
       completionProvider: {
         resolveProvider: true,
-        triggerCharacters: ['@', ':']
+        triggerCharacters: ["@", ":"],
       },
       hoverProvider: true,
-      definitionProvider: true
-    }
+      definitionProvider: true,
+    },
   };
 });
 
 // Completion handler
-connection.onCompletion(
-  (_textDocumentPosition): CompletionItem[] => {
-    return [
-      {
-        label: '@role',
-        kind: CompletionItemKind.Keyword,
-        data: 1
-      },
-      {
-        label: '@task',
-        kind: CompletionItemKind.Keyword,
-        data: 2
-      }
-    ];
-  }
-);
+connection.onCompletion((_textDocumentPosition): CompletionItem[] => {
+  return [
+    {
+      label: "@role",
+      kind: CompletionItemKind.Keyword,
+      data: 1,
+    },
+    {
+      label: "@task",
+      kind: CompletionItemKind.Keyword,
+      data: 2,
+    },
+  ];
+});
 
 // Completion resolve (additional details)
-connection.onCompletionResolve(
-  (item: CompletionItem): CompletionItem => {
-    if (item.data === 1) {
-      item.detail = 'Role directive';
-      item.documentation = 'Defines the LLM persona/role';
-    }
-    return item;
+connection.onCompletionResolve((item: CompletionItem): CompletionItem => {
+  if (item.data === 1) {
+    item.detail = "Role directive";
+    item.documentation = "Defines the LLM persona/role";
   }
-);
+  return item;
+});
 
 // Document change listener
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent((change) => {
   validateTextDocument(change.document);
 });
 
@@ -785,12 +805,15 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 
   // Example: Check for missing @role
   const text = textDocument.getText();
-  if (!text.includes('@role')) {
+  if (!text.includes("@role")) {
     diagnostics.push({
       severity: DiagnosticSeverity.Warning,
-      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
-      message: 'Missing @role directive',
-      source: 'ucpl'
+      range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 10 },
+      },
+      message: "Missing @role directive",
+      source: "ucpl",
     });
   }
 
@@ -832,9 +855,7 @@ connection.listen();
       "name": "Launch Client",
       "type": "extensionHost",
       "request": "launch",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceFolder}"
-      ],
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
       "outFiles": ["${workspaceFolder}/client/out/**/*.js"]
     },
     {
@@ -887,16 +908,16 @@ npm install --save-dev @vscode/test-cli @vscode/test-electron
 **Configuration** (`.vscode-test.js`):
 
 ```javascript
-const { defineConfig } = require('@vscode/test-cli');
+const { defineConfig } = require("@vscode/test-cli");
 
 module.exports = defineConfig({
-  files: 'out/test/**/*.test.js',
-  version: 'stable',
-  workspaceFolder: './test-fixtures',
+  files: "out/test/**/*.test.js",
+  version: "stable",
+  workspaceFolder: "./test-fixtures",
   mocha: {
-    ui: 'bdd',
-    timeout: 20000
-  }
+    ui: "bdd",
+    timeout: 20000,
+  },
 });
 ```
 
@@ -915,38 +936,39 @@ module.exports = defineConfig({
 **File**: `src/test/extension.test.ts`
 
 ```typescript
-import * as assert from 'assert';
-import * as vscode from 'vscode';
+import * as assert from "assert";
+import * as vscode from "vscode";
 
-suite('UCPL Extension Test Suite', () => {
-  vscode.window.showInformationMessage('Start all tests.');
+suite("UCPL Extension Test Suite", () => {
+  vscode.window.showInformationMessage("Start all tests.");
 
-  test('Syntax highlighting activates', async () => {
+  test("Syntax highlighting activates", async () => {
     const doc = await vscode.workspace.openTextDocument({
-      language: 'ucpl',
-      content: '@role:dev\n@task:analyze'
+      language: "ucpl",
+      content: "@role:dev\n@task:analyze",
     });
 
     const editor = await vscode.window.showTextDocument(doc);
     assert.ok(editor);
-    assert.strictEqual(doc.languageId, 'ucpl');
+    assert.strictEqual(doc.languageId, "ucpl");
   });
 
-  test('Completion provider triggers on @', async () => {
+  test("Completion provider triggers on @", async () => {
     const doc = await vscode.workspace.openTextDocument({
-      language: 'ucpl',
-      content: '@'
+      language: "ucpl",
+      content: "@",
     });
 
     const position = new vscode.Position(0, 1);
-    const completions = await vscode.commands.executeCommand<vscode.CompletionList>(
-      'vscode.executeCompletionItemProvider',
-      doc.uri,
-      position
-    );
+    const completions =
+      await vscode.commands.executeCommand<vscode.CompletionList>(
+        "vscode.executeCompletionItemProvider",
+        doc.uri,
+        position,
+      );
 
     assert.ok(completions.items.length > 0);
-    assert.ok(completions.items.some(item => item.label === 'role'));
+    assert.ok(completions.items.some((item) => item.label === "role"));
   });
 });
 ```
@@ -1039,6 +1061,7 @@ vsce publish major  # 1.0.0 → 2.0.0
 **Display name**: Clear, searchable name (≠ `name` field)
 
 **Categories**: Choose relevant categories (max 3):
+
 - Programming Languages
 - Formatters
 - Linters
@@ -1049,13 +1072,7 @@ vsce publish major  # 1.0.0 → 2.0.0
 
 ```json
 {
-  "keywords": [
-    "ucpl",
-    "prompt",
-    "language",
-    "llm",
-    "ai"
-  ]
+  "keywords": ["ucpl", "prompt", "language", "llm", "ai"]
 }
 ```
 
@@ -1138,17 +1155,58 @@ vsce publish major  # 1.0.0 → 2.0.0
 
 ```typescript
 const directives = [
-  { label: '@role', detail: 'Define LLM persona', values: ['dev', 'audit', 'teach', 'edit', 'analyze', 'debug', 'design', 'translate'] },
-  { label: '@task', detail: 'Primary task specification', values: ['fix', 'explain', 'refactor', 'review', 'summarize', 'generate', 'test', 'optimize', 'doc', 'compare'] },
-  { label: '@out', detail: 'Output format', values: ['code', 'bullets', 'table', 'json', 'yaml', 'steps', 'diagram', 'prose'] },
-  { label: '@scope', detail: 'Limit work to specific area', values: [] },
-  { label: '@principles', detail: 'Guiding principles', values: [] },
-  { label: '@def', detail: 'Define reusable macro', values: [] },
-  { label: '@workflow', detail: 'Multi-step workflow', values: [] },
-  { label: '@chain', detail: 'Sequential execution', values: [] },
-  { label: '@if', detail: 'Conditional logic', values: [] },
-  { label: '@loop', detail: 'Repeat until condition', values: [] },
-  { label: '@use', detail: 'Execute macro', values: [] }
+  {
+    label: "@role",
+    detail: "Define LLM persona",
+    values: [
+      "dev",
+      "audit",
+      "teach",
+      "edit",
+      "analyze",
+      "debug",
+      "design",
+      "translate",
+    ],
+  },
+  {
+    label: "@task",
+    detail: "Primary task specification",
+    values: [
+      "fix",
+      "explain",
+      "refactor",
+      "review",
+      "summarize",
+      "generate",
+      "test",
+      "optimize",
+      "doc",
+      "compare",
+    ],
+  },
+  {
+    label: "@out",
+    detail: "Output format",
+    values: [
+      "code",
+      "bullets",
+      "table",
+      "json",
+      "yaml",
+      "steps",
+      "diagram",
+      "prose",
+    ],
+  },
+  { label: "@scope", detail: "Limit work to specific area", values: [] },
+  { label: "@principles", detail: "Guiding principles", values: [] },
+  { label: "@def", detail: "Define reusable macro", values: [] },
+  { label: "@workflow", detail: "Multi-step workflow", values: [] },
+  { label: "@chain", detail: "Sequential execution", values: [] },
+  { label: "@if", detail: "Conditional logic", values: [] },
+  { label: "@loop", detail: "Repeat until condition", values: [] },
+  { label: "@use", detail: "Execute macro", values: [] },
 ];
 ```
 
@@ -1156,15 +1214,51 @@ const directives = [
 
 ```typescript
 const toolCategories = [
-  { label: '@@search:web', detail: 'Web search', params: ['query', 'recent', 'sources'] },
-  { label: '@@search:code', detail: 'Code pattern search', params: ['pattern', 'scope'] },
-  { label: '@@think:deep', detail: 'Deep reasoning', params: ['steps', 'approach'] },
-  { label: '@@fetch:url', detail: 'Retrieve URL content', params: ['url', 'headers'] },
-  { label: '@@read:files', detail: 'Read files', params: ['pattern', 'encoding'] },
-  { label: '@@write:files', detail: 'Write files', params: ['path', 'content'] },
-  { label: '@@execute:shell', detail: 'Run shell command', params: ['command', 'timeout'] },
-  { label: '@@memory:save', detail: 'Persist data', params: ['key', 'value', 'category'] },
-  { label: '@@memory:load', detail: 'Retrieve data', params: ['key', 'default'] }
+  {
+    label: "@@search:web",
+    detail: "Web search",
+    params: ["query", "recent", "sources"],
+  },
+  {
+    label: "@@search:code",
+    detail: "Code pattern search",
+    params: ["pattern", "scope"],
+  },
+  {
+    label: "@@think:deep",
+    detail: "Deep reasoning",
+    params: ["steps", "approach"],
+  },
+  {
+    label: "@@fetch:url",
+    detail: "Retrieve URL content",
+    params: ["url", "headers"],
+  },
+  {
+    label: "@@read:files",
+    detail: "Read files",
+    params: ["pattern", "encoding"],
+  },
+  {
+    label: "@@write:files",
+    detail: "Write files",
+    params: ["path", "content"],
+  },
+  {
+    label: "@@execute:shell",
+    detail: "Run shell command",
+    params: ["command", "timeout"],
+  },
+  {
+    label: "@@memory:save",
+    detail: "Persist data",
+    params: ["key", "value", "category"],
+  },
+  {
+    label: "@@memory:load",
+    detail: "Retrieve data",
+    params: ["key", "default"],
+  },
 ];
 ```
 
@@ -1172,9 +1266,21 @@ const toolCategories = [
 
 ```typescript
 const constraints = [
-  { label: '!', detail: 'Mandatory constraint (MUST)', kind: vscode.CompletionItemKind.Operator },
-  { label: '?', detail: 'Optional constraint', kind: vscode.CompletionItemKind.Operator },
-  { label: '~', detail: 'Avoid/discouraged', kind: vscode.CompletionItemKind.Operator }
+  {
+    label: "!",
+    detail: "Mandatory constraint (MUST)",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: "?",
+    detail: "Optional constraint",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: "~",
+    detail: "Avoid/discouraged",
+    kind: vscode.CompletionItemKind.Operator,
+  },
 ];
 ```
 
@@ -1182,11 +1288,31 @@ const constraints = [
 
 ```typescript
 const logicalOps = [
-  { label: '&', detail: 'AND - all conditions', kind: vscode.CompletionItemKind.Operator },
-  { label: '||', detail: 'OR - any condition', kind: vscode.CompletionItemKind.Operator },
-  { label: '=>', detail: 'IMPLIES - logical implication', kind: vscode.CompletionItemKind.Operator },
-  { label: '^', detail: 'PRIORITY - focus on', kind: vscode.CompletionItemKind.Operator },
-  { label: '>', detail: 'OUTPUT - pipe to', kind: vscode.CompletionItemKind.Operator }
+  {
+    label: "&",
+    detail: "AND - all conditions",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: "||",
+    detail: "OR - any condition",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: "=>",
+    detail: "IMPLIES - logical implication",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: "^",
+    detail: "PRIORITY - focus on",
+    kind: vscode.CompletionItemKind.Operator,
+  },
+  {
+    label: ">",
+    detail: "OUTPUT - pipe to",
+    kind: vscode.CompletionItemKind.Operator,
+  },
 ];
 ```
 
@@ -1211,18 +1337,36 @@ async function validateUCPLDocument(document: TextDocument): Promise<void> {
 
   if (!yamlHeaderMatch) {
     // Warning: Missing YAML header
-    sendDiagnostic(document, 'Missing YAML header with format: ucpl', 0, 0, DiagnosticSeverity.Warning);
+    sendDiagnostic(
+      document,
+      "Missing YAML header with format: ucpl",
+      0,
+      0,
+      DiagnosticSeverity.Warning,
+    );
     return;
   }
 
   const header = yamlHeaderMatch[1];
 
-  if (!header.includes('format: ucpl')) {
-    sendDiagnostic(document, 'YAML header must specify format: ucpl', 0, 0, DiagnosticSeverity.Error);
+  if (!header.includes("format: ucpl")) {
+    sendDiagnostic(
+      document,
+      "YAML header must specify format: ucpl",
+      0,
+      0,
+      DiagnosticSeverity.Error,
+    );
   }
 
-  if (!header.includes('version:')) {
-    sendDiagnostic(document, 'YAML header should specify version', 0, 0, DiagnosticSeverity.Warning);
+  if (!header.includes("version:")) {
+    sendDiagnostic(
+      document,
+      "YAML header should specify version",
+      0,
+      0,
+      DiagnosticSeverity.Warning,
+    );
   }
 }
 ```
@@ -1359,7 +1503,7 @@ if (toolRange) {
 Show document structure in Outline view:
 
 ```typescript
-vscode.languages.registerDocumentSymbolProvider('ucpl', {
+vscode.languages.registerDocumentSymbolProvider("ucpl", {
   provideDocumentSymbols(document: TextDocument): vscode.DocumentSymbol[] {
     const symbols: vscode.DocumentSymbol[] = [];
     const text = document.getText();
@@ -1374,40 +1518,43 @@ vscode.languages.registerDocumentSymbolProvider('ucpl', {
 
       const symbol = new vscode.DocumentSymbol(
         name,
-        'Macro',
+        "Macro",
         vscode.SymbolKind.Function,
         new vscode.Range(pos, document.positionAt(endPos)),
-        new vscode.Range(pos, pos)
+        new vscode.Range(pos, pos),
       );
       symbols.push(symbol);
     }
 
     return symbols;
-  }
+  },
 });
 ```
 
 ### 11.2 Code Actions (Quick Fixes)
 
 ```typescript
-vscode.languages.registerCodeActionsProvider('ucpl', {
-  provideCodeActions(document: TextDocument, range: Range): vscode.CodeAction[] {
+vscode.languages.registerCodeActionsProvider("ucpl", {
+  provideCodeActions(
+    document: TextDocument,
+    range: Range,
+  ): vscode.CodeAction[] {
     const actions: vscode.CodeAction[] = [];
     const line = document.lineAt(range.start.line).text;
 
     // Suggest adding @role if missing
-    if (!document.getText().includes('@role')) {
+    if (!document.getText().includes("@role")) {
       const action = new vscode.CodeAction(
-        'Add @role directive',
-        vscode.CodeActionKind.QuickFix
+        "Add @role directive",
+        vscode.CodeActionKind.QuickFix,
       );
       action.edit = new vscode.WorkspaceEdit();
-      action.edit.insert(document.uri, new Position(0, 0), '@role:dev\n');
+      action.edit.insert(document.uri, new Position(0, 0), "@role:dev\n");
       actions.push(action);
     }
 
     return actions;
-  }
+  },
 });
 ```
 
@@ -1417,20 +1564,26 @@ For advanced token coloring beyond TextMate:
 
 ```typescript
 const legend = new vscode.SemanticTokensLegend(
-  ['directive', 'constraint', 'macro', 'variable', 'toolInvocation'],
-  ['declaration', 'definition', 'readonly']
+  ["directive", "constraint", "macro", "variable", "toolInvocation"],
+  ["declaration", "definition", "readonly"],
 );
 
-vscode.languages.registerDocumentSemanticTokensProvider('ucpl', {
-  provideDocumentSemanticTokens(document: TextDocument): vscode.SemanticTokens {
-    const builder = new vscode.SemanticTokensBuilder(legend);
+vscode.languages.registerDocumentSemanticTokensProvider(
+  "ucpl",
+  {
+    provideDocumentSemanticTokens(
+      document: TextDocument,
+    ): vscode.SemanticTokens {
+      const builder = new vscode.SemanticTokensBuilder(legend);
 
-    // Tokenize document
-    // Add tokens: builder.push(line, char, length, tokenType, tokenModifiers)
+      // Tokenize document
+      // Add tokens: builder.push(line, char, length, tokenType, tokenModifiers)
 
-    return builder.build();
-  }
-}, legend);
+      return builder.build();
+    },
+  },
+  legend,
+);
 ```
 
 ### 11.4 Folding Range Provider
@@ -1438,7 +1591,7 @@ vscode.languages.registerDocumentSemanticTokensProvider('ucpl', {
 Custom folding logic:
 
 ```typescript
-vscode.languages.registerFoldingRangeProvider('ucpl', {
+vscode.languages.registerFoldingRangeProvider("ucpl", {
   provideFoldingRanges(document: TextDocument): vscode.FoldingRange[] {
     const ranges: vscode.FoldingRange[] = [];
     const text = document.getText();
@@ -1453,7 +1606,7 @@ vscode.languages.registerFoldingRangeProvider('ucpl', {
     }
 
     return ranges;
-  }
+  },
 });
 ```
 
@@ -1466,7 +1619,9 @@ vscode.languages.registerFoldingRangeProvider('ucpl', {
 **Extract YAML header**:
 
 ```typescript
-function parseYAMLHeader(document: TextDocument): { format?: string; version?: string } | null {
+function parseYAMLHeader(
+  document: TextDocument,
+): { format?: string; version?: string } | null {
   const text = document.getText();
   const match = text.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return null;
@@ -1535,8 +1690,8 @@ function extractDirectives(document: TextDocument): Map<string, string[]> {
 **Access settings in code**:
 
 ```typescript
-const config = vscode.workspace.getConfiguration('ucpl');
-const strictMode = config.get<boolean>('validation.strictMode', false);
+const config = vscode.workspace.getConfiguration("ucpl");
+const strictMode = config.get<boolean>("validation.strictMode", false);
 ```
 
 ### 12.3 Error Handling
@@ -1548,7 +1703,7 @@ try {
   const completions = await provideCompletionItems(document, position);
   return completions;
 } catch (error) {
-  console.error('Completion error:', error);
+  console.error("Completion error:", error);
   return []; // Return empty instead of crashing
 }
 ```
@@ -1556,14 +1711,16 @@ try {
 **User-facing errors**:
 
 ```typescript
-vscode.window.showErrorMessage(
-  'UCPL: Failed to parse document. Check syntax.',
-  'Show Output'
-).then(selection => {
-  if (selection === 'Show Output') {
-    outputChannel.show();
-  }
-});
+vscode.window
+  .showErrorMessage(
+    "UCPL: Failed to parse document. Check syntax.",
+    "Show Output",
+  )
+  .then((selection) => {
+    if (selection === "Show Output") {
+      outputChannel.show();
+    }
+  });
 ```
 
 ### 12.4 Performance Optimization
@@ -1573,7 +1730,7 @@ vscode.window.showErrorMessage(
 ```typescript
 let validationTimeout: NodeJS.Timeout | undefined;
 
-documents.onDidChangeContent(change => {
+documents.onDidChangeContent((change) => {
   if (validationTimeout) {
     clearTimeout(validationTimeout);
   }
@@ -1595,7 +1752,10 @@ function getParsedDocument(document: TextDocument): ParsedDocument {
   }
 
   const parsed = parseDocument(document);
-  documentCache.set(document.uri.toString(), { ...parsed, version: document.version });
+  documentCache.set(document.uri.toString(), {
+    ...parsed,
+    version: document.version,
+  });
   return parsed;
 }
 ```
@@ -1646,6 +1806,7 @@ function getParsedDocument(document: TextDocument): ParsedDocument {
 Implementation checklist for UCPL extension:
 
 **Phase 1: Syntax Highlighting**
+
 - [ ] TextMate grammar for UCPL syntax
 - [ ] Directive tokenization (@role, @task, etc.)
 - [ ] Tool invocation highlighting (@@search:web, etc.)
@@ -1655,6 +1816,7 @@ Implementation checklist for UCPL extension:
 - [ ] String and comment handling
 
 **Phase 2: Language Configuration**
+
 - [ ] Bracket matching for [], {}, ()
 - [ ] Auto-closing pairs
 - [ ] Comment toggling (#)
@@ -1662,6 +1824,7 @@ Implementation checklist for UCPL extension:
 - [ ] Word pattern for double-click selection
 
 **Phase 3: Snippets**
+
 - [ ] Basic task structure snippet
 - [ ] Workflow snippet with @chain
 - [ ] Conditional snippet (@if/@elif/@else)
@@ -1669,6 +1832,7 @@ Implementation checklist for UCPL extension:
 - [ ] Tool invocation snippets
 
 **Phase 4: IntelliSense (Basic)**
+
 - [ ] Directive completions (@role, @task, etc.)
 - [ ] Role value completions (dev, audit, etc.)
 - [ ] Task value completions (fix, refactor, etc.)
@@ -1676,6 +1840,7 @@ Implementation checklist for UCPL extension:
 - [ ] Modifier completions (concise, secure, etc.)
 
 **Phase 5: IntelliSense (Advanced)**
+
 - [ ] Context-aware completions (values after @role:)
 - [ ] Tool invocation completions (@@search:web, etc.)
 - [ ] Tool parameter completions ([query=, steps=])
@@ -1683,17 +1848,20 @@ Implementation checklist for UCPL extension:
 - [ ] Macro name completions for @use
 
 **Phase 6: Navigation**
+
 - [ ] Go to Definition for @use → @def
 - [ ] Find References for @def macros
 - [ ] Document symbols (outline view for @def)
 
 **Phase 7: Hover Information**
+
 - [ ] Directive hover docs
 - [ ] Tool invocation parameter docs
 - [ ] Variable value previews
 - [ ] Macro definition previews
 
 **Phase 8: Validation**
+
 - [ ] YAML header validation (format: ucpl)
 - [ ] Required directive checking (@role)
 - [ ] Macro reference validation (@use without @def)
@@ -1701,12 +1869,14 @@ Implementation checklist for UCPL extension:
 - [ ] Tool parameter validation
 
 **Phase 9: Advanced Features**
+
 - [ ] Code actions (quick fixes for common issues)
 - [ ] Folding ranges for @def blocks
 - [ ] Formatting provider (optional)
 - [ ] Rename symbol for macros
 
 **Phase 10: Testing & Publishing**
+
 - [ ] Unit tests for tokenization
 - [ ] Integration tests for completion
 - [ ] End-to-end tests with sample .ucpl files
@@ -1731,6 +1901,7 @@ Implementation checklist for UCPL extension:
 
 **Issue**: Large documents cause slow analysis
 **Mitigation**:
+
 - Incremental document sync (`TextDocumentSyncKind.Incremental`)
 - Debounce validation (500ms)
 - Cache parsed AST with document version
@@ -1760,12 +1931,12 @@ Implementation checklist for UCPL extension:
 
 **UCPL vs Natural Language (50-prompt dataset)**:
 
-| Metric | Natural Language | UCPL | Reduction |
-|--------|------------------|------|-----------|
-| Avg tokens/prompt | 87.4 | 42.1 | 51.8% |
-| Max tokens | 243 | 118 | 51.4% |
-| Min tokens | 18 | 9 | 50.0% |
-| Comprehension accuracy | 98.2% | 96.7% | -1.5% |
+| Metric                 | Natural Language | UCPL  | Reduction |
+| ---------------------- | ---------------- | ----- | --------- |
+| Avg tokens/prompt      | 87.4             | 42.1  | 51.8%     |
+| Max tokens             | 243              | 118   | 51.4%     |
+| Min tokens             | 18               | 9     | 50.0%     |
+| Comprehension accuracy | 98.2%            | 96.7% | -1.5%     |
 
 **Recommendation**: 50-60% compression optimal for quality retention
 

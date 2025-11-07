@@ -24,13 +24,13 @@ Implemented a multi-tier time-based aggregation system that maintains historical
 
 ### Retention Policy (Aggressive: 30/365/5y)
 
-| Tier | Retention | Detail Level | Max Records |
-|------|-----------|--------------|-------------|
-| Recent | 30 days | Full detail (individual compressions) | ~2,100* |
-| Daily | 365 days | Aggregated by day | 335 |
-| Monthly | 5 years | Aggregated by month | 60 |
+| Tier    | Retention | Detail Level                          | Max Records |
+| ------- | --------- | ------------------------------------- | ----------- |
+| Recent  | 30 days   | Full detail (individual compressions) | ~2,100\*    |
+| Daily   | 365 days  | Aggregated by day                     | 335         |
+| Monthly | 5 years   | Aggregated by month                   | 60          |
 
-*Assumes ~70 compressions/day average
+\*Assumes ~70 compressions/day average
 
 **Total maximum records: ~2,500** (vs infinite growth in old system)
 
@@ -92,17 +92,20 @@ Storage Breakdown:
 ### Key Functions
 
 #### `aggregateStats(stats)`
+
 - Called automatically before every save
 - Moves old data between tiers
 - Enforces retention policy
 - Returns aggregated stats object
 
 #### `migrateStatsFormat(oldStats)`
+
 - Converts old flat array format to new multi-tier format
 - Called automatically when old format detected
 - Preserves all historical data during migration
 
 #### `handleGetStats(args)`
+
 - Updated to query across all tiers based on time period
 - Intelligently combines recent records with aggregates
 - Shows storage breakdown
@@ -112,12 +115,12 @@ Storage Breakdown:
 Example with heavy usage (70 compressions/day):
 
 | Timeframe | Old Format | New Format | Savings |
-|-----------|------------|------------|---------|
-| 30 days | ~420 KB | ~420 KB | 0% |
-| 90 days | ~1.2 MB | ~450 KB | 62% |
-| 1 year | ~4.8 MB | ~520 KB | 89% |
-| 2 years | ~9.6 MB | ~560 KB | 94% |
-| 5 years | ~24 MB | ~600 KB | 97% |
+| --------- | ---------- | ---------- | ------- |
+| 30 days   | ~420 KB    | ~420 KB    | 0%      |
+| 90 days   | ~1.2 MB    | ~450 KB    | 62%     |
+| 1 year    | ~4.8 MB    | ~520 KB    | 89%     |
+| 2 years   | ~9.6 MB    | ~560 KB    | 94%     |
+| 5 years   | ~24 MB     | ~600 KB    | 97%     |
 
 ## Configuration
 
@@ -125,21 +128,23 @@ Retention policy is configurable via `RETENTION_POLICY` constants in `server.js`
 
 ```javascript
 const RETENTION_POLICY = {
-  RECENT_DAYS: 30,      // Keep detailed records for last 30 days
-  DAILY_DAYS: 365,      // Keep daily aggregates for 365 days
-  MONTHLY_YEARS: 5      // Keep monthly aggregates for 5 years
+  RECENT_DAYS: 30, // Keep detailed records for last 30 days
+  DAILY_DAYS: 365, // Keep daily aggregates for 365 days
+  MONTHLY_YEARS: 5, // Keep monthly aggregates for 5 years
 };
 ```
 
 ### Alternative Policies
 
 **Conservative (7/90/forever)**:
+
 - Recent: 7 days
 - Daily: 90 days
 - Monthly: Forever
 - Max records: ~600
 
 **Moderate (14/180/2y)**:
+
 - Recent: 14 days
 - Daily: 180 days
 - Monthly: 2 years
@@ -154,6 +159,7 @@ node mcp-server/test-stats-retention.js
 ```
 
 Tests cover:
+
 1. Migration from old format
 2. Auto-aggregation on save
 3. Retention policy enforcement
@@ -177,6 +183,7 @@ When you first run the updated MCP server:
 5. Console logs confirm migration success
 
 Example migration output:
+
 ```
 [INFO] Migrating stats to new multi-tier format...
 [INFO] Migration complete: 145 recent, 72 daily, 18 monthly

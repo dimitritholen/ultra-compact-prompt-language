@@ -5,6 +5,7 @@ A structured syntax for writing token-efficient, predictable LLM prompts.
 ## The Problem
 
 Natural language prompts are:
+
 - **Verbose**: Simple requests balloon to 40+ tokens
 - **Ambiguous**: Same prompt interpreted differently across runs
 - **Slow to write**: Typing detailed instructions is time-consuming
@@ -20,6 +21,7 @@ UCPL (Ultra-Compact Prompt Language) is a **structured syntax** that optimizes p
 ## Quick Comparison
 
 **Natural Language** (42 tokens):
+
 ```
 You are an expert Python developer. Analyze the following code
 for security vulnerabilities. Focus on SQL injection and XSS.
@@ -27,6 +29,7 @@ Provide output as a bulleted list with severity ratings.
 ```
 
 **UCPL** (18 tokens):
+
 ```yaml
 ---
 format: ucpl
@@ -122,13 +125,13 @@ This signals to the LLM that the content should be parsed as UCPL.
 
 ## Compression Levels by Task Type
 
-| Task Type | Token Reduction | Quality Impact |
-|-----------|----------------|----------------|
-| Code review | 66% | 0% |
-| Simple refactoring | 65% | 0% |
-| Complex analysis | 38% | -5% |
-| Documentation | 52% | 0% |
-| Multi-step workflows | 45% | -3% |
+| Task Type            | Token Reduction | Quality Impact |
+| -------------------- | --------------- | -------------- |
+| Code review          | 66%             | 0%             |
+| Simple refactoring   | 65%             | 0%             |
+| Complex analysis     | 38%             | -5%            |
+| Documentation        | 52%             | 0%             |
+| Multi-step workflows | 45%             | -3%            |
 
 **Optimal compression**: 50-60% for complex tasks without quality loss.
 
@@ -219,6 +222,7 @@ Use the [UCPL converter](../.claude/commands/ucpl.md) to transform natural langu
 ## Examples
 
 See the [examples directory](../examples/) for real-world UCPL prompts:
+
 - [Code review workflow](../examples/code-review-ucpl.md)
 - [Parallel task execution](../examples/worktrees-parallel-ucpl.md)
 - [Documentation generation](../examples/doc-generation-ucpl.md)

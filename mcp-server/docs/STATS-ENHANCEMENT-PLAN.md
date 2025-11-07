@@ -3,9 +3,11 @@
 ## Phase 1: Flexible Time Filtering + Cost Tracking (PRIORITY)
 
 ### Goal
+
 Enable natural language time queries AND track actual cost savings in dollars.
 
 **User queries to support:**
+
 - "What did I save this week?"
 - "Last 3 days?"
 - "Show me January 2025"
@@ -16,9 +18,10 @@ Enable natural language time queries AND track actual cost savings in dollars.
 ## Part A: Flexible Time Filtering ⚡
 
 ### Current Limitation
+
 ```javascript
 // Only 4 fixed periods
-period: 'today' | 'week' | 'month' | 'all'
+period: "today" | "week" | "month" | "all";
 ```
 
 ### Solution: Add Custom Date Range Support
@@ -55,11 +58,11 @@ get_compression_stats({
  * - Numbers: treated as relativeDays
  */
 function parseFlexibleDate(value) {
-  if (!value || value === 'now') {
+  if (!value || value === "now") {
     return new Date();
   }
 
-  if (value === 'today') {
+  if (value === "today") {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
@@ -179,14 +182,14 @@ async handleGetStats(args) {
 
 ```javascript
 // test-flexible-dates.js
-testDateParsing('-7d');     // 7 days ago
-testDateParsing('-2w');     // 2 weeks ago
-testDateParsing('2025-01-01'); // Specific date
-testDateParsing('today');   // Today at midnight
+testDateParsing("-7d"); // 7 days ago
+testDateParsing("-2w"); // 2 weeks ago
+testDateParsing("2025-01-01"); // Specific date
+testDateParsing("today"); // Today at midnight
 
 testQuery({ relativeDays: 3 }); // Last 3 days
-testQuery({ startDate: '2025-01-01', endDate: '2025-01-31' }); // January
-testQuery({ startDate: '-7d', endDate: 'now' }); // Last week
+testQuery({ startDate: "2025-01-01", endDate: "2025-01-31" }); // January
+testQuery({ startDate: "-7d", endDate: "now" }); // Last week
 ```
 
 ---
@@ -194,6 +197,7 @@ testQuery({ startDate: '-7d', endDate: 'now' }); // Last week
 ## Part B: LLM Detection + Cost Tracking 💰
 
 ### Goal
+
 Track which LLM is being used and calculate actual dollar cost savings.
 
 ### Challenge: MCP Protocol Doesn't Expose Client Info
@@ -212,31 +216,31 @@ function detectLLMClient() {
   // Claude Desktop sets specific env vars
   if (process.env.CLAUDE_DESKTOP_VERSION) {
     return {
-      client: 'claude-desktop',
-      model: 'claude-sonnet-4' // Default assumption
+      client: "claude-desktop",
+      model: "claude-sonnet-4", // Default assumption
     };
   }
 
   // Claude Code (VS Code extension)
-  if (process.env.VSCODE_PID || process.env.TERM_PROGRAM === 'vscode') {
+  if (process.env.VSCODE_PID || process.env.TERM_PROGRAM === "vscode") {
     return {
-      client: 'claude-code',
-      model: 'claude-sonnet-4'
+      client: "claude-code",
+      model: "claude-sonnet-4",
     };
   }
 
   // Cline extension
   if (process.env.CLINE_VERSION) {
     return {
-      client: 'cline',
-      model: 'claude-sonnet-4' // User configurable
+      client: "cline",
+      model: "claude-sonnet-4", // User configurable
     };
   }
 
   // Unknown
   return {
-    client: 'unknown',
-    model: 'claude-sonnet-4' // Safe default
+    client: "unknown",
+    model: "claude-sonnet-4", // Safe default
   };
 }
 ```
@@ -250,16 +254,16 @@ Create config file: `~/.ucpl/compress/config.json`
   "defaultModel": "claude-sonnet-4",
   "modelPricing": {
     "claude-sonnet-4": {
-      "input": 3.00,
-      "output": 15.00
+      "input": 3.0,
+      "output": 15.0
     },
     "claude-opus-4": {
-      "input": 15.00,
-      "output": 75.00
+      "input": 15.0,
+      "output": 75.0
     },
     "gpt-4o": {
-      "input": 2.50,
-      "output": 10.00
+      "input": 2.5,
+      "output": 10.0
     }
   }
 }
@@ -284,16 +288,16 @@ Store pricing in `~/.ucpl/providers/prices.json`:
         {
           "name": "claude-sonnet-4",
           "price_url": "https://www.anthropic.com/pricing",
-          "input_price": 3.00,
-          "output_price": 15.00,
+          "input_price": 3.0,
+          "output_price": 15.0,
           "per_unit": "1M tokens",
           "currency": "USD"
         },
         {
           "name": "claude-opus-4",
           "price_url": "https://www.anthropic.com/pricing",
-          "input_price": 15.00,
-          "output_price": 75.00,
+          "input_price": 15.0,
+          "output_price": 75.0,
           "per_unit": "1M tokens",
           "currency": "USD"
         }
@@ -305,8 +309,8 @@ Store pricing in `~/.ucpl/providers/prices.json`:
         {
           "name": "gpt-4o",
           "price_url": "https://openai.com/api/pricing/",
-          "input_price": 2.50,
-          "output_price": 10.00,
+          "input_price": 2.5,
+          "output_price": 10.0,
           "per_unit": "1M tokens",
           "currency": "USD"
         },
@@ -314,7 +318,7 @@ Store pricing in `~/.ucpl/providers/prices.json`:
           "name": "gpt-4o-mini",
           "price_url": "https://openai.com/api/pricing/",
           "input_price": 0.15,
-          "output_price": 0.60,
+          "output_price": 0.6,
           "per_unit": "1M tokens",
           "currency": "USD"
         }
@@ -328,7 +332,12 @@ Store pricing in `~/.ucpl/providers/prices.json`:
 #### Weekly Price Update System
 
 ```javascript
-const PRICING_FILE = path.join(os.homedir(), '.ucpl', 'providers', 'prices.json');
+const PRICING_FILE = path.join(
+  os.homedir(),
+  ".ucpl",
+  "providers",
+  "prices.json",
+);
 const PRICE_UPDATE_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 /**
@@ -338,7 +347,7 @@ async function loadPricing() {
   let pricing;
 
   try {
-    const data = await fs.readFile(PRICING_FILE, 'utf-8');
+    const data = await fs.readFile(PRICING_FILE, "utf-8");
     pricing = JSON.parse(data);
   } catch (_error) {
     // No pricing file exists, initialize with defaults
@@ -350,7 +359,7 @@ async function loadPricing() {
   const age = Date.now() - lastUpdate.getTime();
 
   if (age > PRICE_UPDATE_INTERVAL) {
-    console.error('[INFO] Pricing data is > 7 days old, updating...');
+    console.error("[INFO] Pricing data is > 7 days old, updating...");
     pricing = await updatePricing(pricing);
   }
 
@@ -364,49 +373,49 @@ async function initializeDefaultPricing() {
   const pricing = {
     providers: {
       anthropic: {
-        website: 'https://www.anthropic.com',
+        website: "https://www.anthropic.com",
         models: [
           {
-            name: 'claude-sonnet-4',
-            price_url: 'https://www.anthropic.com/pricing',
-            input_price: 3.00,
-            output_price: 15.00,
-            per_unit: '1M tokens',
-            currency: 'USD'
+            name: "claude-sonnet-4",
+            price_url: "https://www.anthropic.com/pricing",
+            input_price: 3.0,
+            output_price: 15.0,
+            per_unit: "1M tokens",
+            currency: "USD",
           },
           {
-            name: 'claude-opus-4',
-            price_url: 'https://www.anthropic.com/pricing',
-            input_price: 15.00,
-            output_price: 75.00,
-            per_unit: '1M tokens',
-            currency: 'USD'
-          }
-        ]
+            name: "claude-opus-4",
+            price_url: "https://www.anthropic.com/pricing",
+            input_price: 15.0,
+            output_price: 75.0,
+            per_unit: "1M tokens",
+            currency: "USD",
+          },
+        ],
       },
       openai: {
-        website: 'https://openai.com',
+        website: "https://openai.com",
         models: [
           {
-            name: 'gpt-4o',
-            price_url: 'https://openai.com/api/pricing/',
-            input_price: 2.50,
-            output_price: 10.00,
-            per_unit: '1M tokens',
-            currency: 'USD'
+            name: "gpt-4o",
+            price_url: "https://openai.com/api/pricing/",
+            input_price: 2.5,
+            output_price: 10.0,
+            per_unit: "1M tokens",
+            currency: "USD",
           },
           {
-            name: 'gpt-4o-mini',
-            price_url: 'https://openai.com/api/pricing/',
+            name: "gpt-4o-mini",
+            price_url: "https://openai.com/api/pricing/",
             input_price: 0.15,
-            output_price: 0.60,
-            per_unit: '1M tokens',
-            currency: 'USD'
-          }
-        ]
-      }
+            output_price: 0.6,
+            per_unit: "1M tokens",
+            currency: "USD",
+          },
+        ],
+      },
     },
-    lastUpdate: new Date().toISOString()
+    lastUpdate: new Date().toISOString(),
   };
 
   // Save to file
@@ -418,7 +427,7 @@ async function initializeDefaultPricing() {
  * Update pricing by fetching from URLs in pricing file
  */
 async function updatePricing(pricing) {
-  console.error('[INFO] Fetching updated pricing from provider websites...');
+  console.error("[INFO] Fetching updated pricing from provider websites...");
 
   // Track which providers we successfully updated
   const updatedProviders = [];
@@ -426,7 +435,7 @@ async function updatePricing(pricing) {
   for (const [providerName, provider] of Object.entries(pricing.providers)) {
     try {
       // Get unique pricing URLs for this provider
-      const priceUrls = new Set(provider.models.map(m => m.price_url));
+      const priceUrls = new Set(provider.models.map((m) => m.price_url));
 
       for (const url of priceUrls) {
         console.error(`[INFO] Fetching pricing from ${url}...`);
@@ -444,22 +453,33 @@ async function updatePricing(pricing) {
               model.output_price = newPrices[model.name].output_price;
 
               // Log price changes
-              if (oldInput !== model.input_price || oldOutput !== model.output_price) {
+              if (
+                oldInput !== model.input_price ||
+                oldOutput !== model.output_price
+              ) {
                 console.error(`[INFO] Price change for ${model.name}:`);
-                console.error(`       Input: $${oldInput} → $${model.input_price}`);
-                console.error(`       Output: $${oldOutput} → $${model.output_price}`);
+                console.error(
+                  `       Input: $${oldInput} → $${model.input_price}`,
+                );
+                console.error(
+                  `       Output: $${oldOutput} → $${model.output_price}`,
+                );
               }
             }
           }
 
           updatedProviders.push(providerName);
         } catch (error) {
-          console.error(`[WARN] Failed to fetch pricing from ${url}: ${error.message}`);
+          console.error(
+            `[WARN] Failed to fetch pricing from ${url}: ${error.message}`,
+          );
           console.error(`[WARN] Keeping existing prices for ${providerName}`);
         }
       }
     } catch (error) {
-      console.error(`[ERROR] Failed to update ${providerName} pricing: ${error.message}`);
+      console.error(
+        `[ERROR] Failed to update ${providerName} pricing: ${error.message}`,
+      );
     }
   }
 
@@ -467,9 +487,11 @@ async function updatePricing(pricing) {
   if (updatedProviders.length > 0) {
     pricing.lastUpdate = new Date().toISOString();
     await savePricing(pricing);
-    console.error(`[INFO] Successfully updated pricing for: ${updatedProviders.join(', ')}`);
+    console.error(
+      `[INFO] Successfully updated pricing for: ${updatedProviders.join(", ")}`,
+    );
   } else {
-    console.error('[WARN] No providers were updated, keeping old prices');
+    console.error("[WARN] No providers were updated, keeping old prices");
   }
 
   return pricing;
@@ -488,9 +510,9 @@ async function fetchPricingFromURL(url, providerName) {
 
   // Parse pricing based on provider
   switch (providerName) {
-    case 'anthropic':
+    case "anthropic":
       return parseAnthropicPricing(html);
-    case 'openai':
+    case "openai":
       return parseOpenAIPricing(html);
     default:
       throw new Error(`Unknown provider: ${providerName}`);
@@ -507,25 +529,29 @@ function parseAnthropicPricing(html) {
 
   // Look for pricing patterns in HTML
   // Example: "Claude Sonnet 4.0" ... "$3.00" ... "$15.00"
-  const sonnetMatch = html.match(/Claude.*?Sonnet.*?4.*?(\d+\.?\d*).*?(\d+\.?\d*)/i);
+  const sonnetMatch = html.match(
+    /Claude.*?Sonnet.*?4.*?(\d+\.?\d*).*?(\d+\.?\d*)/i,
+  );
   if (sonnetMatch) {
-    prices['claude-sonnet-4'] = {
+    prices["claude-sonnet-4"] = {
       input_price: parseFloat(sonnetMatch[1]),
-      output_price: parseFloat(sonnetMatch[2])
+      output_price: parseFloat(sonnetMatch[2]),
     };
   }
 
-  const opusMatch = html.match(/Claude.*?Opus.*?4.*?(\d+\.?\d*).*?(\d+\.?\d*)/i);
+  const opusMatch = html.match(
+    /Claude.*?Opus.*?4.*?(\d+\.?\d*).*?(\d+\.?\d*)/i,
+  );
   if (opusMatch) {
-    prices['claude-opus-4'] = {
+    prices["claude-opus-4"] = {
       input_price: parseFloat(opusMatch[1]),
-      output_price: parseFloat(opusMatch[2])
+      output_price: parseFloat(opusMatch[2]),
     };
   }
 
   // If parsing fails, throw error to use cached prices
   if (Object.keys(prices).length === 0) {
-    throw new Error('Failed to parse pricing data from HTML');
+    throw new Error("Failed to parse pricing data from HTML");
   }
 
   return prices;
@@ -540,22 +566,24 @@ function parseOpenAIPricing(html) {
   // Parse OpenAI pricing (similar pattern)
   const gpt4oMatch = html.match(/GPT-4o.*?(\d+\.?\d*).*?(\d+\.?\d*)/i);
   if (gpt4oMatch) {
-    prices['gpt-4o'] = {
+    prices["gpt-4o"] = {
       input_price: parseFloat(gpt4oMatch[1]),
-      output_price: parseFloat(gpt4oMatch[2])
+      output_price: parseFloat(gpt4oMatch[2]),
     };
   }
 
-  const gpt4oMiniMatch = html.match(/GPT-4o.*?mini.*?(\d+\.?\d*).*?(\d+\.?\d*)/i);
+  const gpt4oMiniMatch = html.match(
+    /GPT-4o.*?mini.*?(\d+\.?\d*).*?(\d+\.?\d*)/i,
+  );
   if (gpt4oMiniMatch) {
-    prices['gpt-4o-mini'] = {
+    prices["gpt-4o-mini"] = {
       input_price: parseFloat(gpt4oMiniMatch[1]),
-      output_price: parseFloat(gpt4oMiniMatch[2])
+      output_price: parseFloat(gpt4oMiniMatch[2]),
     };
   }
 
   if (Object.keys(prices).length === 0) {
-    throw new Error('Failed to parse pricing data from HTML');
+    throw new Error("Failed to parse pricing data from HTML");
   }
 
   return prices;
@@ -567,7 +595,7 @@ function parseOpenAIPricing(html) {
 async function savePricing(pricing) {
   const pricingDir = path.dirname(PRICING_FILE);
   await fs.mkdir(pricingDir, { recursive: true });
-  await fs.writeFile(PRICING_FILE, JSON.stringify(pricing, null, 2), 'utf-8');
+  await fs.writeFile(PRICING_FILE, JSON.stringify(pricing, null, 2), "utf-8");
 }
 
 /**
@@ -581,19 +609,21 @@ function getModelPricing(pricing, modelName) {
           input_price: model.input_price,
           output_price: model.output_price,
           per_unit: model.per_unit,
-          currency: model.currency
+          currency: model.currency,
         };
       }
     }
   }
 
   // Default if model not found
-  console.error(`[WARN] Model '${modelName}' not found in pricing, using defaults`);
+  console.error(
+    `[WARN] Model '${modelName}' not found in pricing, using defaults`,
+  );
   return {
-    input_price: 3.00,
-    output_price: 15.00,
-    per_unit: '1M tokens',
-    currency: 'USD'
+    input_price: 3.0,
+    output_price: 15.0,
+    per_unit: "1M tokens",
+    currency: "USD",
   };
 }
 ```
@@ -606,7 +636,7 @@ function getModelPricing(pricing, modelName) {
  */
 function calculateCostSavings(compression, pricingData) {
   const tokensSaved = compression.tokensSaved;
-  const model = compression.model || 'claude-sonnet-4';
+  const model = compression.model || "claude-sonnet-4";
 
   // Get pricing for this model
   const pricing = getModelPricing(pricingData, model);
@@ -622,7 +652,7 @@ function calculateCostSavings(compression, pricingData) {
     model,
     pricePerMTok: pricePerMillion,
     currency: pricing.currency,
-    perUnit: pricing.per_unit
+    perUnit: pricing.per_unit,
   };
 }
 ```
@@ -644,11 +674,11 @@ const record = {
   format,
 
   // NEW: LLM and cost tracking
-  model: detectedModel,              // 'claude-sonnet-4'
-  client: detectedClient,            // 'claude-desktop'
+  model: detectedModel, // 'claude-sonnet-4'
+  client: detectedClient, // 'claude-desktop'
   pricePerMTok: pricing.input_price, // 3.00
-  costSavingsUSD: calculatedCost,    // 0.15
-  currency: pricing.currency         // 'USD'
+  costSavingsUSD: calculatedCost, // 0.15
+  currency: pricing.currency, // 'USD'
 };
 ```
 
@@ -716,22 +746,26 @@ Response:
 ## Implementation Steps
 
 ### Step 1: Add Date Parsing (30 min)
+
 - [ ] Add `parseFlexibleDate()` helper
 - [ ] Add tests for date parsing
 - [ ] Update tool schema with new parameters
 
 ### Step 2: Update Stats Query (45 min)
+
 - [ ] Modify `handleGetStats()` to support custom dates
 - [ ] Test with various date formats
 - [ ] Ensure backward compatibility with `period` param
 
 ### Step 3: LLM Detection (1 hour)
+
 - [ ] Add `detectLLMClient()` function
 - [ ] Test in Claude Desktop
 - [ ] Test in Claude Code
 - [ ] Add fallback configuration
 
 ### Step 4: Pricing System with Weekly Updates (2 hours)
+
 - [ ] Create `~/.ucpl/providers/` directory structure
 - [ ] Add `initializeDefaultPricing()` to create `prices.json`
 - [ ] Implement `loadPricing()` with 7-day check
@@ -743,18 +777,21 @@ Response:
 - [ ] Log price changes when detected
 
 ### Step 5: Cost Tracking (1 hour)
+
 - [ ] Add model/client/cost fields to compression record
 - [ ] Update `recordCompression()` to include cost data
 - [ ] Migrate existing stats (add model: 'claude-sonnet-4' default)
 - [ ] Calculate cost on compression using pricing data
 
 ### Step 6: Enhanced Output (45 min)
+
 - [ ] Add cost summary to stats output
 - [ ] Add model breakdown with costs
 - [ ] Format currency (USD)
 - [ ] Update output schema
 
 ### Step 7: Testing (1.5 hours)
+
 - [ ] Test flexible date queries
 - [ ] Test cost calculations with different models
 - [ ] Test model detection in different clients
@@ -764,6 +801,7 @@ Response:
 - [ ] Integration tests
 
 ### Step 8: Documentation (30 min)
+
 - [ ] Update README with cost tracking feature
 - [ ] Add examples of natural language queries
 - [ ] Document `prices.json` structure
@@ -833,8 +871,8 @@ This file is auto-generated on first run and auto-updated weekly:
         {
           "name": "claude-sonnet-4",
           "price_url": "https://www.anthropic.com/pricing",
-          "input_price": 3.00,
-          "output_price": 15.00,
+          "input_price": 3.0,
+          "output_price": 15.0,
           "per_unit": "1M tokens",
           "currency": "USD"
         }
@@ -846,8 +884,8 @@ This file is auto-generated on first run and auto-updated weekly:
         {
           "name": "gpt-4o",
           "price_url": "https://openai.com/api/pricing/",
-          "input_price": 2.50,
-          "output_price": 10.00,
+          "input_price": 2.5,
+          "output_price": 10.0,
           "per_unit": "1M tokens",
           "currency": "USD"
         }
@@ -861,13 +899,15 @@ This file is auto-generated on first run and auto-updated weekly:
 ### Manual Price/Model Management
 
 Users can manually edit `prices.json` to:
+
 1. **Add custom models:**
+
 ```json
 {
   "name": "my-custom-model",
   "price_url": "https://provider.com/pricing",
-  "input_price": 5.00,
-  "output_price": 20.00,
+  "input_price": 5.0,
+  "output_price": 20.0,
   "per_unit": "1M tokens",
   "currency": "USD"
 }
@@ -876,6 +916,7 @@ Users can manually edit `prices.json` to:
 2. **Override detected prices** (won't be overwritten until next weekly update)
 
 3. **Add new providers:**
+
 ```json
 "anthropic": { ... },
 "openai": { ... },
@@ -911,6 +952,7 @@ For model detection override:
 ## Pricing Fetching Strategy
 
 ### Weekly Auto-Update System
+
 1. **On MCP server startup**: Check `lastUpdate` in `prices.json`
 2. **If > 7 days old**: Trigger automatic price update
 3. **Fetch from URLs**: Use `price_url` from each model definition
@@ -920,18 +962,21 @@ For model detection override:
 7. **Save timestamp**: Update `lastUpdate` to current time
 
 ### Anthropic Pricing
+
 - **Source:** https://www.anthropic.com/pricing
 - **Method:** HTML parsing (no public API)
 - **Update:** Weekly (7 days)
 - **Fallback:** Keep existing prices if fetch fails
 
 ### OpenAI Pricing
+
 - **Source:** https://openai.com/api/pricing/
 - **Method:** HTML parsing
 - **Update:** Weekly (7 days)
 - **Fallback:** Keep existing prices if fetch fails
 
 ### Pricing Update Behavior
+
 - ✅ Logs price changes to console
 - ✅ Keeps old prices if fetch fails
 - ✅ Updates only successfully fetched providers
@@ -939,6 +984,7 @@ For model detection override:
 - ✅ Respects manual edits (until next weekly update)
 
 ### Resilience Strategy
+
 ```
 Fetch fails → Log warning → Keep cached prices → Try again in 7 days
 Network down → Use existing prices → No crash
@@ -951,17 +997,20 @@ New model added manually → Skip in weekly update → Keep user's price
 ## Future Enhancements (Post-Phase 1)
 
 ### Phase 2: Project & Path Filtering
+
 - Track project name/path with each compression
 - Filter by project: "Show me savings for myapp"
 - Filter by path: "Show me savings for src/components"
 - Group by project
 
 ### Phase 3: Comparisons & Trends
+
 - Compare periods: "Compare this week vs last week"
 - Show trends: "Is my usage increasing?"
 - Cost projections: "At this rate, I'll save $X this year"
 
 ### Phase 4: Advanced Analytics
+
 - Cost savings by project
 - ROI calculation (compression time vs cost savings)
 - Most valuable compressions (highest savings)
@@ -984,16 +1033,21 @@ New model added manually → Skip in weekly update → Keep user's price
 ## Open Questions
 
 **Q: Should we support multiple currencies?**
+
 - A: Start with USD only, add if requested
 
 **Q: Should we track output tokens too?**
+
 - A: No, we only save input tokens (by not sending them)
 
 **Q: What if pricing API is down?**
+
 - A: Use cached prices, fallback to hardcoded defaults
 
 **Q: Should we alert users when prices change?**
+
 - A: Yes, log to console when prices update
 
 **Q: How to handle custom/fine-tuned models?**
+
 - A: Allow user configuration in config.json

@@ -1,4 +1,4 @@
-const fs = require('fs').promises;
+const fs = require("fs").promises;
 
 /**
  * Check if a file exists using fs.access()
@@ -71,7 +71,7 @@ async function pollForCondition(condition, options = {}) {
       // Continue polling - errors are expected while waiting
     }
 
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
     delay = Math.min(delay * 1.5, maxDelay);
   }
 
@@ -106,7 +106,7 @@ async function cleanupFiles(...filePaths) {
     try {
       await fs.unlink(filePath);
     } catch (error) {
-      if (error.code !== 'ENOENT') {
+      if (error.code !== "ENOENT") {
         console.warn(`Failed to cleanup ${filePath}:`, error.message);
       }
     }
@@ -116,5 +116,5 @@ async function cleanupFiles(...filePaths) {
 module.exports = {
   fileExists,
   pollForCondition,
-  cleanupFiles
+  cleanupFiles,
 };

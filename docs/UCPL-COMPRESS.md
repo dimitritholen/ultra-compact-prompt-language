@@ -76,15 +76,16 @@ git diff | ucpl-compress --language python
 
 ## Compression Levels
 
-| Level | Description | Reduction | Use Cases |
-|-------|-------------|-----------|-----------|
-| **full** | Classes + methods + docstrings + key logic | 70-80% | General purpose, code understanding |
-| **signatures** | Function/method signatures + types only | 80-85% | API design, interface changes |
-| **minimal** | API surface only (names + parameters) | 85-90% | Quick overview, structure analysis |
+| Level          | Description                                | Reduction | Use Cases                           |
+| -------------- | ------------------------------------------ | --------- | ----------------------------------- |
+| **full**       | Classes + methods + docstrings + key logic | 70-80%    | General purpose, code understanding |
+| **signatures** | Function/method signatures + types only    | 80-85%    | API design, interface changes       |
+| **minimal**    | API surface only (names + parameters)      | 85-90%    | Quick overview, structure analysis  |
 
 ### Example: Full vs Signatures vs Minimal
 
 **Original Code** (850 tokens):
+
 ```python
 class UserAuthenticator:
     """Handles user authentication with JWT tokens."""
@@ -111,6 +112,7 @@ class UserAuthenticator:
 ```
 
 **Full Level** (180 tokens, 79% reduction):
+
 ```markdown
 # auth/user.py
 
@@ -119,6 +121,7 @@ Handles user authentication with JWT tokens.
 ## `UserAuthenticator`
 
 **Methods**:
+
 - `__init__(self, secret_key: str, token_expiry: int = 3600)`
   Initialize compressor with secret and expiry config
 
@@ -128,17 +131,20 @@ Handles user authentication with JWT tokens.
 ```
 
 **Signatures Level** (90 tokens, 89% reduction):
+
 ```markdown
 # auth/user.py
 
 ## `UserAuthenticator`
 
 **Methods**:
+
 - `__init__(self, secret_key: str, token_expiry: int = 3600)`
 - `generate_token(self, user_id: int, email: str) -> str`
 ```
 
 **Minimal Level** (30 tokens, 96% reduction):
+
 ```markdown
 # auth/user.py
 
@@ -149,6 +155,7 @@ Handles user authentication with JWT tokens.
 ## Supported Languages
 
 ### 1. Python (.py)
+
 - **Extracts**: Classes, methods, function signatures, docstrings, type hints
 - **Best for**: Any Python project
 - **Example**:
@@ -157,6 +164,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 2. JavaScript/TypeScript (.js, .jsx, .ts, .tsx)
+
 - **Extracts**: Classes, functions, JSDoc, TypeScript interfaces/types
 - **Best for**: React, Node.js, frontend projects
 - **Example**:
@@ -165,6 +173,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 3. Go (.go)
+
 - **Extracts**: Package, structs, interfaces, functions, methods
 - **Best for**: Go services and APIs
 - **Example**:
@@ -173,6 +182,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 4. Java (.java)
+
 - **Extracts**: Package, classes, interfaces, methods, inheritance
 - **Best for**: Java applications, Android
 - **Example**:
@@ -181,6 +191,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 5. Markdown (.md, .markdown)
+
 - **Extracts**: Title, headings, structure, code blocks, links
 - **Best for**: Documentation, READMEs
 - **Example**:
@@ -189,6 +200,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 6. JSON (.json)
+
 - **Extracts**: Structure, keys, nested objects, array lengths
 - **Best for**: Config files, API responses
 - **Example**:
@@ -197,6 +209,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 7. YAML (.yaml, .yml)
+
 - **Extracts**: Top-level keys, nesting depth, structure
 - **Best for**: Config files, CI/CD pipelines
 - **Example**:
@@ -205,6 +218,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 8. HTML (.html, .htm)
+
 - **Extracts**: Title, element counts, scripts, stylesheets, IDs/classes
 - **Best for**: Web pages, templates
 - **Example**:
@@ -213,6 +227,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 9. CSS (.css, .scss, .sass)
+
 - **Extracts**: Selectors, properties, variables, media queries
 - **Best for**: Stylesheets
 - **Example**:
@@ -221,6 +236,7 @@ Handles user authentication with JWT tokens.
   ```
 
 ### 10. Generic Fallback
+
 - **Extracts**: Comments, function keywords, basic structure
 - **Best for**: Other languages (C++, Rust, Ruby, etc.)
 - **Auto-used**: When language not explicitly supported
@@ -228,6 +244,7 @@ Handles user authentication with JWT tokens.
 ## Output Formats
 
 ### Text (Default)
+
 Human-readable compressed content with statistics.
 
 ```bash
@@ -235,6 +252,7 @@ ucpl-compress src/main.py
 ```
 
 **Output**:
+
 ```markdown
 ================================================================================
 File: src/main.py
@@ -250,10 +268,12 @@ Estimated tokens saved: ~1078
 Main application entry point.
 
 ## `Application`
+
 ...
 ```
 
 ### JSON
+
 LLM-friendly structured output.
 
 ```bash
@@ -261,6 +281,7 @@ ucpl-compress src/main.py --format json
 ```
 
 **Output**:
+
 ```json
 {
   "version": "1.0.0",
@@ -285,6 +306,7 @@ ucpl-compress src/main.py --format json
 ```
 
 ### Summary Table
+
 Quick overview without full content.
 
 ```bash
@@ -292,6 +314,7 @@ ucpl-compress src/ --format summary
 ```
 
 **Output**:
+
 ```
 File                                     Original     Compressed   Savings
 ================================================================================
@@ -310,19 +333,19 @@ ucpl-compress [path] [options]
 
 ### Arguments
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `path` | File or directory to compress (or `-` for stdin) | stdin |
+| Argument | Description                                      | Default |
+| -------- | ------------------------------------------------ | ------- |
+| `path`   | File or directory to compress (or `-` for stdin) | stdin   |
 
 ### Options
 
-| Option | Choices | Default | Description |
-|--------|---------|---------|-------------|
-| `-l, --level` | `full`, `signatures`, `minimal` | `full` | Compression level |
-| `-f, --format` | `text`, `json`, `summary` | `text` | Output format |
-| `--language` | `python`, `javascript`, `typescript`, `go`, `java`, `markdown`, `json`, `yaml`, `html`, `css` | `python` | Programming language (auto-detected from extension) |
-| `-v, --verbose` | flag | false | Include compression statistics |
-| `--version` | flag | - | Show version and exit |
+| Option          | Choices                                                                                       | Default  | Description                                         |
+| --------------- | --------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------- |
+| `-l, --level`   | `full`, `signatures`, `minimal`                                                               | `full`   | Compression level                                   |
+| `-f, --format`  | `text`, `json`, `summary`                                                                     | `text`   | Output format                                       |
+| `--language`    | `python`, `javascript`, `typescript`, `go`, `java`, `markdown`, `json`, `yaml`, `html`, `css` | `python` | Programming language (auto-detected from extension) |
+| `-v, --verbose` | flag                                                                                          | false    | Include compression statistics                      |
+| `--version`     | flag                                                                                          | -        | Show version and exit                               |
 
 ## Integration with UCPL
 
@@ -352,6 +375,7 @@ LLMs can invoke `ucpl-compress` as a tool:
 ```
 
 This expands to:
+
 ```bash
 ucpl-compress src/api.py --level signatures --format json
 ```
@@ -360,12 +384,12 @@ ucpl-compress src/api.py --level signatures --format json
 
 Tested on real-world codebases:
 
-| Project Type | Files | Original Tokens | Compressed Tokens | Savings | Time |
-|-------------|-------|-----------------|-------------------|---------|------|
-| Python API (FastAPI) | 45 | 124,500 | 28,100 | 77.4% | 1.2s |
-| React Frontend | 120 | 385,000 | 82,000 | 78.7% | 3.5s |
-| Go Microservice | 28 | 68,000 | 14,500 | 78.7% | 0.8s |
-| Mixed Project | 200 | 512,000 | 108,000 | 78.9% | 5.1s |
+| Project Type         | Files | Original Tokens | Compressed Tokens | Savings | Time |
+| -------------------- | ----- | --------------- | ----------------- | ------- | ---- |
+| Python API (FastAPI) | 45    | 124,500         | 28,100            | 77.4%   | 1.2s |
+| React Frontend       | 120   | 385,000         | 82,000            | 78.7%   | 3.5s |
+| Go Microservice      | 28    | 68,000          | 14,500            | 78.7%   | 0.8s |
+| Mixed Project        | 200   | 512,000         | 108,000           | 78.9%   | 5.1s |
 
 **Average compression**: 78.4%
 **Average speed**: ~100,000 tokens/second
@@ -373,6 +397,7 @@ Tested on real-world codebases:
 ## Use Cases
 
 ### 1. Code Review Context
+
 Reduce the token cost of providing code context for reviews:
 
 ```bash
@@ -383,6 +408,7 @@ git diff main..feature | ucpl-compress --language python
 ```
 
 ### 2. Documentation Generation
+
 Compress codebase for documentation tasks:
 
 ```bash
@@ -390,6 +416,7 @@ ucpl-compress src/ --level signatures --format summary > docs/api-reference.md
 ```
 
 ### 3. Codebase Understanding
+
 Quickly understand large codebases:
 
 ```bash
@@ -401,6 +428,7 @@ ucpl-compress src/core/ --level full
 ```
 
 ### 4. CI/CD Integration
+
 Use in automated workflows:
 
 ```yaml
@@ -417,6 +445,7 @@ Use in automated workflows:
 ```
 
 ### 5. LLM Context Windows
+
 Fit more code into limited context windows:
 
 ```bash
@@ -490,6 +519,7 @@ message = client.messages.create(
 ### "name 'tiktoken' is not found"
 
 Install tiktoken for accurate token counting:
+
 ```bash
 pip install tiktoken
 ```
@@ -499,6 +529,7 @@ Without tiktoken, the tool estimates tokens as `length / 4`.
 ### "Parse error" for specific files
 
 Some files may have syntax errors. The tool will skip them and continue:
+
 ```bash
 ucpl-compress src/ 2>&1 | grep ERROR
 ```
@@ -511,6 +542,7 @@ ucpl-compress src/ 2>&1 | grep ERROR
 ### Permission denied
 
 Make the script executable:
+
 ```bash
 chmod +x scripts/ucpl-compress
 ```
@@ -541,13 +573,13 @@ print(f"\n{result.compressed_content}")
 
 ## Comparison with Alternatives
 
-| Tool | Token Reduction | LLM Readable | Languages | Speed |
-|------|----------------|--------------|-----------|-------|
-| **ucpl-compress** | 70-90% | ✅ Direct | 10+ | Fast |
-| gzip | 80-95% | ❌ Needs decompression | All | Fast |
-| LLMLingua | 80-95% | ✅ With loss | All | Slow |
-| Manual summaries | Variable | ✅ | All | Very slow |
-| AST compression | 50-70% | ⚠️ Partial | Few | Medium |
+| Tool              | Token Reduction | LLM Readable           | Languages | Speed     |
+| ----------------- | --------------- | ---------------------- | --------- | --------- |
+| **ucpl-compress** | 70-90%          | ✅ Direct              | 10+       | Fast      |
+| gzip              | 80-95%          | ❌ Needs decompression | All       | Fast      |
+| LLMLingua         | 80-95%          | ✅ With loss           | All       | Slow      |
+| Manual summaries  | Variable        | ✅                     | All       | Very slow |
+| AST compression   | 50-70%          | ⚠️ Partial             | Few       | Medium    |
 
 ## Roadmap
 
@@ -578,6 +610,7 @@ MIT License - See LICENSE file for details.
 Created as part of the [Ultra-Compact Prompt Language (UCPL)](https://github.com/dimitritholen/ultra-compact-prompt-language) project.
 
 Research inspiration from:
+
 - LLMLingua (Microsoft Research)
 - Context compression papers (2023-2025)
 - Anthropic prompt caching documentation

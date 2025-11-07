@@ -11,6 +11,7 @@
 The Model Context Protocol (MCP) enables LLMs to auto-discover tools through structured JSON Schema metadata, eliminating the need for manual prompt instructions. This document synthesizes best practices from official specifications, production implementations, and community patterns.
 
 **Key Finding:** Tool discoverability depends on three critical factors:
+
 1. **Schema Quality** - Detailed JSON Schema with clear types and constraints
 2. **Description Clarity** - Concise, action-oriented descriptions
 3. **Parameter Design** - Explicit required/optional fields with defaults and validation
@@ -44,11 +45,17 @@ Every MCP tool contains[^3]:
   "description": "Search through indexed documents using semantic or keyword matching",
   "inputSchema": {
     "type": "object",
-    "properties": { /* ... */ },
+    "properties": {
+      /* ... */
+    },
     "required": ["query"]
   },
-  "outputSchema": { /* Optional */ },
-  "annotations": { /* Optional metadata */ }
+  "outputSchema": {
+    /* Optional */
+  },
+  "annotations": {
+    /* Optional metadata */
+  }
 }
 ```
 
@@ -61,6 +68,7 @@ Every MCP tool contains[^3]:
 **Format:** Must match regex `^[a-zA-Z0-9_-]{1,64}$`[^4]
 
 **Style:** Use `snake_case` for optimal GPT-4o tokenization[^5]:
+
 ```
 ✓ get_user_data
 ✓ search_documents
@@ -71,6 +79,7 @@ Every MCP tool contains[^3]:
 ```
 
 **Service Prefixing:** Recommended for multi-service servers[^6]:
+
 ```
 github_create_issue
 github_add_comment
@@ -78,6 +87,7 @@ github_list_pulls
 ```
 
 Benefits:
+
 - Groups related functions together
 - Prevents name collisions
 - Clarifies service ownership
@@ -147,12 +157,14 @@ Benefits:
 ### 4.1 Parameter Types and Validation
 
 **Primitive Types:**
+
 - `string` - Text data
 - `number` - Numeric values (float)
 - `integer` - Whole numbers
 - `boolean` - True/false
 
 **Complex Types:**
+
 - `array` - Lists of items
 - `object` - Nested structures
 
@@ -174,7 +186,7 @@ Benefits:
   },
   "tags": {
     "type": "array",
-    "items": {"type": "string"},
+    "items": { "type": "string" },
     "minItems": 1,
     "maxItems": 10
   }
@@ -184,6 +196,7 @@ Benefits:
 ### 4.2 Enums and Restricted Values
 
 **Simple Enum:**
+
 ```json
 {
   "priority": {
@@ -195,15 +208,16 @@ Benefits:
 ```
 
 **Enum with Descriptions (oneOf pattern):**[^10]
+
 ```json
 {
   "color": {
     "type": "string",
     "description": "Choose your favorite color",
     "oneOf": [
-      {"const": "#FF0000", "title": "Red"},
-      {"const": "#00FF00", "title": "Green"},
-      {"const": "#0000FF", "title": "Blue"}
+      { "const": "#FF0000", "title": "Red" },
+      { "const": "#00FF00", "title": "Green" },
+      { "const": "#0000FF", "title": "Blue" }
     ]
   }
 }
@@ -238,30 +252,32 @@ Benefits:
 ### 4.4 Advanced Patterns
 
 **anyOf - Multiple Valid Types:**
+
 ```json
 {
   "identifier": {
     "anyOf": [
-      {"type": "string", "pattern": "^[A-Z]{3}[0-9]{3}$"},
-      {"type": "integer", "minimum": 1}
+      { "type": "string", "pattern": "^[A-Z]{3}[0-9]{3}$" },
+      { "type": "integer", "minimum": 1 }
     ]
   }
 }
 ```
 
 **oneOf - Exactly One Match:**
+
 ```json
 {
   "search": {
     "oneOf": [
       {
         "type": "object",
-        "properties": {"id": {"type": "string"}},
+        "properties": { "id": { "type": "string" } },
         "required": ["id"]
       },
       {
         "type": "object",
-        "properties": {"name": {"type": "string"}},
+        "properties": { "name": { "type": "string" } },
         "required": ["name"]
       }
     ]
@@ -285,9 +301,9 @@ Declare expected response structure for validation[^14]:
   "outputSchema": {
     "type": "object",
     "properties": {
-      "temperature": {"type": "number"},
-      "conditions": {"type": "string"},
-      "humidity": {"type": "integer"}
+      "temperature": { "type": "number" },
+      "conditions": { "type": "string" },
+      "humidity": { "type": "integer" }
     },
     "required": ["temperature", "conditions"]
   }
@@ -450,18 +466,21 @@ From ucpl-compress MCP server:
 MCP defines three error levels[^24]:
 
 **1. Transport-Level Errors**
+
 - Network timeouts
 - Connection failures
 - Authentication errors
 - Handled by transport layer (stdio, HTTP, SSE)
 
 **2. Protocol-Level Errors**
+
 - JSON-RPC 2.0 violations
 - Malformed requests
 - Invalid methods
 - Return standardized error codes
 
 **3. Application-Level Errors**
+
 - Business logic failures
 - External API errors
 - Resource constraints
@@ -485,6 +504,7 @@ MCP defines three error levels[^24]:
 ```
 
 **Standard Error Codes:**
+
 - `-32700` - Parse error (invalid JSON)
 - `-32600` - Invalid request
 - `-32601` - Method not found
@@ -492,6 +512,7 @@ MCP defines three error levels[^24]:
 - `-32603` - Internal error
 
 **Custom Error Codes:** Organize by range[^25]
+
 - `-31xxx` - Authentication errors
 - `-30xxx` - Resource access errors
 - `-29xxx` - Validation errors
@@ -536,21 +557,25 @@ Classify errors for appropriate handling[^27]:
 try {
   return await executeTool(args);
 } catch (error) {
-  if (error.code === 'ENOENT') {
+  if (error.code === "ENOENT") {
     return {
-      content: [{
-        type: 'text',
-        text: `File not found: ${args.path}\n\nVerify path exists`
-      }],
-      isError: true
+      content: [
+        {
+          type: "text",
+          text: `File not found: ${args.path}\n\nVerify path exists`,
+        },
+      ],
+      isError: true,
     };
-  } else if (error.code === 'EACCES') {
+  } else if (error.code === "EACCES") {
     return {
-      content: [{
-        type: 'text',
-        text: `Permission denied: ${args.path}\n\nCheck file permissions`
-      }],
-      isError: true
+      content: [
+        {
+          type: "text",
+          text: `Permission denied: ${args.path}\n\nCheck file permissions`,
+        },
+      ],
+      isError: true,
     };
   } else {
     throw error; // Unknown error - let protocol handler deal with it
@@ -567,11 +592,13 @@ try {
 Official testing tool for MCP servers[^28]:
 
 **Installation:**
+
 ```bash
 npx @modelcontextprotocol/inspector node build/index.js
 ```
 
 **Features:**
+
 - Visual UI at http://localhost:6274
 - Schema validation
 - Tool execution testing
@@ -581,21 +608,25 @@ npx @modelcontextprotocol/inspector node build/index.js
 ### 9.2 Automated Testing Layers[^29]
 
 **1. Unit Tests**
+
 - Individual tool handlers
 - Parameter validation
 - Error handling
 
 **2. Integration Tests**
+
 - Tool interactions
 - External API calls
 - Database operations
 
 **3. Contract Tests**
+
 - MCP protocol compliance
 - Schema validation
 - JSON-RPC format
 
 **4. Load Tests**
+
 - Concurrent requests
 - Performance benchmarks
 - Token limit validation
@@ -603,6 +634,7 @@ npx @modelcontextprotocol/inspector node build/index.js
 ### 9.3 Schema Validation
 
 Use MCP Inspector to catch common issues[^30]:
+
 - Missing required parameters
 - Type mismatches
 - Invalid enum values
@@ -627,6 +659,7 @@ Use MCP Inspector to catch common issues[^30]:
 ```
 
 **Benefits:**
+
 - Independent scaling
 - Easier testing
 - Clear team ownership
@@ -650,6 +683,7 @@ Use MCP Inspector to catch common issues[^30]:
 ### 10.3 Security by Design
 
 **Defense in Depth**[^33]:
+
 1. Network isolation
 2. Authentication
 3. Authorization
@@ -657,6 +691,7 @@ Use MCP Inspector to catch common issues[^30]:
 5. Output sanitization
 
 **Input Validation:**
+
 ```json
 {
   "file_path": {
@@ -677,12 +712,13 @@ Use MCP Inspector to catch common issues[^30]:
 const config = {
   apiKey: process.env.API_KEY,
   dbHost: process.env.DB_HOST,
-  maxRetries: parseInt(process.env.MAX_RETRIES || '3'),
-  timeout: parseInt(process.env.TIMEOUT || '30000')
+  maxRetries: parseInt(process.env.MAX_RETRIES || "3"),
+  timeout: parseInt(process.env.TIMEOUT || "30000"),
 };
 ```
 
 **Use validated configuration objects:**
+
 - Pydantic (Python)
 - Zod (TypeScript)
 - JSON Schema validation
@@ -690,26 +726,31 @@ const config = {
 ### 10.5 Observability
 
 **Structured Logging**[^36]:
+
 ```javascript
-console.error(JSON.stringify({
-  level: 'error',
-  timestamp: new Date().toISOString(),
-  requestId: req.id,
-  tool: 'search_documents',
-  error: error.message,
-  userId: user.id
-}));
+console.error(
+  JSON.stringify({
+    level: "error",
+    timestamp: new Date().toISOString(),
+    requestId: req.id,
+    tool: "search_documents",
+    error: error.message,
+    userId: user.id,
+  }),
+);
 ```
 
 **Important:** Log to stderr, not stdout. MCP servers must only write JSON-RPC to stdout[^37].
 
 **Metrics to Track:**
+
 - Request latency (P50, P95, P99)
 - Error rates by tool
 - Token usage per request
 - Throughput (requests/sec)
 
 **Target KPIs**[^38]:
+
 - Throughput: >1000 req/sec
 - P95 latency: <100ms
 - Error rate: <0.1%
@@ -748,6 +789,7 @@ console.error(JSON.stringify({
 **Tools:** Perform actions with side effects
 
 **Example:**
+
 ```
 Resource: file:///project/README.md (read-only reference)
 Tool: update_file(path, content) (modifies file)
@@ -758,17 +800,21 @@ Tool: update_file(path, content) (modifies file)
 **Problem:** Large responses exceed token limits
 
 **Solution:** mcp-cache pattern[^41]
+
 1. Server caches large response locally
 2. Returns summary + query tools
 3. LLM searches cached data on demand
 
 **Implementation:**
+
 ```json
 {
-  "content": [{
-    "type": "text",
-    "text": "Cached 1000 results. Use search_cache(query) to explore."
-  }],
+  "content": [
+    {
+      "type": "text",
+      "text": "Cached 1000 results. Use search_cache(query) to explore."
+    }
+  ],
   "tools": [
     {
       "name": "search_cache",
@@ -819,34 +865,42 @@ Tool: update_file(path, content) (modifies file)
 ## 13. Common Pitfalls and Solutions
 
 ### Pitfall 1: Vague Descriptions
+
 **Problem:** "Does stuff with data"
 **Solution:** "Fetch user profile data from database by ID or email"
 
 ### Pitfall 2: Missing Pagination
+
 **Problem:** Tool returns 10,000 items, exceeds token limit
 **Solution:** Implement cursor-based pagination with default page_size=50
 
 ### Pitfall 3: Ambiguous Parameters
+
 **Problem:** `date` field accepts any string
 **Solution:** Add `format: "date-time"` and pattern validation
 
 ### Pitfall 4: Poor Error Messages
+
 **Problem:** "Error: ENOENT"
 **Solution:** "File not found: data.json. Check path is correct."
 
 ### Pitfall 5: No Default Values
+
 **Problem:** All parameters required, even optional ones
 **Solution:** Add `default` values for optional parameters
 
 ### Pitfall 6: Inconsistent Naming
+
 **Problem:** Mix of `camelCase` and `snake_case`
 **Solution:** Choose `snake_case` and enforce consistently
 
 ### Pitfall 7: Missing Schema Validation
+
 **Problem:** Tool accepts invalid inputs, fails at runtime
 **Solution:** Use JSON Schema constraints (min/max, pattern, enum)
 
 ### Pitfall 8: Logging to stdout
+
 **Problem:** Breaks JSON-RPC protocol
 **Solution:** All logs to stderr, only JSON-RPC to stdout
 
@@ -874,45 +928,85 @@ LLMs successfully discover and use MCP tools when:
 ## Sources and References
 
 [^1]: Model Context Protocol - Tools Specification. https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+
 [^2]: Model Context Protocol - Dynamic Updates. https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+
 [^3]: Model Context Protocol - Tool Definition. https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+
 [^4]: Tool Naming Convention - ShotGrid MCP Server. https://pipeline-f26f1c83.mintlify.app/guides/tool-naming-convention
+
 [^5]: MCP Server Naming Conventions. https://zazencodes.com/blog/mcp-server-naming-conventions
+
 [^6]: Suggestion for MCP Function Naming Convention - GitHub Issue #333. https://github.com/github/github-mcp-server/issues/333
+
 [^7]: 3 Insider Tips for Using MCP Effectively. https://www.merge.dev/blog/mcp-best-practices
+
 [^8]: Tools - Model Context Protocol. https://modelcontextprotocol.info/docs/concepts/tools/
+
 [^9]: 3 Insider Tips for Using MCP Effectively. https://www.merge.dev/blog/mcp-best-practices
+
 [^10]: Enums in OpenAPI Best Practices. https://www.speakeasy.com/openapi/schemas/enums
+
 [^11]: SEP-1330: Elicitation Enum Schema Improvements. https://github.com/modelcontextprotocol/modelcontextprotocol/issues/1330
+
 [^12]: Tools - FastMCP. https://gofastmcp.com/servers/tools
+
 [^13]: Optional Fields in rust-sdk MCP Schemas. https://github.com/modelcontextprotocol/rust-sdk/issues/135
+
 [^14]: What's New in MCP - Structured Content. https://blogs.cisco.com/developer/whats-new-in-mcp-elicitation-structured-content-and-oauth-enhancements
+
 [^15]: Model Context Protocol - Schema Reference. https://modelcontextprotocol.io/specification/2025-06-18/schema
+
 [^16]: Model Context Protocol - Structured Content. https://modelcontextprotocol.io/specification/2025-06-18/server/tools
+
 [^17]: Lessons from OpenAPI to MCP Conversions. https://www.stainless.com/blog/lessons-from-openapi-to-mcp-server-conversion
+
 [^18]: MCP Tool Annotations Introduction. https://blog.marcnuri.com/mcp-tool-annotations-introduction
+
 [^19]: MCP Tool Annotations And Metadata. https://devflowstack.org/blog/mcp-tool-annotations-and-metadata
+
 [^20]: Tokens Exceeds Maximum Allowed - GitHub Issue. https://github.com/oraios/serena/issues/516
+
 [^21]: Pagination - Model Context Protocol. https://modelcontextprotocol.io/specification/2025-03-26/server/utilities/pagination
+
 [^22]: Understanding Limits of LIMIT and OFFSET. https://blog.thnkandgrow.com/understanding-the-limits-of-limit-and-offset-for-large-datasets/
+
 [^23]: API Pagination Best Practices. https://engineeringatscale.substack.com/p/api-pagination-limit-offset-vs-cursor
+
 [^24]: Error Handling in MCP Servers. https://mcpcat.io/guides/error-handling-custom-mcp-servers/
+
 [^25]: Error Handling And Debugging MCP Servers. https://www.stainless.com/mcp/error-handling-and-debugging-mcp-servers
+
 [^26]: Error Handling in MCP TypeScript SDK. https://dev.to/yigit-konur/error-handling-in-mcp-typescript-sdk-2ol7
+
 [^27]: Best Practices for Handling MCP Exceptions. https://gist.github.com/eonist/1cbc3502305e0fc0aa6e977bae283b41
+
 [^28]: MCP Inspector - Official Tool. https://github.com/modelcontextprotocol/inspector
+
 [^29]: MCP Best Practices: Architecture Guide. https://modelcontextprotocol.info/docs/best-practices/
+
 [^30]: MCP Inspector Testing Guide. https://www.stainless.com/mcp/mcp-inspector-testing-and-debugging-mcp-servers
+
 [^31]: MCP Best Practices: Single Responsibility. https://modelcontextprotocol.info/docs/best-practices/
+
 [^32]: MCP Best Practices: Tool Design. https://modelcontextprotocol.info/docs/best-practices/
+
 [^33]: MCP Best Practices: Security. https://modelcontextprotocol.info/docs/best-practices/
+
 [^34]: MCP JSON Schema Validation. https://www.byteplus.com/en/topic/542256
+
 [^35]: MCP Best Practices: Configuration. https://modelcontextprotocol.info/docs/best-practices/
+
 [^36]: MCP Best Practices: Observability. https://modelcontextprotocol.info/docs/best-practices/
+
 [^37]: Error Handling in MCP Servers. https://mcpcat.io/guides/error-handling-custom-mcp-servers/
+
 [^38]: 7 MCP Server Best Practices. https://www.marktechpost.com/2025/07/23/7-mcp-server-best-practices-for-scalable-ai-integrations-in-2025/
+
 [^39]: MCP Prompts Explained. https://medium.com/@laurentkubaski/mcp-prompts-explained-including-how-to-actually-use-them-9db13d69d7e2
+
 [^40]: What are MCP Resources. https://www.speakeasy.com/mcp/building-servers/protocol-reference/resources
+
 [^41]: Solving AI's 25000 Token Wall. https://dev.to/swapnilsurdi/solving-ais-25000-token-wall-introducing-mcp-cache-1fie
 
 ---

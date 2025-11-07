@@ -9,106 +9,107 @@
  * - Multi-tier filtering (recent, daily, monthly aggregates)
  */
 
-import { describe, test, before, after } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
+import { describe, test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 
 // Test configuration
 const TEST_STATS_DIR = path.join(os.tmpdir(), `.ucpl-test-${Date.now()}`);
-const TEST_STATS_FILE = path.join(TEST_STATS_DIR, 'compression-stats.json');
+const TEST_STATS_FILE = path.join(TEST_STATS_DIR, "compression-stats.json");
 
 // Test stats data with dates spanning multiple tiers
 function generateTestStats() {
   const now = new Date();
 
   // Helper to create dates relative to now
-  const daysAgo = (days) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const daysAgo = (days) =>
+    new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
   return {
-    version: '2.0',
+    version: "2.0",
     recent: [
       // Recent: Last 30 days (individual records)
       {
         timestamp: daysAgo(1).toISOString(),
-        path: 'test1.js',
+        path: "test1.js",
         originalTokens: 1000,
         compressedTokens: 250,
         tokensSaved: 750,
         compressionRatio: 0.25,
         savingsPercentage: 75,
-        level: 'full',
-        format: 'text'
+        level: "full",
+        format: "text",
       },
       {
         timestamp: daysAgo(3).toISOString(),
-        path: 'test2.js',
+        path: "test2.js",
         originalTokens: 2000,
         compressedTokens: 500,
         tokensSaved: 1500,
         compressionRatio: 0.25,
         savingsPercentage: 75,
-        level: 'full',
-        format: 'text'
+        level: "full",
+        format: "text",
       },
       {
         timestamp: daysAgo(7).toISOString(),
-        path: 'test3.js',
+        path: "test3.js",
         originalTokens: 1500,
         compressedTokens: 300,
         tokensSaved: 1200,
         compressionRatio: 0.2,
         savingsPercentage: 80,
-        level: 'minimal',
-        format: 'text'
+        level: "minimal",
+        format: "text",
       },
       {
         timestamp: daysAgo(14).toISOString(),
-        path: 'test4.js',
+        path: "test4.js",
         originalTokens: 3000,
         compressedTokens: 600,
         tokensSaved: 2400,
         compressionRatio: 0.2,
         savingsPercentage: 80,
-        level: 'minimal',
-        format: 'text'
+        level: "minimal",
+        format: "text",
       },
       {
         timestamp: daysAgo(28).toISOString(),
-        path: 'test5.js',
+        path: "test5.js",
         originalTokens: 1000,
         compressedTokens: 200,
         tokensSaved: 800,
         compressionRatio: 0.2,
         savingsPercentage: 80,
-        level: 'minimal',
-        format: 'text'
-      }
+        level: "minimal",
+        format: "text",
+      },
     ],
     daily: {
       // Daily: 31-365 days ago (aggregated by day)
-      [daysAgo(45).toISOString().split('T')[0]]: {
-        date: daysAgo(45).toISOString().split('T')[0],
+      [daysAgo(45).toISOString().split("T")[0]]: {
+        date: daysAgo(45).toISOString().split("T")[0],
         count: 5,
         originalTokens: 10000,
         compressedTokens: 2000,
-        tokensSaved: 8000
+        tokensSaved: 8000,
       },
-      [daysAgo(60).toISOString().split('T')[0]]: {
-        date: daysAgo(60).toISOString().split('T')[0],
+      [daysAgo(60).toISOString().split("T")[0]]: {
+        date: daysAgo(60).toISOString().split("T")[0],
         count: 3,
         originalTokens: 6000,
         compressedTokens: 1200,
-        tokensSaved: 4800
+        tokensSaved: 4800,
       },
-      [daysAgo(90).toISOString().split('T')[0]]: {
-        date: daysAgo(90).toISOString().split('T')[0],
+      [daysAgo(90).toISOString().split("T")[0]]: {
+        date: daysAgo(90).toISOString().split("T")[0],
         count: 2,
         originalTokens: 4000,
         compressedTokens: 800,
-        tokensSaved: 3200
-      }
+        tokensSaved: 3200,
+      },
     },
     monthly: {
       // Monthly: 365+ days ago (aggregated by month)
@@ -117,26 +118,26 @@ function generateTestStats() {
         count: 20,
         originalTokens: 50000,
         compressedTokens: 10000,
-        tokensSaved: 40000
+        tokensSaved: 40000,
       },
       [daysAgo(730).toISOString().substring(0, 7)]: {
         month: daysAgo(730).toISOString().substring(0, 7),
         count: 15,
         originalTokens: 30000,
         compressedTokens: 6000,
-        tokensSaved: 24000
-      }
+        tokensSaved: 24000,
+      },
     },
     summary: {
       totalCompressions: 50,
       totalOriginalTokens: 109500,
       totalCompressedTokens: 21850,
-      totalTokensSaved: 87650
-    }
+      totalTokensSaved: 87650,
+    },
   };
 }
 
-describe('get_compression_stats Date Range Queries', () => {
+describe("get_compression_stats Date Range Queries", () => {
   before(async () => {
     // Setup: Create test stats file
     await fs.mkdir(TEST_STATS_DIR, { recursive: true });
@@ -149,35 +150,63 @@ describe('get_compression_stats Date Range Queries', () => {
     try {
       await fs.rm(TEST_STATS_DIR, { recursive: true, force: true });
     } catch (err) {
-      console.error(`Warning: Could not clean up test directory: ${err.message}`);
+      console.error(
+        `Warning: Could not clean up test directory: ${err.message}`,
+      );
     }
   });
 
-  test('should verify test stats file was created', async () => {
-    const stats = JSON.parse(await fs.readFile(TEST_STATS_FILE, 'utf8'));
-    assert.strictEqual(stats.version, '2.0');
+  test("should verify test stats file was created", async () => {
+    const stats = JSON.parse(await fs.readFile(TEST_STATS_FILE, "utf8"));
+    assert.strictEqual(stats.version, "2.0");
     assert.strictEqual(stats.recent.length, 5);
     assert.strictEqual(stats.summary.totalCompressions, 50);
   });
 
   // Manual verification tests - these require a running MCP server
-  test.todo('Manual: Test relativeDays=3 (last 3 days) - expects 2 compressions, 2250 tokens saved');
-  test.todo('Manual: Test relativeDays=7 (last week) - expects 3 compressions, 3450 tokens saved');
-  test.todo('Manual: Test relativeDays=30 (last 30 days) - expects 5 compressions, 6650 tokens saved');
-  test.todo('Manual: Test startDate/endDate custom range (last 14-7 days) - expects 1-2 compressions');
-  test.todo('Manual: Test legacy period=today (backward compatibility) - expects 1 compression, 750 tokens saved');
-  test.todo('Manual: Test legacy period=week (backward compatibility) - expects 3 compressions, 3450 tokens saved');
-  test.todo('Manual: Test legacy period=month (backward compatibility) - expects 5 compressions, 6650 tokens saved');
-  test.todo('Manual: Test legacy period=all (includes all tiers) - expects 50 compressions, 87650 tokens saved');
-  test.todo('Manual: Test ISO date range (specific dates) - expects 1-2 compressions');
-  test.todo('Manual: Test relativeDays takes precedence over period - expects 3 compressions, 3450 tokens saved');
-  test.todo('Manual: Test invalid relativeDays (400) - should error with "must be a number between 1 and 365"');
-  test.todo('Manual: Test invalid date format - should error with "Invalid date format"');
-  test.todo('Manual: Test startDate after endDate - should error with "Invalid date range"');
+  test.todo(
+    "Manual: Test relativeDays=3 (last 3 days) - expects 2 compressions, 2250 tokens saved",
+  );
+  test.todo(
+    "Manual: Test relativeDays=7 (last week) - expects 3 compressions, 3450 tokens saved",
+  );
+  test.todo(
+    "Manual: Test relativeDays=30 (last 30 days) - expects 5 compressions, 6650 tokens saved",
+  );
+  test.todo(
+    "Manual: Test startDate/endDate custom range (last 14-7 days) - expects 1-2 compressions",
+  );
+  test.todo(
+    "Manual: Test legacy period=today (backward compatibility) - expects 1 compression, 750 tokens saved",
+  );
+  test.todo(
+    "Manual: Test legacy period=week (backward compatibility) - expects 3 compressions, 3450 tokens saved",
+  );
+  test.todo(
+    "Manual: Test legacy period=month (backward compatibility) - expects 5 compressions, 6650 tokens saved",
+  );
+  test.todo(
+    "Manual: Test legacy period=all (includes all tiers) - expects 50 compressions, 87650 tokens saved",
+  );
+  test.todo(
+    "Manual: Test ISO date range (specific dates) - expects 1-2 compressions",
+  );
+  test.todo(
+    "Manual: Test relativeDays takes precedence over period - expects 3 compressions, 3450 tokens saved",
+  );
+  test.todo(
+    'Manual: Test invalid relativeDays (400) - should error with "must be a number between 1 and 365"',
+  );
+  test.todo(
+    'Manual: Test invalid date format - should error with "Invalid date format"',
+  );
+  test.todo(
+    'Manual: Test startDate after endDate - should error with "Invalid date range"',
+  );
 });
 
-describe('Manual Test Documentation', () => {
-  test('should display manual test instructions', (t) => {
+describe("Manual Test Documentation", () => {
+  test("should display manual test instructions", (t) => {
     const instructions = `
 ╔══════════════════════════════════════════════════════════════╗
 ║  Manual Test Scenarios for get_compression_stats            ║
@@ -235,6 +264,6 @@ Expected Results:
     `.trim();
 
     t.diagnostic(instructions);
-    assert.ok(true, 'Manual test instructions documented');
+    assert.ok(true, "Manual test instructions documented");
   });
 });

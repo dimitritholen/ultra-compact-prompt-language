@@ -9,6 +9,7 @@
 Prompt engineering for code generation has evolved dramatically over the past two years. What started as simple "write me a function to..." requests has matured into sophisticated multi-agent systems, retrieval-augmented pipelines, and reasoning frameworks. The field is moving from one-shot prompting toward **iterative, multi-turn conversations** with specialized context retrieval.
 
 **Key Takeaways:**
+
 1. **RAG (Retrieval-Augmented Generation) is essential** for real-world code tasks - it improves accuracy by 4-174% depending on the task
 2. **Chain-of-thought reasoning works, but needs guardrails** - newer frameworks like SEER adaptively switch between direct generation and step-by-step reasoning
 3. **Prompt quality matters more than model size** - smaller models with well-crafted prompts often match larger models' performance
@@ -21,6 +22,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **The Problem:** LLMs excel at synthetic coding problems (like LeetCode) but struggle with real-world tasks. Why? Because real code needs context from your entire codebase - variable names, architectural patterns, dependencies, and coding conventions. Feeding all this context to an LLM is expensive and often exceeds token limits.
 
 **The Solution Space:** Researchers are exploring three main directions:
+
 1. **Better prompts** - how to structure instructions for maximum clarity
 2. **Smart context retrieval** - finding and injecting only the relevant code snippets
 3. **Multi-step reasoning** - breaking complex tasks into manageable steps
@@ -42,6 +44,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Why it matters**: Don't waste time perfecting your first prompt. Start with a basic request, review the output, then refine. Think of it like pair programming - you wouldn't explain everything upfront either.
 
 **Example workflow**:
+
 ```
 1. "Create a user authentication endpoint"
 2. Review generated code
@@ -57,6 +60,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Why it matters**: Token costs drop dramatically, and accuracy improves because the model focuses on what matters.
 
 **How it works**:
+
 1. User asks: "Write tests for the payment processor"
 2. RAG system searches codebase for payment-related code
 3. Retrieves: PaymentProcessor class, related interfaces, existing test patterns
@@ -81,6 +85,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Why it matters**: Including irrelevant examples wastes tokens and confuses the model. Strategic selection improves accuracy without ballooning costs.
 
 **Selection strategies**:
+
 - **Similarity-based**: Find examples similar to current task
 - **Mistake-based**: Show examples where models typically fail
 - **Diversity-based**: Cover different edge cases
@@ -102,6 +107,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Why it matters**: Never trust AI-generated code in production without security review. "It compiles" ≠ "It's secure."
 
 **Mitigation strategies**:
+
 - Use RAG systems like RESCUE (2510.18204) that retrieve secure coding patterns
 - Apply static analysis to all generated code
 - Include security-focused few-shot examples in prompts
@@ -133,6 +139,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Why it matters**: Tests provide concrete specifications. Instead of vague "implement user registration," you give precise behavioral expectations.
 
 **Practical approach**:
+
 ```
 1. Write test cases defining expected behavior
 2. Prompt: "Implement this function to pass these tests"
@@ -149,22 +156,26 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Core idea**: Don't dump entire codebase into context. Intelligently retrieve relevant snippets.
 
 **How it works**:
+
 1. **Index Phase**: Parse codebase, extract semantic embeddings
 2. **Query Phase**: When user asks question, search index for relevant code
 3. **Augment Phase**: Inject retrieved snippets into prompt
 4. **Generate Phase**: LLM generates code with full context
 
 **Pros**:
+
 - Massive token savings (only include what's needed)
 - Improved accuracy (focused context)
 - Scales to large codebases
 
 **Cons**:
+
 - Requires upfront indexing infrastructure
 - Retrieval quality determines output quality
 - Adds latency for search step
 
 **Use cases**:
+
 - Enterprise codebases (1M+ lines of code)
 - Generating code matching existing patterns
 - API usage examples from documentation
@@ -176,6 +187,7 @@ When you ask an AI to write code, you're doing **prompt engineering** - the art 
 **Core idea**: Ask LLM to "show its work" step-by-step before generating final code.
 
 **How it works**:
+
 ```
 Prompt: "Let's solve this step by step:
 1. What are the inputs and outputs?
@@ -185,16 +197,19 @@ Prompt: "Let's solve this step by step:
 ```
 
 **Pros**:
+
 - Better handling of complex logic
 - Easier to debug (reasoning is visible)
 - Reduces hallucinations
 
 **Cons**:
+
 - Higher token costs (reasoning overhead)
 - Slower generation
 - Overkill for simple tasks
 
 **Use cases**:
+
 - Complex algorithms
 - Debugging cryptic errors
 - Architectural decisions
@@ -206,22 +221,26 @@ Prompt: "Let's solve this step by step:
 **Core idea**: Generate code, then verify it with symbolic math tools like SymPy.
 
 **How it works**:
+
 1. LLM generates Python code using SymPy
 2. Execute code symbolically (no concrete values)
 3. Verify mathematical correctness
 4. If incorrect, feed error back to LLM for refinement
 
 **Pros**:
+
 - Provably correct for mathematical tasks
 - Catches subtle logic errors
 - Works for symbolic reasoning (algebra, calculus)
 
 **Cons**:
+
 - Limited to math domains
 - Requires domain-specific verifiers
 - Doesn't generalize to all code types
 
 **Use cases**:
+
 - Scientific computing
 - Financial calculations
 - Cryptographic implementations
@@ -233,6 +252,7 @@ Prompt: "Let's solve this step by step:
 **Core idea**: Divide labor among specialized agents with distinct roles.
 
 **How it works**:
+
 ```
 ┌─────────────┐
 │   Planner   │ → Breaks task into subtasks
@@ -252,16 +272,19 @@ Prompt: "Let's solve this step by step:
 ```
 
 **Pros**:
+
 - Better separation of concerns
 - Feedback loops catch errors early
 - Scales to complex projects
 
 **Cons**:
+
 - Higher orchestration complexity
 - More token usage (multiple models)
 - Debugging cross-agent issues is hard
 
 **Use cases**:
+
 - End-to-end feature development
 - Infrastructure-as-code generation
 - Automated refactoring
@@ -273,6 +296,7 @@ Prompt: "Let's solve this step by step:
 **Core idea**: Pre-structure prompts with role definitions and constraints.
 
 **How it works**:
+
 ```markdown
 You are a senior security engineer specializing in Python.
 Task: Review this authentication function.
@@ -281,16 +305,19 @@ Output format: Markdown list of issues with severity ratings.
 ```
 
 **Pros**:
+
 - Consistent output quality
 - Easy to version control and iterate
 - Reusable across similar tasks
 
 **Cons**:
+
 - Brittle (model updates may break templates)
 - Over-specification can limit creativity
 - Template design is time-consuming
 
 **Use cases**:
+
 - Repetitive tasks (code review, documentation)
 - Enforcing style guides
 - Onboarding (provide templates to junior devs)
@@ -302,21 +329,25 @@ Output format: Markdown list of issues with severity ratings.
 **Core idea**: Semantically compress code to fit more context in limited token windows.
 
 **How it works**:
+
 - **Full compression**: Keep signatures, remove implementation details
 - **Semantic compression**: Preserve semantically relevant parts
 - **Minimal compression**: Just interfaces and type signatures
 
 **Pros**:
+
 - 70-90% token reduction (UCPL-compress)
 - Fit larger codebases in context
 - Faster inference (fewer tokens to process)
 
 **Cons**:
+
 - May lose critical implementation details
 - Requires preprocessing step
 - Compression quality affects generation quality
 
 **Use cases**:
+
 - Analyzing large codebases
 - Understanding cross-file dependencies
 - Generating code matching existing patterns
@@ -330,6 +361,7 @@ Output format: Markdown list of issues with severity ratings.
 **Problem solved**: Writing comprehensive tests is time-consuming and often skipped.
 
 **Implementation hints**:
+
 1. Use RAG to retrieve existing test patterns from your codebase
 2. Provide few-shot examples of edge cases
 3. Specify coverage targets in prompt ("test all error conditions")
@@ -338,6 +370,7 @@ Output format: Markdown list of issues with severity ratings.
 **Tools/Libraries**: LSPRAG (2510.22210) for language-agnostic test generation
 
 **Example prompt**:
+
 ```
 Given this PaymentProcessor class, generate unit tests covering:
 - Valid payment processing
@@ -358,6 +391,7 @@ Use pytest fixtures for setup/teardown.
 **Problem solved**: Migrating codebases (e.g., Python 2→3, JavaScript→TypeScript) is tedious.
 
 **Implementation hints**:
+
 1. Use RAG to retrieve similar successful migrations
 2. Apply snippet-level translation (not entire files at once)
 3. Include few-shot examples of idiom translations
@@ -366,6 +400,7 @@ Use pytest fixtures for setup/teardown.
 **Tools/Libraries**: PyMigTool (32% complete correctness, 2510.08810), RustAssure (for C→Rust)
 
 **Example workflow**:
+
 ```
 For each function in old codebase:
 1. Retrieve similar functions in new framework
@@ -382,6 +417,7 @@ For each function in old codebase:
 **Problem solved**: Manual security reviews don't scale; automated tools have high false positive rates.
 
 **Implementation hints**:
+
 1. Use RAG to retrieve secure coding patterns from your codebase
 2. Provide few-shot examples of past vulnerabilities
 3. Specify OWASP Top 10 categories in prompt
@@ -390,6 +426,7 @@ For each function in old codebase:
 **Tools/Libraries**: RESCUE (2510.18204) for secure code generation, RefleXGen (2510.23674) for security review
 
 **Example prompt**:
+
 ```
 Review this Express.js authentication endpoint for security issues.
 Focus on:
@@ -409,12 +446,14 @@ Output: Markdown table with [Issue, Severity, Recommendation].
 **Problem solved**: Developers hate writing documentation; outdated docs are worse than no docs.
 
 **Implementation hints**:
+
 1. Generate docs directly from code using LLMs
 2. Include context about the module's purpose (use RAG)
 3. Specify output format (JSDoc, docstrings, markdown)
 4. Update docs automatically on code changes
 
 **Example prompt**:
+
 ```
 Generate JSDoc comments for this TypeScript module.
 Include:
@@ -434,6 +473,7 @@ Style: Match our existing docs in src/core/auth.ts.
 **Problem solved**: Profiling identifies bottlenecks, but optimization strategies require domain expertise.
 
 **Implementation hints**:
+
 1. Provide profiling data in prompt
 2. Use RAG to retrieve similar optimizations from codebase
 3. Specify constraints (memory vs. speed tradeoffs)
@@ -442,6 +482,7 @@ Style: Match our existing docs in src/core/auth.ts.
 **Tools/Libraries**: Opal (19-52% speedups, 2510.00932), VibeCodeHPC (HPC auto-tuning, 2510.00031)
 
 **Example prompt**:
+
 ```
 This database query is the bottleneck (profiler shows 2.3s avg):
 
@@ -463,6 +504,7 @@ Suggest optimizations with expected performance gains.
 **Problem solved**: Bugs pile up faster than developers can fix them.
 
 **Implementation hints**:
+
 1. Provide bug report, stack trace, and relevant code context
 2. Use RAG to find similar past bug fixes
 3. Generate fix and validate with test suite
@@ -471,6 +513,7 @@ Suggest optimizations with expected performance gains.
 **Tools/Libraries**: SIADAFIX (60.67% pass@1, 2510.16059)
 
 **Example workflow**:
+
 ```
 1. User reports: "App crashes when uploading files >5MB"
 2. Retrieve stack trace and upload handler code
@@ -538,23 +581,27 @@ Suggest optimizations with expected performance gains.
 ## Evolution & Trends
 
 **Phase 1 (2020-2022): Simple Prompting**
+
 - "Write me a function to sort an array"
 - Zero-shot or basic few-shot
 - Focused on isolated coding problems
 
 **Phase 2 (2022-2023): Context-Aware Prompting**
+
 - Include function signatures, type hints
 - Few-shot examples from same codebase
 - Chain-of-thought reasoning emerges
 - Tools like GitHub Copilot gain traction
 
 **Phase 3 (2024): Retrieval-Augmented Generation (RAG)**
+
 - Selective context retrieval from large codebases
 - Repository-level awareness
 - Prompt templates and personas
 - Security-focused prompting emerges
 
 **Phase 4 (2025): Multi-Agent Systems & Adaptive Reasoning**
+
 - Specialized agents (planner, coder, tester, reviewer)
 - Adaptive CoT (SEER) switches strategies dynamically
 - Neurosymbolic approaches (SymCode) with formal verification
@@ -562,6 +609,7 @@ Suggest optimizations with expected performance gains.
 - Real-time verification and feedback loops
 
 **Future Direction (2026+)**: Predictions based on current research:
+
 - **Self-evolving prompts**: Systems that learn from debugging traces (QiMeng-NeuComBack, 2511.01183)
 - **Cross-codebase knowledge transfer**: RAG systems that learn from public GitHub repos
 - **Formal verification integration**: Proving correctness, not just generating code
@@ -648,11 +696,13 @@ Suggest optimizations with expected performance gains.
 ## Implementation Resources
 
 ### GitHub Repos Mentioned
+
 - **Opal**: Framework for LLM-driven performance optimization (2510.00932)
 - **PyMigTool**: Python library migration automation (2510.08810)
 - **VibeCodeHPC**: HPC code auto-tuning (2510.00031)
 
 ### Datasets Referenced
+
 - **HumanEval**: 164 hand-written programming problems (most common benchmark)
 - **MBPP (Mostly Basic Programming Problems)**: 1000 crowd-sourced Python tasks
 - **LoCoBench**: 8000 scenarios across 10 languages for long-context evaluation (2509.09614)
@@ -660,6 +710,7 @@ Suggest optimizations with expected performance gains.
 - **V-GameGym**: 2,219 visual game development samples (2509.20136)
 
 ### Benchmarks Used
+
 - **HumanEval**: Function-level code generation (164 problems)
 - **MBPP**: Basic programming problems (1000 tasks)
 - **CodeContests**: Competitive programming challenges
@@ -667,6 +718,7 @@ Suggest optimizations with expected performance gains.
 - **Pass@k**: Correctness metric (k=1, 5, 10, 100 common)
 
 ### Tools & Frameworks
+
 - **Language Server Protocol (LSP)**: Used by LSPRAG for precise symbol retrieval
 - **SymPy**: Symbolic math library used in SymCode for verification
 - **Ansible**: Used in MicroRemed benchmark for remediation tasks

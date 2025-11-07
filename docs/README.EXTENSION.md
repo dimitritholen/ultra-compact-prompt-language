@@ -13,7 +13,9 @@ Adds full language support for `.ucpl` files in VS Code, making UCPL syntax as c
 ## Features
 
 ### 🎨 Syntax Highlighting
+
 Full color-coding for UCPL elements:
+
 - Directives (`@role:`, `@task:`, `@workflow:`)
 - Constraints (`!`, `?`, `~`)
 - Operators (`&`, `||`, `>`, `^`)
@@ -22,37 +24,44 @@ Full color-coding for UCPL elements:
 - Comments and strings
 
 ### 💡 IntelliSense (Autocomplete)
+
 Smart autocomplete for all UCPL syntax:
+
 - Press `Ctrl+Space` to see context-aware suggestions
 - Autocomplete directive names, operators, and common patterns
 - Parameter suggestions for tool invocations
 
 ### 📦 Code Snippets
+
 Quick templates for common patterns:
 
-| Trigger | Description |
-|---------|-------------|
-| `ucpl-header` | YAML header boilerplate |
-| `ucpl-task` | Basic task template |
-| `ucpl-workflow` | Sequential workflow |
-| `ucpl-macro` | Macro definition |
-| `ucpl-conditional` | If/else logic |
-| `ucpl-loop` | Loop structure |
-| `ucpl-full` | Complete UCPL template |
+| Trigger            | Description             |
+| ------------------ | ----------------------- |
+| `ucpl-header`      | YAML header boilerplate |
+| `ucpl-task`        | Basic task template     |
+| `ucpl-workflow`    | Sequential workflow     |
+| `ucpl-macro`       | Macro definition        |
+| `ucpl-conditional` | If/else logic           |
+| `ucpl-loop`        | Loop structure          |
+| `ucpl-full`        | Complete UCPL template  |
 
 Type the trigger and press `Tab` to expand.
 
 ### 📖 Hover Documentation
+
 Hover over any UCPL element to see:
+
 - Syntax explanation
 - Usage examples
 - Parameter details
 
 ### 🔍 Go to Definition
+
 - Press `F12` on `@use macro_name` to jump to the macro definition
 - Works across the same file
 
 ### 🔧 Bracket Matching
+
 - Auto-close brackets, quotes, and delimiters
 - Highlight matching pairs
 
@@ -113,6 +122,7 @@ ucpl-task  ← Press Tab to expand
 ```
 
 Expands to:
+
 ```ucpl
 ---
 format: ucpl
@@ -127,6 +137,7 @@ version: 1.1
 ### Hover Help
 
 Hover over `@task:` to see:
+
 ```
 @task:X|Y|Z
 Define the primary task with focus areas.
@@ -213,6 +224,7 @@ The extension works out of the box, but you can customize:
 ### File Associations
 
 Add to VS Code `settings.json`:
+
 ```json
 {
   "files.associations": {
@@ -225,6 +237,7 @@ Add to VS Code `settings.json`:
 ### Theme Colors
 
 UCPL syntax uses standard TextMate scopes that work with all VS Code themes:
+
 - `keyword.control.ucpl` - Directives
 - `keyword.operator.ucpl` - Operators
 - `support.function.ucpl` - Tool invocations
@@ -241,6 +254,7 @@ UCPL syntax uses standard TextMate scopes that work with all VS Code themes:
 ## Language Support
 
 The extension provides syntax support for UCPL v1.1, including:
+
 - Core directives (`@role`, `@task`, `@scope`, `@out`)
 - Constraints (`!`, `?`, `~`)
 - Operators (`&`, `||`, `>`, `^`)

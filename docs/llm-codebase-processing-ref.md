@@ -337,13 +337,13 @@ Most code files exceed single embedding limits, requiring strategic splitting.
 
 ### Tool Comparison Summary
 
-| Tool | Context Window | Multi-File Capability | Token Strategy | Best Use Case |
-|------|----------------|----------------------|----------------|---------------|
-| **Copilot** | 64K | Limited | Minimal sending | Auto-completion |
-| **Cursor** | API-dependent | Advanced | RAG + Indexing | Feature development |
-| **Claude Code** | 200K | Advanced | Large context + caching | Architecture analysis |
-| **Supermaven** | 300K | Advanced | Massive context | Large codebase understanding |
-| **Gemini Code Assist** | 1M | Advanced | Ultra-large context | Multi-file reasoning |
+| Tool                   | Context Window | Multi-File Capability | Token Strategy          | Best Use Case                |
+| ---------------------- | -------------- | --------------------- | ----------------------- | ---------------------------- |
+| **Copilot**            | 64K            | Limited               | Minimal sending         | Auto-completion              |
+| **Cursor**             | API-dependent  | Advanced              | RAG + Indexing          | Feature development          |
+| **Claude Code**        | 200K           | Advanced              | Large context + caching | Architecture analysis        |
+| **Supermaven**         | 300K           | Advanced              | Massive context         | Large codebase understanding |
+| **Gemini Code Assist** | 1M             | Advanced              | Ultra-large context     | Multi-file reasoning         |
 
 ---
 

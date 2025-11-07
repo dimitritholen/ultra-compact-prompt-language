@@ -21,24 +21,28 @@ Common helper functions for file operations, polling, and cleanup.
 **Example:**
 
 ```javascript
-const { fileExists, pollForCondition, cleanupFiles } = require('./test-utils/helpers');
+const {
+  fileExists,
+  pollForCondition,
+  cleanupFiles,
+} = require("./test-utils/helpers");
 
 // Check if a file exists
-if (await fileExists('./test-file.txt')) {
-  console.log('File exists');
+if (await fileExists("./test-file.txt")) {
+  console.log("File exists");
 }
 
 // Poll for a condition
 const result = await pollForCondition(
   async () => {
-    const exists = await fileExists('./test-file.txt');
+    const exists = await fileExists("./test-file.txt");
     return exists ? { success: true } : null;
   },
-  { maxWaitMs: 5000, initialDelay: 100, maxDelay: 1000 }
+  { maxWaitMs: 5000, initialDelay: 100, maxDelay: 1000 },
 );
 
 // Cleanup test files
-await cleanupFiles('./test-file1.txt', './test-file2.txt');
+await cleanupFiles("./test-file1.txt", "./test-file2.txt");
 ```
 
 ### mcp-client.js
@@ -52,23 +56,23 @@ MCP protocol client for testing server interactions.
 **Example:**
 
 ```javascript
-const { callMCPTool } = require('./test-utils/mcp-client');
-const path = require('path');
+const { callMCPTool } = require("./test-utils/mcp-client");
+const path = require("path");
 
-const SERVER_PATH = path.join(__dirname, 'server.js');
+const SERVER_PATH = path.join(__dirname, "server.js");
 
 // Call compress_code_context tool
 const { response, stderr } = await callMCPTool(
   SERVER_PATH,
-  'compress_code_context',
+  "compress_code_context",
   {
-    path: './test-file.js',
-    level: 'full',
-    format: 'text'
-  }
+    path: "./test-file.js",
+    level: "full",
+    format: "text",
+  },
 );
 
-console.log('Compression result:', response.result.content[0].text);
+console.log("Compression result:", response.result.content[0].text);
 ```
 
 ### fixtures.js
@@ -82,16 +86,16 @@ Test data generation functions for creating realistic test fixtures.
 **Example:**
 
 ```javascript
-const { generateStatsWithCost } = require('./test-utils/fixtures');
+const { generateStatsWithCost } = require("./test-utils/fixtures");
 
 // Generate default test stats
 const stats = generateStatsWithCost();
-console.log('Total compressions:', stats.summary.totalCompressions);
+console.log("Total compressions:", stats.summary.totalCompressions);
 
 // Generate custom test stats (future enhancement)
 const customStats = generateStatsWithCost({
   compressionCount: 5,
-  daysAgo: 7
+  daysAgo: 7,
 });
 ```
 

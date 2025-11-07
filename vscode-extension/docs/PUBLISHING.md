@@ -5,6 +5,7 @@ This document explains how the automated publishing workflow works and how to se
 ## Overview
 
 The extension uses GitHub Actions to automatically:
+
 1. **Version** the extension using semantic versioning
 2. **Build** the .vsix package
 3. **Release** on GitHub with the .vsix file
@@ -46,6 +47,7 @@ Make sure you've created your publisher on the VS Code Marketplace:
 2. Sign in and create publisher with ID: `dimitritholen`
 
 Or via CLI:
+
 ```bash
 npx @vscode/vsce create-publisher dimitritholen
 ```
@@ -55,6 +57,7 @@ npx @vscode/vsce create-publisher dimitritholen
 ### Automatic Triggering
 
 The workflow triggers on:
+
 - **Push to main branch** with changes in `vscode-extension/` directory
 - **Manual trigger** via GitHub Actions UI (with custom version bump)
 
@@ -62,11 +65,11 @@ The workflow triggers on:
 
 The workflow uses **Conventional Commits** to determine version bumps:
 
-| Commit Message | Version Bump | Example |
-|----------------|--------------|---------|
-| `fix: ...` | **patch** | 0.1.0 → 0.1.1 |
-| `feat: ...` | **minor** | 0.1.0 → 0.2.0 |
-| `feat!: ...` or `BREAKING CHANGE:` | **major** | 0.1.0 → 1.0.0 |
+| Commit Message                     | Version Bump | Example       |
+| ---------------------------------- | ------------ | ------------- |
+| `fix: ...`                         | **patch**    | 0.1.0 → 0.1.1 |
+| `feat: ...`                        | **minor**    | 0.1.0 → 0.2.0 |
+| `feat!: ...` or `BREAKING CHANGE:` | **major**    | 0.1.0 → 1.0.0 |
 
 ### Commit Message Format
 
@@ -81,6 +84,7 @@ Use this format for your commits:
 ```
 
 **Types:**
+
 - `feat:` - New feature (minor bump)
 - `fix:` - Bug fix (patch bump)
 - `docs:` - Documentation only
@@ -90,24 +94,28 @@ Use this format for your commits:
 - `chore:` - Maintenance tasks
 
 **Breaking Changes:**
+
 - Add `!` after type: `feat!: remove old API`
 - Or add footer: `BREAKING CHANGE: description`
 
 ### Examples
 
 **Patch Release (0.1.0 → 0.1.1):**
+
 ```bash
 git commit -m "fix: correct syntax highlighting for variables"
 git push
 ```
 
 **Minor Release (0.1.0 → 0.2.0):**
+
 ```bash
 git commit -m "feat: add support for nested workflows"
 git push
 ```
 
 **Major Release (0.1.0 → 1.0.0):**
+
 ```bash
 git commit -m "feat!: redesign macro syntax for better clarity
 

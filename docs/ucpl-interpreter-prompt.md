@@ -128,9 +128,9 @@ Do NOT just explain what you would do - DO IT.
   "workflow": {
     "type": "sequential",
     "steps": [
-      {"step": 1, "action": "investigate_codebase", "store": "$patterns"},
-      {"step": 2, "action": "implement_feature", "store": "$code"},
-      {"step": 3, "action": "write_tests", "store": "$tests"}
+      { "step": 1, "action": "investigate_codebase", "store": "$patterns" },
+      { "step": 2, "action": "implement_feature", "store": "$code" },
+      { "step": 3, "action": "write_tests", "store": "$tests" }
     ]
   },
   "output": {
@@ -166,11 +166,11 @@ Do NOT just explain what you would do - DO IT.
 
 ## Quick Reference
 
-| Input | What You Do |
-|-------|-------------|
-| `{"format":"ucpl-schema-v1",...}` | Parse JSON → Execute directly |
-| `@role:X @task:Y...` | Parse UCPL → Convert to schema → Execute |
-| User asks "what does this do?" | Explain the specification |
-| User provides specification | **Execute it** (default mode) |
+| Input                             | What You Do                              |
+| --------------------------------- | ---------------------------------------- |
+| `{"format":"ucpl-schema-v1",...}` | Parse JSON → Execute directly            |
+| `@role:X @task:Y...`              | Parse UCPL → Convert to schema → Execute |
+| User asks "what does this do?"    | Explain the specification                |
+| User provides specification       | **Execute it** (default mode)            |
 
 **Default behavior**: Execute specifications immediately, don't just describe them.

@@ -3,6 +3,7 @@
 ## UCPL Syntax (Prompts)
 
 ### Basic Structure
+
 ```
 @role:developer
 @task:implement|test
@@ -12,30 +13,34 @@
 ```
 
 ### Directives
-| Syntax | Meaning |
-|--------|---------|
-| `@role:X` | Adopt role X |
-| `@task:X\|Y` | Task X with focus on Y |
-| `@out:X+Y` | Output formats X and Y |
-| `@scope:X` | Limit work to X |
-| `@principles:X` | Follow principles X |
+
+| Syntax          | Meaning                |
+| --------------- | ---------------------- |
+| `@role:X`       | Adopt role X           |
+| `@task:X\|Y`    | Task X with focus on Y |
+| `@out:X+Y`      | Output formats X and Y |
+| `@scope:X`      | Limit work to X        |
+| `@principles:X` | Follow principles X    |
 
 ### Constraints
-| Syntax | Meaning |
-|--------|---------|
-| `!X` | MUST do X (mandatory) |
-| `?X` | OPTIONAL: X (nice-to-have) |
-| `~X` | AVOID: X (discouraged) |
+
+| Syntax | Meaning                    |
+| ------ | -------------------------- |
+| `!X`   | MUST do X (mandatory)      |
+| `?X`   | OPTIONAL: X (nice-to-have) |
+| `~X`   | AVOID: X (discouraged)     |
 
 ### Operators
-| Syntax | Meaning |
-|--------|---------|
-| `&` | AND (all conditions) |
-| `\|\|` | OR (any condition) |
-| `^X` | Priority/focus on X |
-| `>X` | Output to X |
+
+| Syntax | Meaning              |
+| ------ | -------------------- |
+| `&`    | AND (all conditions) |
+| `\|\|` | OR (any condition)   |
+| `^X`   | Priority/focus on X  |
+| `>X`   | Output to X          |
 
 ### Tool Invocation
+
 ```
 @@search:web[query="topic"]
 @@think:deep[steps=10]
@@ -49,13 +54,13 @@
 
 ### Supported Languages
 
-| Language | File Extensions | Compression | Features |
-|----------|----------------|-------------|----------|
-| **Python** | .py | AST-based (~85-90%) | Classes, functions, docstrings, type hints, imports |
-| **JavaScript** | .js, .jsx | Regex-based (~80-85%) | Classes, functions, JSDoc, ES6 imports, arrow functions |
-| **TypeScript** | .ts, .tsx | Regex-based (~80-85%) | All JS features + interfaces, types, type annotations |
-| **Go** | .go | Regex-based (~75-80%) | Structs, interfaces, functions, methods, packages |
-| **Markdown** | .md, .markdown | Structure (~90-95%) | Headings, structure, code blocks, links, summary |
+| Language       | File Extensions | Compression           | Features                                                |
+| -------------- | --------------- | --------------------- | ------------------------------------------------------- |
+| **Python**     | .py             | AST-based (~85-90%)   | Classes, functions, docstrings, type hints, imports     |
+| **JavaScript** | .js, .jsx       | Regex-based (~80-85%) | Classes, functions, JSDoc, ES6 imports, arrow functions |
+| **TypeScript** | .ts, .tsx       | Regex-based (~80-85%) | All JS features + interfaces, types, type annotations   |
+| **Go**         | .go             | Regex-based (~75-80%) | Structs, interfaces, functions, methods, packages       |
+| **Markdown**   | .md, .markdown  | Structure (~90-95%)   | Headings, structure, code blocks, links, summary        |
 
 **Auto-detection**: Language is detected from file extension automatically.
 
@@ -83,35 +88,38 @@ cat file.py | ucpl-compress
 
 ### Compression Levels
 
-| Level | Use Case | Savings |
-|-------|----------|---------|
-| `full` | General use (default) | ~85% |
-| `signatures` | API review | ~90% |
-| `minimal` | Quick overview | ~95% |
+| Level        | Use Case              | Savings |
+| ------------ | --------------------- | ------- |
+| `full`       | General use (default) | ~85%    |
+| `signatures` | API review            | ~90%    |
+| `minimal`    | Quick overview        | ~95%    |
 
 ### Output Formats
 
-| Format | Use Case |
-|--------|----------|
-| `text` | Human-readable (default) |
-| `summary` | Token savings table |
-| `json` | LLM consumption |
+| Format    | Use Case                 |
+| --------- | ------------------------ |
+| `text`    | Human-readable (default) |
+| `summary` | Token savings table      |
+| `json`    | LLM consumption          |
 
 ---
 
 ## Token Savings
 
 ### UCPL (Prompts)
+
 - **Before**: 1,500 tokens (natural language)
 - **After**: 250-400 tokens (UCPL schema)
 - **Savings**: 70-85%
 
 ### Context Compression
+
 - **Before**: 45,000 tokens (full code)
 - **After**: 6,000 tokens (compressed)
 - **Savings**: 85-90%
 
 ### Combined Impact
+
 - **Total session**: 50,000 → 10,000 tokens
 - **Savings**: 80% on entire interaction
 - **Cost**: ~$0.15 → ~$0.03 per session
@@ -121,6 +129,7 @@ cat file.py | ucpl-compress
 ## Common Patterns
 
 ### Code Review
+
 ```
 @role:reviewer
 @task:review|security|performance
@@ -130,6 +139,7 @@ cat file.py | ucpl-compress
 ```
 
 ### Architecture Analysis
+
 ```
 @role:architect
 @task:analyze|scalability
@@ -139,6 +149,7 @@ cat file.py | ucpl-compress
 ```
 
 ### Refactoring
+
 ```
 @role:developer
 @task:refactor|readable
@@ -148,6 +159,7 @@ cat file.py | ucpl-compress
 ```
 
 ### Bug Investigation
+
 ```
 @role:debugger
 @task:investigate|fix
@@ -162,6 +174,7 @@ cat file.py | ucpl-compress
 ## Integration Examples
 
 ### With Claude Code
+
 ```bash
 # Create alias
 alias compress='python scripts/ucpl-compress'
@@ -172,6 +185,7 @@ compress src/ > context.md
 ```
 
 ### With API
+
 ```python
 from scripts.ucpl_compress import ContextCompressor
 
@@ -186,6 +200,7 @@ messages = [
 ```
 
 ### With UCPL
+
 ```
 @role:architect
 @@compress:context[path=src/]
@@ -198,18 +213,21 @@ messages = [
 ## When to Use What
 
 ### Use UCPL When:
+
 - ✅ Need consistent results
 - ✅ Repeated workflows
 - ✅ Fast iteration
 - ✅ Team collaboration
 
 ### Use Compression When:
+
 - ✅ Large codebases (>10k tokens)
 - ✅ Architecture review
 - ✅ API design
 - ✅ Code structure analysis
 
 ### Don't Compress When:
+
 - ❌ Bug fixing (need full code)
 - ❌ Algorithm optimization
 - ❌ Small files (<500 tokens)
@@ -220,6 +238,7 @@ messages = [
 ## Cheat Sheet
 
 ### UCPL Conversion
+
 ```bash
 # Natural language (1,500 tokens)
 "You are a developer. Review this code for security issues.
@@ -233,6 +252,7 @@ Output as bullet points with severity ratings."
 ```
 
 ### Context Compression
+
 ```bash
 # Full code (3,000 tokens)
 class AuthService:
@@ -248,6 +268,7 @@ Methods:
 ```
 
 ### Combined Savings
+
 ```bash
 # Total before: 50,000 tokens
 Prompt: 1,500

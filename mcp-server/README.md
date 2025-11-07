@@ -46,6 +46,7 @@ npm install -g .
 ### Claude Desktop
 
 Add to your config file:
+
 - Linux/Mac: `~/.config/claude/claude_desktop_config.json`
 - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
@@ -70,6 +71,7 @@ Claude Code automatically detects MCP servers configured in Claude Desktop. No a
 ## 🎉 No System Prompt Configuration Needed
 
 The MCP server is **fully self-documenting** with enhanced schema discoverability. When an LLM queries available tools, it receives:
+
 - Comprehensive usage instructions with validation constraints
 - Rich enum options with titles and descriptions
 - Output schema documentation
@@ -82,6 +84,7 @@ The MCP server is **fully self-documenting** with enhanced schema discoverabilit
 ### What's New in v1.3 (2025-01-06)
 
 **Enhanced Statistics & Cost Tracking** - Comprehensive improvements to compression statistics:
+
 - **Flexible Date Queries**: Query statistics using ISO dates, relative time ("7 days ago", "last week"), or simple day counts
 - **Automatic LLM Detection**: Detects Claude Desktop, Claude Code, VSCode, and other clients via environment variables
 - **Cost Tracking**: Calculates and tracks USD cost savings based on detected LLM model pricing
@@ -90,6 +93,7 @@ The MCP server is **fully self-documenting** with enhanced schema discoverabilit
 - **Enhanced Error Messages**: Clear, actionable error messages for date parsing and configuration issues
 
 **Pricing Support for 7 LLM Models**:
+
 - Claude Sonnet 4 ($3.00/M tokens) - Claude Opus 4 ($15.00/M tokens)
 - GPT-4o ($2.50/M tokens) - GPT-4o Mini ($0.15/M tokens)
 - Gemini 2.0 Flash ($0.10/M tokens)
@@ -100,6 +104,7 @@ See [TEST-COVERAGE-REPORT.md](./TEST-COVERAGE-REPORT.md) for implementation deta
 ### What's New in v1.2 (2025-11-05)
 
 **Enhanced Discoverability** - Achieved 100% discoverability score through:
+
 - Tool description compressed from 676 → 216 chars (within MCP limit)
 - All enums converted to `oneOf` pattern with rich descriptions
 - Added comprehensive JSON Schema validation constraints
@@ -149,6 +154,7 @@ Compress src/main.py to understand its structure
 ```
 
 Claude will automatically invoke:
+
 ```json
 {
   "tool": "compress_code_context",
@@ -166,6 +172,7 @@ Show me the minimal API surface of the entire src/ directory
 ```
 
 Claude will invoke:
+
 ```json
 {
   "tool": "compress_code_context",
@@ -185,6 +192,7 @@ The server automatically tracks token savings for every compression with **100% 
 The statistics tool now supports flexible date queries using ISO dates, relative time, or simple day counts. Here are 15+ ways to query your stats:
 
 **Simple Queries (using presets):**
+
 ```
 Show me my compression statistics
 Show me stats for today
@@ -193,6 +201,7 @@ Show me monthly compression data
 ```
 
 **Relative Time Queries:**
+
 ```
 Show me compressions from the last 7 days
 Show me stats from 2 weeks ago until now
@@ -201,6 +210,7 @@ Show me compressions from yesterday
 ```
 
 **ISO Date Range Queries:**
+
 ```
 Show me compressions from 2025-01-01 to 2025-01-06
 Show me stats for January 2025
@@ -208,6 +218,7 @@ What did I save between 2024-12-15 and 2025-01-01?
 ```
 
 **Natural Language Time Expressions:**
+
 ```
 Show me compressions from last week
 What did I compress 3 days ago?
@@ -215,6 +226,7 @@ Show me stats from the beginning of the month
 ```
 
 **Cost-Focused Queries:**
+
 ```
 How much money have I saved with compressions?
 Show me cost savings by model
@@ -222,6 +234,7 @@ What's my total cost savings this month?
 ```
 
 **Detailed Analysis:**
+
 ```
 Show me detailed compression records for the last 10 days
 Give me stats with individual compression details
@@ -233,11 +246,13 @@ Show me the last 20 compression operations
 The tool supports three ways to specify date ranges (in priority order):
 
 **1. Simple Day Count** (easiest):
+
 - **relativeDays** (optional): Number of days to look back from now
   - Example: `relativeDays: 7` = last 7 days
   - Must be between 1 and 365
 
 **2. Custom Date Range** (flexible):
+
 - **startDate** (optional): Start date for filtering
   - Accepts ISO format: `"2025-01-01"` or `"2025-01-01T10:00:00Z"`
   - Accepts relative time: `"2 hours ago"`, `"yesterday"`, `"last week"`
@@ -247,6 +262,7 @@ The tool supports three ways to specify date ranges (in priority order):
   - If omitted: defaults to current time
 
 **3. Legacy Presets** (backward compatible):
+
 - **period** (optional): Time period preset
   - `all` (default): All time statistics
   - `today`: Last 24 hours
@@ -254,6 +270,7 @@ The tool supports three ways to specify date ranges (in priority order):
   - `month`: Last 30 days
 
 **Display Options:**
+
 - **includeDetails** (optional): Include individual compression records (default: false)
 - **limit** (optional): Maximum records to show when includeDetails=true (default: 10, max: 100)
 
@@ -262,6 +279,7 @@ The tool supports three ways to specify date ranges (in priority order):
 For each compression, the following is recorded:
 
 **Token Metrics:**
+
 - **Timestamp**: When the compression occurred
 - **Path**: File or directory that was compressed
 - **Original tokens**: ACTUAL token count before compression (using tiktoken)
@@ -273,6 +291,7 @@ For each compression, the following is recorded:
 - **Format**: text, summary, or json
 
 **Cost Tracking (NEW in v1.3):**
+
 - **Model**: Detected LLM model (e.g., "claude-sonnet-4", "gpt-4o")
 - **Client**: Detected client name (e.g., "claude-desktop", "claude-code")
 - **Price per M tokens**: Current pricing for the detected model
@@ -280,6 +299,7 @@ For each compression, the following is recorded:
 - **Currency**: Always "USD"
 
 **Summary Statistics (NEW in v1.3):**
+
 - **Total cost savings USD**: Aggregate cost savings across all compressions
 - **Average cost per compression**: Mean cost savings per compression operation
 - **Model breakdown**: Per-model statistics showing:
@@ -299,6 +319,7 @@ Statistics are stored in `~/.ucpl/compress/compression-stats.json` (cross-platfo
 ## Compression Statistics (Last 7 Days)
 
 **Summary:**
+
 - Total Compressions: 15
 - Original Tokens: 125,450
 - Compressed Tokens: 28,320
@@ -307,17 +328,20 @@ Statistics are stored in `~/.ucpl/compress/compression-stats.json` (cross-platfo
 - Average Savings: 77.4%
 
 **Cost Savings (NEW):**
+
 - Total Cost Savings: $0.29 USD
 - Average Cost per Compression: $0.019 USD
 - Detected Model: Claude Sonnet 4 ($3.00/M tokens)
 
 **Model Breakdown:**
+
 - Claude Sonnet 4: 15 compressions, 97,130 tokens saved, $0.29 USD saved
 - Records with cost tracking: 15/15 (100%)
 
 **Recent Compressions (showing 5 of 15):**
 
 ### /home/user/project/src/auth.py
+
 - Date: 1/6/2025, 2:30:15 PM
 - Level: full, Format: text
 - Original: 8,450 tokens
@@ -327,6 +351,7 @@ Statistics are stored in `~/.ucpl/compress/compression-stats.json` (cross-platfo
 - Model: Claude Sonnet 4 ($3.00/M tokens)
 
 ### /home/user/project/src/database/
+
 - Date: 1/6/2025, 1:15:42 PM
 - Level: minimal, Format: summary
 - Original: 42,300 tokens
@@ -358,6 +383,7 @@ The server automatically detects which LLM client you're using to provide accura
    - If no client detected, defaults to Claude Sonnet 4 ($3.00/M tokens)
 
 **Example Detection Log** (visible in MCP server logs):
+
 ```
 [INFO] Detected Claude Desktop (version: 1.2.3)
 [INFO] Using model: claude-sonnet-4
@@ -370,6 +396,7 @@ Create a config file to override automatic detection:
 **File Location:** `~/.ucpl/compress/config.json`
 
 **Example Configuration:**
+
 ```json
 {
   "model": "gpt-4o"
@@ -390,11 +417,13 @@ Create a config file to override automatic detection:
 **Steps to Configure:**
 
 1. Create the config directory:
+
    ```bash
    mkdir -p ~/.ucpl/compress
    ```
 
 2. Create the config file:
+
    ```bash
    echo '{"model": "gpt-4o"}' > ~/.ucpl/compress/config.json
    ```
@@ -408,18 +437,28 @@ Create a config file to override automatic detection:
 
 **Invalid Config Fallback:**
 If the config file exists but contains an invalid model ID, the server will:
+
 1. Log a warning: `[WARN] Unknown model in config: xyz, falling back to env detection`
 2. Continue with environment variable detection
 3. If no env vars found, use default model
 
 **Config Schema:**
+
 ```json
 {
   "type": "object",
   "properties": {
     "model": {
       "type": "string",
-      "enum": ["claude-sonnet-4", "claude-opus-4", "gpt-4o", "gpt-4o-mini", "gemini-2.0-flash", "o1", "o1-mini"],
+      "enum": [
+        "claude-sonnet-4",
+        "claude-opus-4",
+        "gpt-4o",
+        "gpt-4o-mini",
+        "gemini-2.0-flash",
+        "o1",
+        "o1-mini"
+      ],
       "description": "LLM model to use for cost calculations"
     }
   },
@@ -432,11 +471,13 @@ If the config file exists but contains an invalid model ID, the server will:
 If you're using a custom client or want to set the model via environment variables:
 
 **For Anthropic Models:**
+
 ```bash
 export ANTHROPIC_MODEL="claude-sonnet-4"
 ```
 
 **For OpenAI Models:**
+
 ```bash
 export OPENAI_MODEL="gpt-4o"
 ```
@@ -465,6 +506,7 @@ export OPENAI_MODEL="gpt-4o"
 ### Server not appearing in Claude Desktop
 
 1. **Verify installation:**
+
    ```bash
    which ucpl-compress-mcp  # Should show path
    ucpl-compress-mcp --version  # Should not error
@@ -475,6 +517,7 @@ export OPENAI_MODEL="gpt-4o"
    - Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
 3. **Verify config syntax:**
+
    ```json
    {
      "mcpServers": {
@@ -493,11 +536,13 @@ export OPENAI_MODEL="gpt-4o"
 ### Tool execution fails
 
 1. **Verify Python is installed:**
+
    ```bash
    python3 --version  # Should be 3.7+
    ```
 
 2. **Test the compression CLI:**
+
    ```bash
    # Find where it's installed
    npm list -g ucpl-compress-mcp
@@ -508,6 +553,7 @@ export OPENAI_MODEL="gpt-4o"
    ```
 
 3. **Reinstall if needed:**
+
    ```bash
    npm uninstall -g ucpl-compress-mcp
    npm install -g ucpl-compress-mcp
@@ -522,12 +568,14 @@ export OPENAI_MODEL="gpt-4o"
 **Solutions:**
 
 1. **Check detection in server logs:**
+
    ```
    [INFO] Detected Claude Desktop (version: 1.2.3)
    [INFO] Using model: claude-sonnet-4
    ```
 
 2. **Verify environment variables:**
+
    ```bash
    # For Claude Desktop
    echo $CLAUDE_DESKTOP_VERSION
@@ -542,11 +590,13 @@ export OPENAI_MODEL="gpt-4o"
    ```
 
 3. **Check config file (if using manual override):**
+
    ```bash
    cat ~/.ucpl/compress/config.json
    ```
 
    Should contain valid JSON:
+
    ```json
    {
      "model": "claude-sonnet-4"
@@ -558,6 +608,7 @@ export OPENAI_MODEL="gpt-4o"
    - Check server.js line 35-43 for full MODEL_PRICING list
 
 5. **If detection fails, create config file:**
+
    ```bash
    mkdir -p ~/.ucpl/compress
    echo '{"model": "claude-sonnet-4"}' > ~/.ucpl/compress/config.json
@@ -572,6 +623,7 @@ export OPENAI_MODEL="gpt-4o"
 **Common Issues & Solutions:**
 
 1. **Invalid date format:**
+
    ```
    Error: Invalid date format: "xyz"
    ```
@@ -582,11 +634,13 @@ export OPENAI_MODEL="gpt-4o"
    - Simple: Use `relativeDays: 7` parameter instead
 
 2. **Date range backwards (startDate > endDate):**
+
    ```
    Error: Invalid date range: startDate is after endDate
    ```
 
    **Fix:** Ensure startDate comes before endDate:
+
    ```json
    {
      "startDate": "2025-01-01",
@@ -595,11 +649,13 @@ export OPENAI_MODEL="gpt-4o"
    ```
 
 3. **relativeDays out of range:**
+
    ```
    Error: relativeDays must be a number between 1 and 365
    ```
 
    **Fix:** Use value between 1-365:
+
    ```json
    {
      "relativeDays": 30
@@ -607,6 +663,7 @@ export OPENAI_MODEL="gpt-4o"
    ```
 
 4. **Ambiguous natural language:**
+
    ```
    [WARN] Could not parse relative time: "sometime last year"
    ```
@@ -617,6 +674,7 @@ export OPENAI_MODEL="gpt-4o"
    - Or use ISO dates for precision
 
 5. **Future endDate warning:**
+
    ```
    [WARN] endDate is in the future, using current time instead
    ```
@@ -656,11 +714,13 @@ export OPENAI_MODEL="gpt-4o"
 **Solutions:**
 
 1. **Check file exists:**
+
    ```bash
    ls -la ~/.ucpl/compress/config.json
    ```
 
 2. **Validate JSON syntax:**
+
    ```bash
    cat ~/.ucpl/compress/config.json | python3 -m json.tool
    ```
@@ -668,11 +728,13 @@ export OPENAI_MODEL="gpt-4o"
    Should output formatted JSON without errors
 
 3. **Check file permissions:**
+
    ```bash
    chmod 644 ~/.ucpl/compress/config.json
    ```
 
 4. **Look for warning in logs:**
+
    ```
    [WARN] Config file error: Unexpected token
    ```
@@ -680,6 +742,7 @@ export OPENAI_MODEL="gpt-4o"
    Indicates invalid JSON syntax
 
 5. **Example valid config:**
+
    ```json
    {
      "model": "gpt-4o"
@@ -687,6 +750,7 @@ export OPENAI_MODEL="gpt-4o"
    ```
 
 6. **To reset config:**
+
    ```bash
    rm ~/.ucpl/compress/config.json
    ```
@@ -753,7 +817,7 @@ Enable debug logging:
 
 ```javascript
 // Add to server.js
-console.error('DEBUG:', message);  // Logs to stderr (visible in client logs)
+console.error("DEBUG:", message); // Logs to stderr (visible in client logs)
 ```
 
 ## License

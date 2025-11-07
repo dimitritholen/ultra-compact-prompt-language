@@ -18,27 +18,29 @@ parser: ucpl-standard
 
 ### Required Fields
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `format` | string | Identifies file as UCPL (signals parser activation) | `ucpl` |
-| `version` | string | UCPL specification version | `1.0` |
-| `parser` | string | Parser implementation to use | `ucpl-standard` |
+| Field     | Type   | Description                                         | Example         |
+| --------- | ------ | --------------------------------------------------- | --------------- |
+| `format`  | string | Identifies file as UCPL (signals parser activation) | `ucpl`          |
+| `version` | string | UCPL specification version                          | `1.0`           |
+| `parser`  | string | Parser implementation to use                        | `ucpl-standard` |
 
 ### Optional Fields
 
-| Field | Type | Description | Example |
-|-------|------|-------------|---------|
-| `description` | string | Human-readable summary of the prompt | `"Staff engineer workflow"` |
-| `encoding` | string | Character encoding (default: utf-8) | `utf-8` |
-| `schema` | string | UCPL dialect/variant identifier | `ucpl-extended` |
-| `strict` | boolean | Enable strict parsing mode | `true` |
-| `author` | string | Prompt author/maintainer | `"DevTeam"` |
-| `updated` | string | Last modification date (ISO 8601) | `"2025-01-15"` |
+| Field         | Type    | Description                          | Example                     |
+| ------------- | ------- | ------------------------------------ | --------------------------- |
+| `description` | string  | Human-readable summary of the prompt | `"Staff engineer workflow"` |
+| `encoding`    | string  | Character encoding (default: utf-8)  | `utf-8`                     |
+| `schema`      | string  | UCPL dialect/variant identifier      | `ucpl-extended`             |
+| `strict`      | boolean | Enable strict parsing mode           | `true`                      |
+| `author`      | string  | Prompt author/maintainer             | `"DevTeam"`                 |
+| `updated`     | string  | Last modification date (ISO 8601)    | `"2025-01-15"`              |
 
 ## Parser Types
 
 ### `ucpl-standard`
+
 Default parser for UCPL v1.0 specification. Supports all core syntax:
+
 - Directives (`@role`, `@task`, etc.)
 - Constraints (`!`, `?`, `~`)
 - Operators (`&`, `||`, `^`, etc.)
@@ -46,6 +48,7 @@ Default parser for UCPL v1.0 specification. Supports all core syntax:
 - Workflows (`@chain`, `@if`, `@loop`)
 
 ### Future Parser Types
+
 - `ucpl-minimal`: Subset parser for basic directives only
 - `ucpl-extended`: Parser with experimental features
 - `ucpl-strict`: Enforces stricter validation rules
@@ -130,15 +133,18 @@ When an LLM encounters a file with UCPL headers:
 ## Best Practices
 
 ### Always Include
+
 - `format`, `version`, and `parser` in all UCPL files
 - `description` for complex workflows or shared prompts
 
 ### Consider Including
+
 - `strict: true` for production/critical prompts
 - `author` and `updated` for team collaboration
 - `schema` when using experimental UCPL features
 
 ### File Naming
+
 - Use `.ucpl` extension (future convention)
 - Or `.md` with UCPL header for compatibility
 - Example: `developer-workflow.ucpl` or `developer.md`
@@ -146,6 +152,7 @@ When an LLM encounters a file with UCPL headers:
 ## Integration with Tools
 
 ### LLM Prompt Detection
+
 ```python
 def is_ucpl_prompt(content: str) -> bool:
     """Check if content has UCPL header"""
@@ -158,6 +165,7 @@ def is_ucpl_prompt(content: str) -> bool:
 ```
 
 ### Parser Selection
+
 ```python
 def load_ucpl_parser(header: dict):
     """Load appropriate UCPL parser"""
@@ -174,16 +182,19 @@ def load_ucpl_parser(header: dict):
 ## Migration Path
 
 ### Existing UCPL Files
+
 1. Add YAML header to existing `.md` files
 2. No changes to UCPL content required
 3. Backward compatible (files without headers work as before)
 
 ### Version Upgrades
+
 When UCPL 2.0 is released:
+
 ```yaml
 ---
 format: ucpl
-version: 2.0  # Updated version
+version: 2.0 # Updated version
 parser: ucpl-standard-v2
 ---
 ```
@@ -191,6 +202,7 @@ parser: ucpl-standard-v2
 ## Validation
 
 ### Valid Header
+
 ```yaml
 ---
 format: ucpl
@@ -198,20 +210,24 @@ version: 1.0
 parser: ucpl-standard
 ---
 ```
+
 ✅ All required fields present
 
 ### Invalid Headers
+
 ```yaml
 ---
 format: markdown
 ---
 ```
+
 ❌ Missing `version` and `parser`
 
 ```yaml
 format: ucpl
 version: 1.0
 ```
+
 ❌ Missing YAML delimiters (`---`)
 
 ## Related Documentation

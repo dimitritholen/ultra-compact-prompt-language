@@ -9,8 +9,8 @@
  * @module test-utils/validators
  */
 
-const assert = require('node:assert/strict');
-const path = require('node:path');
+const assert = require("node:assert/strict");
+const path = require("node:path");
 
 /**
  * Validate compression record has all required fields
@@ -24,17 +24,21 @@ const path = require('node:path');
  * @example
  * validateCompressionRecordStructure(record, 'stats.recent[0]');
  */
-function validateCompressionRecordStructure(record, context = 'record') {
+function validateCompressionRecordStructure(record, context = "record") {
   const requiredFields = [
-    'timestamp', 'path', 'originalTokens', 'compressedTokens',
-    'tokensSaved', 'compressionRatio', 'savingsPercentage', 'level', 'format'
+    "timestamp",
+    "path",
+    "originalTokens",
+    "compressedTokens",
+    "tokensSaved",
+    "compressionRatio",
+    "savingsPercentage",
+    "level",
+    "format",
   ];
 
   for (const field of requiredFields) {
-    assert.ok(
-      field in record,
-      `${context}: missing required field "${field}"`
-    );
+    assert.ok(field in record, `${context}: missing required field "${field}"`);
   }
 }
 
@@ -50,15 +54,21 @@ function validateCompressionRecordStructure(record, context = 'record') {
  * @example
  * validateTokenCounts(record, 'compression #1');
  */
-function validateTokenCounts(record, context = 'record') {
-  assert.ok(record.originalTokens > 0, `${context}: originalTokens must be positive`);
-  assert.ok(record.compressedTokens > 0, `${context}: compressedTokens must be positive`);
+function validateTokenCounts(record, context = "record") {
+  assert.ok(
+    record.originalTokens > 0,
+    `${context}: originalTokens must be positive`,
+  );
+  assert.ok(
+    record.compressedTokens > 0,
+    `${context}: compressedTokens must be positive`,
+  );
 
   const expectedSaved = record.originalTokens - record.compressedTokens;
   assert.strictEqual(
     record.tokensSaved,
     expectedSaved,
-    `${context}: tokensSaved mismatch (expected ${expectedSaved}, got ${record.tokensSaved})`
+    `${context}: tokensSaved mismatch (expected ${expectedSaved}, got ${record.tokensSaved})`,
   );
 }
 
@@ -74,13 +84,13 @@ function validateTokenCounts(record, context = 'record') {
  * @example
  * validateCompressionRatio(record, 'stats.recent[0]');
  */
-function validateCompressionRatio(record, context = 'record') {
+function validateCompressionRatio(record, context = "record") {
   const expectedRatio = record.compressedTokens / record.originalTokens;
   const ratioDiff = Math.abs(record.compressionRatio - expectedRatio);
 
   assert.ok(
     ratioDiff < 0.01,
-    `${context}: compression ratio error (expected ${expectedRatio.toFixed(3)}, got ${record.compressionRatio})`
+    `${context}: compression ratio error (expected ${expectedRatio.toFixed(3)}, got ${record.compressionRatio})`,
   );
 }
 
@@ -104,7 +114,7 @@ function validateCompressionRatio(record, context = 'record') {
  * // Custom 5-minute tolerance
  * validateTimestamp(record, 300, 'recent compression');
  */
-function validateTimestamp(record, maxAgeSeconds = 60, context = 'record') {
+function validateTimestamp(record, maxAgeSeconds = 60, context = "record") {
   try {
     const timestamp = new Date(record.timestamp);
     const now = new Date();
@@ -112,10 +122,12 @@ function validateTimestamp(record, maxAgeSeconds = 60, context = 'record') {
 
     assert.ok(
       ageSeconds >= 0 && ageSeconds <= maxAgeSeconds,
-      `${context}: timestamp out of range (age: ${ageSeconds}s, max: ${maxAgeSeconds}s)`
+      `${context}: timestamp out of range (age: ${ageSeconds}s, max: ${maxAgeSeconds}s)`,
     );
   } catch (e) {
-    throw new Error(`${context}: invalid timestamp format: ${record.timestamp}`);
+    throw new Error(
+      `${context}: invalid timestamp format: ${record.timestamp}`,
+    );
   }
 }
 
@@ -133,13 +145,13 @@ function validateTimestamp(record, maxAgeSeconds = 60, context = 'record') {
  * validatePath(record, './src/index.js', 'compression #1');
  * // Verifies record.path contains 'index.js'
  */
-function validatePath(record, expectedPath, context = 'record') {
+function validatePath(record, expectedPath, context = "record") {
   const recordPath = path.normalize(record.path);
   const expectedBasename = path.basename(path.normalize(expectedPath));
 
   assert.ok(
     recordPath.includes(expectedBasename),
-    `${context}: path mismatch (expected ${expectedBasename}, got ${recordPath})`
+    `${context}: path mismatch (expected ${expectedBasename}, got ${recordPath})`,
   );
 }
 
@@ -174,10 +186,15 @@ function validatePath(record, expectedPath, context = 'record') {
  *   { maxAgeSeconds: 120, context: 'second compression' }
  * );
  */
-function validateCompressionRecord(record, expectedPath, expectedLevel, options = {}) {
+function validateCompressionRecord(
+  record,
+  expectedPath,
+  expectedLevel,
+  options = {},
+) {
   // CI-aware timeout: 5 minutes on CI, 1 minute locally
   const defaultMaxAge = process.env.CI ? 300 : 60;
-  const { maxAgeSeconds = defaultMaxAge, context = 'record' } = options;
+  const { maxAgeSeconds = defaultMaxAge, context = "record" } = options;
 
   validateCompressionRecordStructure(record, context);
   validateTokenCounts(record, context);
@@ -223,14 +240,28 @@ function validateCompressionRecord(record, expectedPath, expectedLevel, options 
  *   return { recordIndex: i, success, errors };
  * });
  */
-function validateCompressionRecordSafe(record, expectedPath, expectedLevel, options = {}) {
+function validateCompressionRecordSafe(
+  record,
+  expectedPath,
+  expectedLevel,
+  options = {},
+) {
   const errors = [];
   const defaultMaxAge = process.env.CI ? 300 : 60;
-  const { maxAgeSeconds = defaultMaxAge, context = 'record' } = options;
+  const { maxAgeSeconds = defaultMaxAge, context = "record" } = options;
 
   // Structure validation
-  const requiredFields = ['timestamp', 'path', 'originalTokens', 'compressedTokens',
-                          'tokensSaved', 'compressionRatio', 'savingsPercentage', 'level', 'format'];
+  const requiredFields = [
+    "timestamp",
+    "path",
+    "originalTokens",
+    "compressedTokens",
+    "tokensSaved",
+    "compressionRatio",
+    "savingsPercentage",
+    "level",
+    "format",
+  ];
   for (const field of requiredFields) {
     if (!(field in record)) {
       errors.push(`${context}: missing required field "${field}"`);
@@ -246,14 +277,18 @@ function validateCompressionRecordSafe(record, expectedPath, expectedLevel, opti
   }
   const expectedSaved = record.originalTokens - record.compressedTokens;
   if (record.tokensSaved !== expectedSaved) {
-    errors.push(`${context}: tokensSaved mismatch (expected ${expectedSaved}, got ${record.tokensSaved})`);
+    errors.push(
+      `${context}: tokensSaved mismatch (expected ${expectedSaved}, got ${record.tokensSaved})`,
+    );
   }
 
   // Compression ratio validation
   const expectedRatio = record.compressedTokens / record.originalTokens;
   const ratioDiff = Math.abs(record.compressionRatio - expectedRatio);
   if (ratioDiff > 0.01) {
-    errors.push(`${context}: compression ratio error (expected ${expectedRatio.toFixed(3)}, got ${record.compressionRatio})`);
+    errors.push(
+      `${context}: compression ratio error (expected ${expectedRatio.toFixed(3)}, got ${record.compressionRatio})`,
+    );
   }
 
   // Timestamp validation
@@ -262,7 +297,9 @@ function validateCompressionRecordSafe(record, expectedPath, expectedLevel, opti
     const now = new Date();
     const ageSeconds = (now - timestamp) / 1000;
     if (ageSeconds < 0 || ageSeconds > maxAgeSeconds) {
-      errors.push(`${context}: timestamp out of range (age: ${ageSeconds}s, max: ${maxAgeSeconds}s)`);
+      errors.push(
+        `${context}: timestamp out of range (age: ${ageSeconds}s, max: ${maxAgeSeconds}s)`,
+      );
     }
   } catch (e) {
     errors.push(`${context}: invalid timestamp format: ${record.timestamp}`);
@@ -272,17 +309,21 @@ function validateCompressionRecordSafe(record, expectedPath, expectedLevel, opti
   const recordPath = path.normalize(record.path);
   const expectedBasename = path.basename(path.normalize(expectedPath));
   if (!recordPath.includes(expectedBasename)) {
-    errors.push(`${context}: path mismatch (expected ${expectedBasename}, got ${recordPath})`);
+    errors.push(
+      `${context}: path mismatch (expected ${expectedBasename}, got ${recordPath})`,
+    );
   }
 
   // Level validation
   if (record.level !== expectedLevel) {
-    errors.push(`${context}: level mismatch (expected ${expectedLevel}, got ${record.level})`);
+    errors.push(
+      `${context}: level mismatch (expected ${expectedLevel}, got ${record.level})`,
+    );
   }
 
   return {
     success: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -293,5 +334,5 @@ module.exports = {
   validateTimestamp,
   validatePath,
   validateCompressionRecord,
-  validateCompressionRecordSafe
+  validateCompressionRecordSafe,
 };

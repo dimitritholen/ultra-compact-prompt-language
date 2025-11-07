@@ -2,7 +2,9 @@
   "mcpServers": {
     "ucpl-compress": {
       "command": "node",
-      "args": ["/home/YOUR_USERNAME/path/to/ultra-compact-prompt-language/mcp-server/server.js"]
+      "args": [
+        "/home/YOUR_USERNAME/path/to/ultra-compact-prompt-language/mcp-server/server.js"
+      ]
     }
   }
 }

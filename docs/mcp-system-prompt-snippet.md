@@ -1,27 +1,9 @@
-# UCPL-Compress MCP System Prompt Snippet
-
-## 🎉 NO LONGER NEEDED (v1.1.0+)
-
-**Great news!** As of v1.1.0, the ucpl-compress MCP server is **fully self-documenting**. You don't need to add anything to your system prompt. The MCP server automatically provides all usage instructions when the LLM queries available tools.
-
-See [MCP-SELF-DOCUMENTING.md](./MCP-SELF-DOCUMENTING.md) for details.
-
----
-
-## Legacy Snippet (For Reference Only)
-
-This snippet is **no longer needed** but preserved for users on older versions or for reference:
-
----
-
-## The Snippet (OPTIONAL - Not Required)
-
-```markdown
 ## Code Compression Tool (ucpl-compress MCP)
 
 You have access to the `compress_code_context` tool via the ucpl-compress MCP server. This tool compresses code files/directories into semantic summaries with 70-98% token reduction while preserving meaning.
 
 **IMPORTANT FOR LARGE DIRECTORIES**: MCP responses are limited to 25,000 tokens. When compressing directories, ALWAYS use pagination:
+
 - Use `limit: 10-50` for initial exploration
 - Use `format: "summary"` to see file list and stats without content
 - Use `offset` parameter to paginate through results
@@ -29,6 +11,7 @@ You have access to the `compress_code_context` tool via the ucpl-compress MCP se
 ### When to Use (Automatic Invocation)
 
 **✅ USE for:**
+
 - **Codebase exploration**: "What does src/auth/ do?", "Where is the payment logic?"
 - **Architecture understanding**: Understanding structure without implementation details
 - **API discovery**: Finding available functions/classes/methods
@@ -37,6 +20,7 @@ You have access to the `compress_code_context` tool via the ucpl-compress MCP se
 - **Initial investigation**: Before diving into specific file edits
 
 **❌ DO NOT USE for:**
+
 - **Code modification/writing**: Always read full files when editing code
 - **Bug fixes**: Need exact implementation to debug correctly
 - **Security audits**: Vulnerabilities hide in implementation details
@@ -55,10 +39,12 @@ Choose level based on task depth:
 ### Usage Pattern
 
 **Two-Phase Workflow** (Recommended):
+
 1. **Exploration Phase**: Compress directories/files to understand structure
 2. **Implementation Phase**: Read full files when ready to modify
 
 **Example Session:**
+
 ```
 User: "Understand the authentication flow in this codebase"
 
@@ -70,6 +56,7 @@ Claude:
 ```
 
 **Pagination Strategy for Large Directories:**
+
 ```
 Step 1: Get overview (summary format shows ALL files without content)
   compress_code_context(path="large-project/", format="summary")
@@ -90,8 +77,9 @@ Step 4: Deep dive on specific files
 ### File Filtering
 
 Use `include`/`exclude` for selective compression:
+
 - `include`: ["*.py", "src/**/*.js"] → Only these patterns
-- `exclude`: ["**/test_*", "**/__pycache__"] → Skip tests/caches
+- `exclude`: ["**/test_*", "**/**pycache**"] → Skip tests/caches
 
 ### Decision Tree
 
@@ -130,7 +118,8 @@ Is codebase >5K lines OR context >50K tokens?
 ### Key Principle
 
 **Compress for understanding, read full for modification.** The compressed output is designed for LLMs to read directly—you don't need to "decompress" it, just process the semantic summary naturally.
-```
+
+````
 
 ---
 
@@ -141,9 +130,10 @@ If users want to enable this MCP server, they need to:
 1. **Install the MCP server:**
    ```bash
    npm install -g ucpl-compress-mcp
-   ```
+````
 
 2. **Configure Claude Desktop** (add to `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
    ```json
    {
      "mcpServers": {
@@ -163,6 +153,7 @@ If users want to enable this MCP server, they need to:
 ## Example Use Cases
 
 ### Use Case 1: New Developer Onboarding
+
 ```
 User: "I'm new to this codebase, what does it do?"
 
@@ -172,6 +163,7 @@ Claude uses: compress_code_context(path=".", level="minimal")
 ```
 
 ### Use Case 2: Finding the Right File
+
 ```
 User: "Where is the user authentication logic?"
 
@@ -181,6 +173,7 @@ Claude uses: compress_code_context(path="src/", level="signatures")
 ```
 
 ### Use Case 3: Cost Optimization
+
 ```
 User: "Review all API endpoints for consistency"
 
@@ -190,6 +183,7 @@ Claude uses: compress_code_context(path="api/", level="full", exclude=["**/test_
 ```
 
 ### Use Case 4: Two-Phase Implementation
+
 ```
 User: "Add rate limiting to our API"
 
@@ -207,7 +201,7 @@ Phase 2 (Implementation):
 ## Notes for LLM Providers
 
 - **Auto-detection works**: Language is auto-detected from file extensions
-- **Glob patterns**: Use standard glob syntax (*, **, ?)
+- **Glob patterns**: Use standard glob syntax (\*, \*\*, ?)
 - **Error handling**: Tool gracefully handles non-existent paths
 - **Format options**: Use `format="summary"` to get just statistics without content
 - **Memory efficient**: Processes files incrementally, no size limits

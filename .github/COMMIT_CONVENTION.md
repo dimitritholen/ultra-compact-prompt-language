@@ -4,13 +4,13 @@ This project uses **Conventional Commits** for automated semantic versioning.
 
 ## Quick Reference
 
-| Commit Prefix | Version Bump | Example |
-|---------------|--------------|---------|
-| `fix:` | Patch (0.1.0 → 0.1.1) | `fix: correct hover tooltip positioning` |
-| `feat:` | Minor (0.1.0 → 0.2.0) | `feat: add code folding support` |
-| `feat!:` or `BREAKING CHANGE:` | Major (0.1.0 → 1.0.0) | `feat!: change directive syntax` |
-| `docs:` | No bump | `docs: update installation guide` |
-| `chore:` | No bump | `chore: update dependencies` |
+| Commit Prefix                  | Version Bump          | Example                                  |
+| ------------------------------ | --------------------- | ---------------------------------------- |
+| `fix:`                         | Patch (0.1.0 → 0.1.1) | `fix: correct hover tooltip positioning` |
+| `feat:`                        | Minor (0.1.0 → 0.2.0) | `feat: add code folding support`         |
+| `feat!:` or `BREAKING CHANGE:` | Major (0.1.0 → 1.0.0) | `feat!: change directive syntax`         |
+| `docs:`                        | No bump               | `docs: update installation guide`        |
+| `chore:`                       | No bump               | `chore: update dependencies`             |
 
 ## Format
 
@@ -25,6 +25,7 @@ This project uses **Conventional Commits** for automated semantic versioning.
 ### Type
 
 Choose one:
+
 - **feat**: New feature
 - **fix**: Bug fix
 - **docs**: Documentation only
@@ -40,6 +41,7 @@ Choose one:
 ### Scope (Optional)
 
 The scope should be the name of the affected component:
+
 - `syntax` - Syntax highlighting
 - `intellisense` - Autocomplete features
 - `snippets` - Code snippets
@@ -164,6 +166,7 @@ chore: update dependencies
 ## Validation
 
 Before committing, ask yourself:
+
 - [ ] Does my commit message follow the format?
 - [ ] Is the type correct?
 - [ ] Is the subject clear and concise?

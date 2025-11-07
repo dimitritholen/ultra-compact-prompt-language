@@ -1,4 +1,4 @@
-const { spawn } = require('child_process');
+const { spawn } = require("child_process");
 
 /**
  * Call an MCP (Model Context Protocol) tool by spawning the server process
@@ -41,16 +41,16 @@ const { spawn } = require('child_process');
  */
 function callMCPTool(serverPath, toolName, args) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('node', [serverPath]);
-    let stdout = '';
-    let stderr = '';
+    const proc = spawn("node", [serverPath]);
+    let stdout = "";
+    let stderr = "";
     let requestId = Date.now();
 
-    proc.stdout.on('data', (data) => {
+    proc.stdout.on("data", (data) => {
       stdout += data.toString();
     });
 
-    proc.stderr.on('data', (data) => {
+    proc.stderr.on("data", (data) => {
       stderr += data.toString();
     });
 
@@ -59,7 +59,10 @@ function callMCPTool(serverPath, toolName, args) {
       proc.kill();
 
       try {
-        const lines = stdout.trim().split('\n').filter(line => line.length > 0);
+        const lines = stdout
+          .trim()
+          .split("\n")
+          .filter((line) => line.length > 0);
 
         // Find the tool call response
         let toolResponse = null;
@@ -79,15 +82,26 @@ function callMCPTool(serverPath, toolName, args) {
           resolve({ response: toolResponse, stderr });
         } else {
           // Debug: show the actual output
-          const debugOutput = lines.length > 0 ? `\nFirst line: ${lines[0].substring(0, 200)}` : '\nNo lines';
-          reject(new Error(`No tool response found in output. Expected ID: ${requestId + 1}. Output lines: ${lines.length}.${debugOutput}\nStderr: ${stderr}`));
+          const debugOutput =
+            lines.length > 0
+              ? `\nFirst line: ${lines[0].substring(0, 200)}`
+              : "\nNo lines";
+          reject(
+            new Error(
+              `No tool response found in output. Expected ID: ${requestId + 1}. Output lines: ${lines.length}.${debugOutput}\nStderr: ${stderr}`,
+            ),
+          );
         }
       } catch (error) {
-        reject(new Error(`Failed to parse response: ${error.message}\nOutput: ${stdout}`));
+        reject(
+          new Error(
+            `Failed to parse response: ${error.message}\nOutput: ${stdout}`,
+          ),
+        );
       }
     }, 3500); // Wait 3.5 seconds for responses and stats recording
 
-    proc.on('close', (code) => {
+    proc.on("close", (code) => {
       clearTimeout(responseTimeout);
       if (code !== 0 && code !== null) {
         reject(new Error(`Process exited with code ${code}: ${stderr}`));
@@ -96,36 +110,36 @@ function callMCPTool(serverPath, toolName, args) {
 
     // Initialize server first
     const initRequest = {
-      jsonrpc: '2.0',
+      jsonrpc: "2.0",
       id: requestId,
-      method: 'initialize',
+      method: "initialize",
       params: {
-        protocolVersion: '2024-11-05',
+        protocolVersion: "2024-11-05",
         capabilities: {},
-        clientInfo: { name: 'test-client', version: '1.0.0' }
-      }
+        clientInfo: { name: "test-client", version: "1.0.0" },
+      },
     };
 
     // Then call the tool
     const toolRequest = {
-      jsonrpc: '2.0',
+      jsonrpc: "2.0",
       id: requestId + 1,
-      method: 'tools/call',
+      method: "tools/call",
       params: {
         name: toolName,
-        arguments: args
-      }
+        arguments: args,
+      },
     };
 
-    proc.stdin.write(JSON.stringify(initRequest) + '\n');
+    proc.stdin.write(JSON.stringify(initRequest) + "\n");
     // Give server time to process initialize before sending tool request
     setTimeout(() => {
-      proc.stdin.write(JSON.stringify(toolRequest) + '\n');
+      proc.stdin.write(JSON.stringify(toolRequest) + "\n");
       // Don't call end() - let the timeout kill the process after responses are received
     }, 100);
   });
 }
 
 module.exports = {
-  callMCPTool
+  callMCPTool,
 };

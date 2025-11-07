@@ -13,12 +13,7 @@
       "framework": "COSTAR",
       "parentTaskId": "001",
       "dependencies": [],
-      "tags": [
-        "infrastructure",
-        "test-framework",
-        "node:test",
-        "setup"
-      ],
+      "tags": ["infrastructure", "test-framework", "node:test", "setup"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -44,11 +39,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "infrastructure",
-        "migration",
-        "integration-tests"
-      ],
+      "tags": ["infrastructure", "migration", "integration-tests"],
       "estimatedTokens": 400,
       "estimatedHours": 3,
       "prompt": {
@@ -74,11 +65,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "infrastructure",
-        "migration",
-        "unit-tests"
-      ],
+      "tags": ["infrastructure", "migration", "unit-tests"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -104,11 +91,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "infrastructure",
-        "migration",
-        "specialty-tests"
-      ],
+      "tags": ["infrastructure", "migration", "specialty-tests"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -142,12 +125,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "async",
-        "reliability",
-        "subprocess",
-        "event-emitters"
-      ],
+      "tags": ["async", "reliability", "subprocess", "event-emitters"],
       "estimatedTokens": 250,
       "estimatedHours": 2,
       "prompt": {
@@ -173,12 +151,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "async",
-        "reliability",
-        "json-rpc",
-        "parsing"
-      ],
+      "tags": ["async", "reliability", "json-rpc", "parsing"],
       "estimatedTokens": 250,
       "estimatedHours": 2,
       "prompt": {
@@ -203,12 +176,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "safety",
-        "file-system",
-        "cleanup",
-        "reliability"
-      ],
+      "tags": ["safety", "file-system", "cleanup", "reliability"],
       "estimatedTokens": 250,
       "estimatedHours": 2,
       "prompt": {
@@ -233,11 +201,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "refactoring",
-        "imports",
-        "test-reliability"
-      ],
+      "tags": ["refactoring", "imports", "test-reliability"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -262,11 +226,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "dates",
-        "maintainability",
-        "brittle-tests"
-      ],
+      "tags": ["dates", "maintainability", "brittle-tests"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -291,11 +251,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "automation",
-        "ci-cd",
-        "test-reliability"
-      ],
+      "tags": ["automation", "ci-cd", "test-reliability"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -324,11 +280,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "assertions",
-        "test-reliability",
-        "refactoring"
-      ],
+      "tags": ["assertions", "test-reliability", "refactoring"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -353,11 +305,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "assertions",
-        "test-quality",
-        "refactoring"
-      ],
+      "tags": ["assertions", "test-quality", "refactoring"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -382,11 +330,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "assertions",
-        "utilities",
-        "precision"
-      ],
+      "tags": ["assertions", "utilities", "precision"],
       "estimatedTokens": 200,
       "estimatedHours": 1,
       "prompt": {
@@ -411,11 +355,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "validation",
-        "assertions",
-        "test-coverage"
-      ],
+      "tags": ["validation", "assertions", "test-coverage"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -440,11 +380,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "refactoring",
-        "test-isolation",
-        "maintainability"
-      ],
+      "tags": ["refactoring", "test-isolation", "maintainability"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -469,11 +405,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "verification",
-        "configuration",
-        "test-reliability"
-      ],
+      "tags": ["verification", "configuration", "test-reliability"],
       "estimatedTokens": 200,
       "estimatedHours": 1,
       "prompt": {
@@ -498,11 +430,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "test-structure",
-        "cleanup",
-        "maintainability"
-      ],
+      "tags": ["test-structure", "cleanup", "maintainability"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -527,11 +455,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "caching",
-        "test-isolation",
-        "refactoring"
-      ],
+      "tags": ["caching", "test-isolation", "refactoring"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -556,11 +480,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "test-isolation",
-        "async",
-        "error-handling"
-      ],
+      "tags": ["test-isolation", "async", "error-handling"],
       "estimatedTokens": 250,
       "estimatedHours": 2,
       "prompt": {
@@ -589,11 +509,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "test-data",
-        "integration",
-        "realism"
-      ],
+      "tags": ["test-data", "integration", "realism"],
       "estimatedTokens": 350,
       "estimatedHours": 3,
       "prompt": {
@@ -622,11 +538,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "test-data",
-        "realism",
-        "fixtures"
-      ],
+      "tags": ["test-data", "realism", "fixtures"],
       "estimatedTokens": 300,
       "estimatedHours": 2,
       "prompt": {
@@ -651,11 +563,7 @@
           "type": "finish-to-start"
         }
       ],
-      "tags": [
-        "integration",
-        "configuration",
-        "path-resolution"
-      ],
+      "tags": ["integration", "configuration", "path-resolution"],
       "estimatedTokens": 250,
       "estimatedHours": 1,
       "prompt": {

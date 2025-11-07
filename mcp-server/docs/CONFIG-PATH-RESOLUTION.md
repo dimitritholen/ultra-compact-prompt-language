@@ -13,6 +13,7 @@ The production config file is located at:
 ```
 
 This resolves to:
+
 - **Linux/macOS**: `/home/username/.ucpl/compress/config.json`
 - **Windows**: `C:\Users\username\.ucpl\compress\config.json`
 
@@ -25,7 +26,7 @@ The path is constructed using Node.js `os.homedir()` for cross-platform compatib
 The config path is **hardcoded** in the server and cannot be overridden via environment variables or command-line arguments. This ensures consistent behavior across all deployments.
 
 ```javascript
-const CONFIG_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'config.json');
+const CONFIG_FILE = path.join(os.homedir(), ".ucpl", "compress", "config.json");
 ```
 
 ### 2. Loading Priority
@@ -91,13 +92,13 @@ The server validates the config file:
 
 The server gracefully handles all config-related errors:
 
-| Error Condition | Behavior |
-|----------------|----------|
-| Config file doesn't exist | Fall back to env detection (no error logged) |
-| Config file is malformed JSON | Log warning, fall back to env detection |
-| Config file is not an object | Fall back to env detection |
-| Model field is invalid/unknown | Log warning, fall back to env detection |
-| Config file has wrong permissions | Log error, fall back to env detection |
+| Error Condition                   | Behavior                                     |
+| --------------------------------- | -------------------------------------------- |
+| Config file doesn't exist         | Fall back to env detection (no error logged) |
+| Config file is malformed JSON     | Log warning, fall back to env detection      |
+| Config file is not an object      | Fall back to env detection                   |
+| Model field is invalid/unknown    | Log warning, fall back to env detection      |
+| Config file has wrong permissions | Log error, fall back to env detection        |
 
 All errors are logged to stderr but do not prevent the server from starting.
 
@@ -130,7 +131,7 @@ User mistypes model name:
 
 ```json
 {
-  "model": "gpt-5-turbo"  // Not in MODEL_PRICING
+  "model": "gpt-5-turbo" // Not in MODEL_PRICING
 }
 ```
 
@@ -141,7 +142,7 @@ Result: Server logs warning and falls back to env detection.
 User has syntax error in config:
 
 ```json
-{ model: "gpt-4o" }  // Missing quotes
+{ "model": "gpt-4o" } // Missing quotes
 ```
 
 Result: Server logs warning and falls back to env detection.
@@ -173,6 +174,7 @@ npm test -- test-config-path-resolution.test.mjs
 ### Path Traversal Protection
 
 The config path is **hardcoded** using `os.homedir()`, preventing:
+
 - Relative path attacks (e.g., `../../../etc/passwd`)
 - Absolute path overrides
 - Symlink attacks
@@ -180,6 +182,7 @@ The config path is **hardcoded** using `os.homedir()`, preventing:
 ### Config File Permissions
 
 Recommended permissions:
+
 - **Linux/macOS**: `chmod 600 ~/.ucpl/compress/config.json` (owner read/write only)
 - **Windows**: User-only read/write (default for user home directory)
 
@@ -196,16 +199,19 @@ The server does **not** enforce permissions but will log errors if the file cann
 ### Config Not Loading
 
 1. **Check file path**:
+
    ```bash
    echo $HOME/.ucpl/compress/config.json
    ```
 
 2. **Verify file exists**:
+
    ```bash
    ls -la ~/.ucpl/compress/config.json
    ```
 
 3. **Check file permissions**:
+
    ```bash
    # Linux/macOS
    chmod 644 ~/.ucpl/compress/config.json
@@ -222,6 +228,7 @@ The server does **not** enforce permissions but will log errors if the file cann
 ### Config Being Ignored
 
 Check server logs (stderr) for warnings:
+
 - `[WARN] Unknown model in config: ...` → Model not recognized
 - `[WARN] Config file error: ...` → File exists but is malformed
 - `[INFO] Using model from config file: ...` → Config loaded successfully
@@ -229,6 +236,7 @@ Check server logs (stderr) for warnings:
 ### Default Model Used Instead of Config
 
 Possible causes:
+
 1. Config file doesn't exist (no error logged)
 2. Config has invalid model (warning logged)
 3. Config is malformed JSON (warning logged)
@@ -242,19 +250,19 @@ Config loading logic is in `server.js`:
 
 ```javascript
 // Lines 48-87
-const CONFIG_FILE = path.join(os.homedir(), '.ucpl', 'compress', 'config.json');
+const CONFIG_FILE = path.join(os.homedir(), ".ucpl", "compress", "config.json");
 
 async function detectLLMClient() {
   try {
-    const configData = await fs.readFile(CONFIG_FILE, 'utf-8');
+    const configData = await fs.readFile(CONFIG_FILE, "utf-8");
     const config = JSON.parse(configData);
 
-    if (typeof config !== 'object' || config === null) {
-      throw new Error('Config must be a valid JSON object');
+    if (typeof config !== "object" || config === null) {
+      throw new Error("Config must be a valid JSON object");
     }
 
     if (config.model && MODEL_PRICING[config.model]) {
-      return { client: 'config-override', model: config.model };
+      return { client: "config-override", model: config.model };
     }
   } catch (err) {
     // Fall back to env detection
@@ -273,6 +281,7 @@ let cachedLLMClient = null;
 ```
 
 This means:
+
 - Config is read **once** when the server starts
 - Changes to the config file require **server restart**
 - Caching improves performance (no repeated file I/O)

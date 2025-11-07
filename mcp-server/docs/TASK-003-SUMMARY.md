@@ -11,6 +11,7 @@ Successfully refactored `handleGetStats()` in `/home/dimitri/dev/ultra-compact-p
 **Location**: `/home/dimitri/dev/ultra-compact-prompt-language/mcp-server/server.js`
 
 **Functionality**:
+
 - Parses multiple date formats:
   - ISO dates: `"2025-01-01"`, `"2025-01-01T12:00:00Z"`
   - Relative time: `"-7d"`, `"-2w"`, `"-1m"`, `"-1y"`
@@ -19,11 +20,12 @@ Successfully refactored `handleGetStats()` in `/home/dimitri/dev/ultra-compact-p
 - Throws descriptive errors for invalid formats
 
 **Example Usage**:
+
 ```javascript
-parseFlexibleDate("2025-01-01")     // → Date object for Jan 1, 2025
-parseFlexibleDate("-7d")            // → Date 7 days ago
-parseFlexibleDate("today")          // → Today at midnight (00:00:00)
-parseFlexibleDate("now")            // → Current time
+parseFlexibleDate("2025-01-01"); // → Date object for Jan 1, 2025
+parseFlexibleDate("-7d"); // → Date 7 days ago
+parseFlexibleDate("today"); // → Today at midnight (00:00:00)
+parseFlexibleDate("now"); // → Current time
 ```
 
 ### 2. Refactored `handleGetStats()` Method (Lines 1058-1203)
@@ -42,11 +44,13 @@ Priority Order:
 ```
 
 **relativeDays Path**:
+
 - Validates: 1 ≤ relativeDays ≤ 365
 - Calculates: `startDate = now - N days`, `endDate = now`
 - Label: `"Last N Day(s)"`
 
 **startDate/endDate Path**:
+
 - Uses `parseFlexibleDate()` to parse both parameters
 - Defaults: `startDate = new Date(0)` (epoch), `endDate = now`
 - Validates: `startDate ≤ endDate`
@@ -54,6 +58,7 @@ Priority Order:
 - Label: `"YYYY-MM-DD to YYYY-MM-DD"`
 
 **Legacy period Path** (Backward Compatible):
+
 - `period: "today"` → Last 24 hours
 - `period: "week"` → Last 7 days
 - `period: "month"` → Last 30 days
@@ -78,6 +83,7 @@ Filters compressions from all three storage tiers:
    - Includes month if ANY overlap with date range
 
 **Aggregation**:
+
 - Sums: `count`, `originalTokens`, `compressedTokens`, `tokensSaved`
 - Handles empty tiers gracefully
 - Maintains accuracy across tier boundaries
@@ -94,6 +100,7 @@ Filters compressions from all three storage tiers:
 ### 3. Tool Schema (Already Updated in Task 002)
 
 The tool schema in lines 829-916 already includes the new parameters:
+
 - `startDate` (string, optional)
 - `endDate` (string, optional)
 - `relativeDays` (number, 1-365, optional)
@@ -143,13 +150,22 @@ The tool schema in lines 829-916 already includes the new parameters:
 
 ```javascript
 // These still work (unchanged behavior):
-{period: "today"}    // ✅ Last 24 hours
-{period: "week"}     // ✅ Last 7 days
-{period: "month"}    // ✅ Last 30 days
-{period: "all"}      // ✅ All time
+{
+  period: "today";
+} // ✅ Last 24 hours
+{
+  period: "week";
+} // ✅ Last 7 days
+{
+  period: "month";
+} // ✅ Last 30 days
+{
+  period: "all";
+} // ✅ All time
 ```
 
 **Priority order ensures no conflicts**:
+
 - If only `period` provided → uses legacy logic
 - If new parameters provided → new parameters take precedence
 
@@ -212,23 +228,27 @@ Enhanced error messages for common issues:
 ### For User
 
 1. **Review Implementation**:
+
    ```bash
    cd /home/dimitri/dev/ultra-compact-prompt-language/mcp-server
    git diff server.js
    ```
 
 2. **Run Unit Tests**:
+
    ```bash
    node test-date-parsing.js
    ```
 
 3. **Manual Testing** (Optional):
+
    ```bash
    npx @modelcontextprotocol/inspector node server.js
    # Follow MANUAL-TEST-GUIDE-TASK-003.md
    ```
 
 4. **Commit Changes**:
+
    ```bash
    git add -A
    git commit -m "feat(stats): add flexible date range queries to get_compression_stats

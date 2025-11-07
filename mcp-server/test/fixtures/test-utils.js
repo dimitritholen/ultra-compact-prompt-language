@@ -7,7 +7,7 @@
  * @module test-utils
  */
 
-const assert = require('assert');
+const assert = require("assert");
 
 const DEFAULT_EPSILON = 0.0001;
 
@@ -48,16 +48,21 @@ const DEFAULT_EPSILON = 0.0001;
  *   'Total cost savings calculation incorrect'
  * );
  */
-function assertAlmostEqual(actual, expected, epsilon = DEFAULT_EPSILON, message) {
+function assertAlmostEqual(
+  actual,
+  expected,
+  epsilon = DEFAULT_EPSILON,
+  message,
+) {
   // Input validation
-  if (typeof actual !== 'number') {
+  if (typeof actual !== "number") {
     throw new TypeError(`actual must be a number, got ${typeof actual}`);
   }
-  if (typeof expected !== 'number') {
+  if (typeof expected !== "number") {
     throw new TypeError(`expected must be a number, got ${typeof expected}`);
   }
-  if (typeof epsilon !== 'number' || epsilon <= 0) {
-    throw new TypeError('epsilon must be a positive number');
+  if (typeof epsilon !== "number" || epsilon <= 0) {
+    throw new TypeError("epsilon must be a positive number");
   }
 
   // Handle NaN explicitly
@@ -65,13 +70,13 @@ function assertAlmostEqual(actual, expected, epsilon = DEFAULT_EPSILON, message)
     return; // Both NaN is considered equal
   }
   if (Number.isNaN(actual) || Number.isNaN(expected)) {
-    const errorMessage = message ||
-      `Expected ${expected}, got ${actual} (one value is NaN)`;
+    const errorMessage =
+      message || `Expected ${expected}, got ${actual} (one value is NaN)`;
     throw new assert.AssertionError({
       message: errorMessage,
       actual: actual,
       expected: expected,
-      operator: 'assertAlmostEqual'
+      operator: "assertAlmostEqual",
     });
   }
 
@@ -80,13 +85,13 @@ function assertAlmostEqual(actual, expected, epsilon = DEFAULT_EPSILON, message)
     if (actual === expected) {
       return; // Both same infinity
     }
-    const errorMessage = message ||
-      `Expected ${expected}, got ${actual} (values are infinite)`;
+    const errorMessage =
+      message || `Expected ${expected}, got ${actual} (values are infinite)`;
     throw new assert.AssertionError({
       message: errorMessage,
       actual: actual,
       expected: expected,
-      operator: 'assertAlmostEqual'
+      operator: "assertAlmostEqual",
     });
   }
 
@@ -95,18 +100,19 @@ function assertAlmostEqual(actual, expected, epsilon = DEFAULT_EPSILON, message)
 
   // Compare against epsilon
   if (difference > epsilon) {
-    const errorMessage = message ||
+    const errorMessage =
+      message ||
       `Expected ${actual} to be within ${epsilon} of ${expected}, but difference was ${difference}`;
     throw new assert.AssertionError({
       message: errorMessage,
       actual: actual,
       expected: expected,
-      operator: 'assertAlmostEqual'
+      operator: "assertAlmostEqual",
     });
   }
 }
 
 module.exports = {
   assertAlmostEqual,
-  DEFAULT_EPSILON
+  DEFAULT_EPSILON,
 };

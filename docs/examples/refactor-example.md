@@ -142,6 +142,7 @@ ucpl refactor.md --args /home/user/project/src
 # Code Refactoring Report
 
 ## Summary
+
 - Total files analyzed: 24
 - Files refactored: 8
 - Files flagged: 6
@@ -150,14 +151,16 @@ ucpl refactor.md --args /home/user/project/src
 
 ## Detailed Results
 
-| File | Before | After | Issues Fixed | Status |
-|------|--------|-------|--------------|--------|
-| auth.py | 62 | 89 | 12 | ✓ Refactored |
-| utils.js | 71 | 88 | 8 | ✓ Refactored |
-| api.ts | 78 | 82 | 3 | ⚠ Flagged |
+| File     | Before | After | Issues Fixed | Status       |
+| -------- | ------ | ----- | ------------ | ------------ |
+| auth.py  | 62     | 89    | 12           | ✓ Refactored |
+| utils.js | 71     | 88    | 8            | ✓ Refactored |
+| api.ts   | 78     | 82    | 3            | ⚠ Flagged   |
+
 ...
 
 ## Key Improvements
+
 - Reduced complexity in 15 functions
 - Added 156 type hints
 - Improved test coverage: 64% → 83%

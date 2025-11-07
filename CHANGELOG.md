@@ -78,6 +78,7 @@ The MCP server is now **fully self-documenting**. LLMs automatically understand 
 No breaking changes. Existing code continues to work. New features are backward compatible.
 
 **Optional:** Remove system prompt snippets - they're no longer needed:
+
 - Delete content from `~/.claude/CLAUDE.md` or project `CLAUDE.md`
 - MCP server now provides all instructions automatically
 

@@ -75,10 +75,7 @@
   },
   "UCPL Macro Usage": {
     "prefix": "ucpl-use",
-    "body": [
-      "@use ${1:macro_name} > \\$${2:result_variable}",
-      "$0"
-    ],
+    "body": ["@use ${1:macro_name} > \\$${2:result_variable}", "$0"],
     "description": "Execute a defined UCPL macro"
   },
   "UCPL Tool: Web Search": {
@@ -107,10 +104,7 @@
   },
   "UCPL Tool: Execute Shell": {
     "prefix": "tool-execute",
-    "body": [
-      "@@execute:shell[cmd=\"${1:command}\", timeout=${2:30000}]",
-      "$0"
-    ],
+    "body": ["@@execute:shell[cmd=\"${1:command}\", timeout=${2:30000}]", "$0"],
     "description": "Execute shell command tool invocation"
   },
   "UCPL Tool: Memory Save": {

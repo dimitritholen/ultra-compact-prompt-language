@@ -13,13 +13,13 @@
       "originalTokens": 9200,
       "compressedTokens": 1100,
       "tokensSaved": 8100,
-      "compressionRatio": 0.120,
+      "compressionRatio": 0.12,
       "savingsPercentage": 88.0,
       "level": "full",
       "format": "text",
       "model": "claude-sonnet-4",
       "client": "claude-desktop",
-      "pricePerMTok": 3.00,
+      "pricePerMTok": 3.0,
       "costSavingsUSD": 0.0243,
       "currency": "USD"
     },
@@ -35,7 +35,7 @@
       "format": "text",
       "model": "gpt-4o",
       "client": "cursor",
-      "pricePerMTok": 2.50,
+      "pricePerMTok": 2.5,
       "costSavingsUSD": 0.017275,
       "currency": "USD"
     },
@@ -51,7 +51,7 @@
       "format": "text",
       "model": "claude-sonnet-4",
       "client": "claude-code",
-      "pricePerMTok": 3.00,
+      "pricePerMTok": 3.0,
       "costSavingsUSD": 0.0306,
       "currency": "USD"
     },
@@ -67,7 +67,7 @@
       "format": "text",
       "model": "claude-sonnet-4",
       "client": "windsurf",
-      "pricePerMTok": 3.00,
+      "pricePerMTok": 3.0,
       "costSavingsUSD": 0.02355,
       "currency": "USD"
     },
@@ -83,7 +83,7 @@
       "format": "text",
       "model": "gpt-4o",
       "client": "cursor",
-      "pricePerMTok": 2.50,
+      "pricePerMTok": 2.5,
       "costSavingsUSD": 0.034,
       "currency": "USD"
     },
@@ -99,7 +99,7 @@
       "format": "text",
       "model": "claude-sonnet-4",
       "client": "claude-desktop",
-      "pricePerMTok": 3.00,
+      "pricePerMTok": 3.0,
       "costSavingsUSD": 0.027,
       "currency": "USD"
     },
@@ -115,7 +115,7 @@
       "format": "summary",
       "model": "claude-sonnet-4",
       "client": "unknown",
-      "pricePerMTok": 3.00,
+      "pricePerMTok": 3.0,
       "costSavingsUSD": 0.01392,
       "currency": "USD"
     }

@@ -23,6 +23,7 @@ npm install
 ```
 
 This will install:
+
 - `vscode` types for extension API
 - TypeScript compiler
 - Testing frameworks
@@ -62,6 +63,7 @@ Try these in your test `.ucpl` file:
 ### 1. Syntax Completion
 
 Type `@` and see directive suggestions:
+
 ```ucpl
 @role:
 @task:
@@ -71,6 +73,7 @@ Type `@` and see directive suggestions:
 ### 2. Value Completion
 
 Type `@role:` and see role suggestions:
+
 ```ucpl
 @role:dev
 @role:audit
@@ -83,6 +86,7 @@ Hover over `@role` to see documentation
 ### 4. Tool Invocations
 
 Type `@@` to see tool completions:
+
 ```ucpl
 @@search:web
 @@think:deep
@@ -122,6 +126,7 @@ Create `syntaxes/ucpl.tmGrammar.json` based on [DEVELOPMENT.md](./DEVELOPMENT.md
 ### Phase 3: Add Snippets
 
 Create `snippets/ucpl.code-snippets.json` for common patterns:
+
 - Basic task
 - Workflow
 - Macro definition
@@ -152,6 +157,7 @@ See [DEVELOPMENT.md](./DEVELOPMENT.md) for complete implementation guide.
 ### "Changes not showing"
 
 **Fix**:
+
 1. Stop debug session
 2. Run `npm run compile`
 3. Press F5 again

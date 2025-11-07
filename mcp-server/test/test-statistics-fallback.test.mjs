@@ -9,15 +9,22 @@
  * 5. Both accurate and estimated compressions use correct multipliers
  */
 
-import { describe, test, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
+import {
+  describe,
+  test,
+  before,
+  after,
+  beforeEach,
+  afterEach,
+} from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
 
 // Test statistics file (separate from production)
-const TEST_STATS_DIR = path.join(os.tmpdir(), 'ucpl-test');
-const TEST_STATS_FILE = path.join(TEST_STATS_DIR, 'compression-stats.json');
+const TEST_STATS_DIR = path.join(os.tmpdir(), "ucpl-test");
+const TEST_STATS_FILE = path.join(TEST_STATS_DIR, "compression-stats.json");
 
 /**
  * Count tokens (simplified version matching server.js)
@@ -38,7 +45,7 @@ function countTokens(text) {
  */
 async function loadStats() {
   try {
-    const data = await fs.readFile(TEST_STATS_FILE, 'utf-8');
+    const data = await fs.readFile(TEST_STATS_FILE, "utf-8");
     return JSON.parse(data);
   } catch (_error) {
     return {
@@ -47,8 +54,8 @@ async function loadStats() {
         totalCompressions: 0,
         totalOriginalTokens: 0,
         totalCompressedTokens: 0,
-        totalTokensSaved: 0
-      }
+        totalTokensSaved: 0,
+      },
     };
   }
 }
@@ -58,20 +65,28 @@ async function loadStats() {
  */
 async function saveStats(stats) {
   await fs.mkdir(TEST_STATS_DIR, { recursive: true });
-  await fs.writeFile(TEST_STATS_FILE, JSON.stringify(stats, null, 2), 'utf-8');
+  await fs.writeFile(TEST_STATS_FILE, JSON.stringify(stats, null, 2), "utf-8");
 }
 
 /**
  * Record compression (accurate)
  */
-async function recordCompression(filePath, originalContent, compressedContent, level, format) {
+async function recordCompression(
+  filePath,
+  originalContent,
+  compressedContent,
+  level,
+  format,
+) {
   const stats = await loadStats();
 
   const originalTokens = countTokens(originalContent);
   const compressedTokens = countTokens(compressedContent);
   const tokensSaved = originalTokens - compressedTokens;
-  const compressionRatio = originalTokens > 0 ? (compressedTokens / originalTokens) : 0;
-  const savingsPercentage = originalTokens > 0 ? ((tokensSaved / originalTokens) * 100) : 0;
+  const compressionRatio =
+    originalTokens > 0 ? compressedTokens / originalTokens : 0;
+  const savingsPercentage =
+    originalTokens > 0 ? (tokensSaved / originalTokens) * 100 : 0;
 
   const record = {
     timestamp: new Date().toISOString(),
@@ -82,7 +97,7 @@ async function recordCompression(filePath, originalContent, compressedContent, l
     compressionRatio: Math.round(compressionRatio * 1000) / 1000,
     savingsPercentage: Math.round(savingsPercentage * 10) / 10,
     level,
-    format
+    format,
   };
 
   stats.compressions.push(record);
@@ -97,14 +112,19 @@ async function recordCompression(filePath, originalContent, compressedContent, l
 /**
  * Record compression with estimation
  */
-async function recordCompressionWithEstimation(filePath, compressedContent, level, format) {
+async function recordCompressionWithEstimation(
+  filePath,
+  compressedContent,
+  level,
+  format,
+) {
   const stats = await loadStats();
   const compressedTokens = countTokens(compressedContent);
 
   const estimationMultipliers = {
-    'minimal': 10.0,
-    'signatures': 6.0,
-    'full': 4.0
+    minimal: 10.0,
+    signatures: 6.0,
+    full: 4.0,
   };
 
   const multiplier = estimationMultipliers[level] || 4.0;
@@ -123,7 +143,7 @@ async function recordCompressionWithEstimation(filePath, compressedContent, leve
     savingsPercentage: Math.round(savingsPercentage * 10) / 10,
     level,
     format,
-    estimated: true
+    estimated: true,
   };
 
   stats.compressions.push(record);
@@ -165,7 +185,7 @@ function applyDiscount(total, discountPercent) {
  * Simulate readOriginalContent that fails
  */
 async function readOriginalContentFail() {
-  throw new Error('ENOENT: no such file or directory');
+  throw new Error("ENOENT: no such file or directory");
 }
 
 /**
@@ -176,28 +196,45 @@ async function recordCompressionWithFallback(
   compressedContent,
   level,
   format,
-  readOriginalFn
+  readOriginalFn,
 ) {
   try {
     const originalContent = await readOriginalFn();
 
     if (originalContent && originalContent.length > 0) {
-      await recordCompression(filePath, originalContent, compressedContent, level, format);
+      await recordCompression(
+        filePath,
+        originalContent,
+        compressedContent,
+        level,
+        format,
+      );
     } else {
-      await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+      await recordCompressionWithEstimation(
+        filePath,
+        compressedContent,
+        level,
+        format,
+      );
     }
   } catch (_error) {
-    await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+    await recordCompressionWithEstimation(
+      filePath,
+      compressedContent,
+      level,
+      format,
+    );
   }
 }
 
 // Test data
-const TEST_COMPRESSED_MINIMAL = 'fn calculateTotal(items): sum | fn formatCurrency(amount): USD | fn applyDiscount(t,d): t*(1-d/100)';
+const TEST_COMPRESSED_MINIMAL =
+  "fn calculateTotal(items): sum | fn formatCurrency(amount): USD | fn applyDiscount(t,d): t*(1-d/100)";
 const TEST_COMPRESSED_FULL = `calculateTotal(items): Sums price*quantity for items
 formatCurrency(amount): Formats as USD currency
 applyDiscount(total, discountPercent): Applies percentage discount`;
 
-describe('Statistics Recording Fallback Tests', () => {
+describe("Statistics Recording Fallback Tests", () => {
   before(async () => {
     // Ensure clean state
     try {
@@ -216,134 +253,207 @@ describe('Statistics Recording Fallback Tests', () => {
     }
   });
 
-  describe('Accurate Recording', () => {
-    test('should record accurately when readOriginalContent succeeds', async (t) => {
+  describe("Accurate Recording", () => {
+    test("should record accurately when readOriginalContent succeeds", async (t) => {
       await recordCompressionWithFallback(
-        '/test/accurate.js',
+        "/test/accurate.js",
         TEST_COMPRESSED_FULL,
-        'full',
-        'text',
-        readOriginalContentSuccess
+        "full",
+        "text",
+        readOriginalContentSuccess,
       );
 
       const stats = await loadStats();
       const record = stats.compressions[stats.compressions.length - 1];
 
-      t.diagnostic(`Original: ${record.originalTokens}, Compressed: ${record.compressedTokens}, Saved: ${record.tokensSaved} (${record.savingsPercentage}%)`);
+      t.diagnostic(
+        `Original: ${record.originalTokens}, Compressed: ${record.compressedTokens}, Saved: ${record.tokensSaved} (${record.savingsPercentage}%)`,
+      );
 
-      assert.strictEqual(record.estimated, undefined, 'Should not have estimated flag');
-      assert.ok(record.originalTokens > record.compressedTokens, 'Original should be greater than compressed');
+      assert.strictEqual(
+        record.estimated,
+        undefined,
+        "Should not have estimated flag",
+      );
+      assert.ok(
+        record.originalTokens > record.compressedTokens,
+        "Original should be greater than compressed",
+      );
     });
   });
 
-  describe('Fallback Recording', () => {
-    test('should use fallback estimation when readOriginalContent fails', async (t) => {
+  describe("Fallback Recording", () => {
+    test("should use fallback estimation when readOriginalContent fails", async (t) => {
       await recordCompressionWithFallback(
-        '/test/fallback.js',
+        "/test/fallback.js",
         TEST_COMPRESSED_MINIMAL,
-        'minimal',
-        'text',
-        readOriginalContentFail
+        "minimal",
+        "text",
+        readOriginalContentFail,
       );
 
       const stats = await loadStats();
       const record = stats.compressions[stats.compressions.length - 1];
 
-      t.diagnostic(`Original (estimated): ${record.originalTokens}, Compressed: ${record.compressedTokens}, Saved: ${record.tokensSaved} (${record.savingsPercentage}%)`);
+      t.diagnostic(
+        `Original (estimated): ${record.originalTokens}, Compressed: ${record.compressedTokens}, Saved: ${record.tokensSaved} (${record.savingsPercentage}%)`,
+      );
 
-      assert.strictEqual(record.estimated, true, 'Should have estimated flag');
-      assert.ok(record.originalTokens > record.compressedTokens, 'Original should be greater than compressed');
+      assert.strictEqual(record.estimated, true, "Should have estimated flag");
+      assert.ok(
+        record.originalTokens > record.compressedTokens,
+        "Original should be greater than compressed",
+      );
     });
   });
 
-  describe('Estimation Multipliers', () => {
-    test('should use correct multiplier for minimal level (10.0x)', async () => {
-      const compressedContent = 'fn test(): result';
+  describe("Estimation Multipliers", () => {
+    test("should use correct multiplier for minimal level (10.0x)", async () => {
+      const compressedContent = "fn test(): result";
       const compressedTokens = countTokens(compressedContent);
 
       await recordCompressionWithEstimation(
-        '/test/minimal.js',
+        "/test/minimal.js",
         compressedContent,
-        'minimal',
-        'text'
+        "minimal",
+        "text",
       );
 
       const stats = await loadStats();
       const record = stats.compressions[stats.compressions.length - 1];
 
       const expectedOriginal = Math.round(compressedTokens * 10.0);
-      assert.strictEqual(record.originalTokens, expectedOriginal, 'Should use 10x multiplier for minimal');
+      assert.strictEqual(
+        record.originalTokens,
+        expectedOriginal,
+        "Should use 10x multiplier for minimal",
+      );
     });
 
-    test('should use correct multiplier for signatures level (6.0x)', async () => {
-      const compressedContent = 'fn test(): result';
+    test("should use correct multiplier for signatures level (6.0x)", async () => {
+      const compressedContent = "fn test(): result";
       const compressedTokens = countTokens(compressedContent);
 
       await recordCompressionWithEstimation(
-        '/test/signatures.js',
+        "/test/signatures.js",
         compressedContent,
-        'signatures',
-        'text'
+        "signatures",
+        "text",
       );
 
       const stats = await loadStats();
       const record = stats.compressions[stats.compressions.length - 1];
 
       const expectedOriginal = Math.round(compressedTokens * 6.0);
-      assert.strictEqual(record.originalTokens, expectedOriginal, 'Should use 6x multiplier for signatures');
+      assert.strictEqual(
+        record.originalTokens,
+        expectedOriginal,
+        "Should use 6x multiplier for signatures",
+      );
     });
 
-    test('should use correct multiplier for full level (4.0x)', async () => {
-      const compressedContent = 'fn test(): result';
+    test("should use correct multiplier for full level (4.0x)", async () => {
+      const compressedContent = "fn test(): result";
       const compressedTokens = countTokens(compressedContent);
 
       await recordCompressionWithEstimation(
-        '/test/full.js',
+        "/test/full.js",
         compressedContent,
-        'full',
-        'text'
+        "full",
+        "text",
       );
 
       const stats = await loadStats();
       const record = stats.compressions[stats.compressions.length - 1];
 
       const expectedOriginal = Math.round(compressedTokens * 4.0);
-      assert.strictEqual(record.originalTokens, expectedOriginal, 'Should use 4x multiplier for full');
+      assert.strictEqual(
+        record.originalTokens,
+        expectedOriginal,
+        "Should use 4x multiplier for full",
+      );
     });
   });
 
-  describe('Multiple Compressions', () => {
-    test('should record multiple compressions correctly', async () => {
+  describe("Multiple Compressions", () => {
+    test("should record multiple compressions correctly", async () => {
       const initialStats = await loadStats();
       const initialCount = initialStats.compressions.length;
 
       // Record 3 more compressions
-      await recordCompressionWithFallback('/test/multi1.js', TEST_COMPRESSED_FULL, 'full', 'text', readOriginalContentSuccess);
-      await recordCompressionWithFallback('/test/multi2.js', TEST_COMPRESSED_MINIMAL, 'minimal', 'text', readOriginalContentFail);
-      await recordCompressionWithFallback('/test/multi3.js', TEST_COMPRESSED_FULL, 'full', 'text', readOriginalContentSuccess);
+      await recordCompressionWithFallback(
+        "/test/multi1.js",
+        TEST_COMPRESSED_FULL,
+        "full",
+        "text",
+        readOriginalContentSuccess,
+      );
+      await recordCompressionWithFallback(
+        "/test/multi2.js",
+        TEST_COMPRESSED_MINIMAL,
+        "minimal",
+        "text",
+        readOriginalContentFail,
+      );
+      await recordCompressionWithFallback(
+        "/test/multi3.js",
+        TEST_COMPRESSED_FULL,
+        "full",
+        "text",
+        readOriginalContentSuccess,
+      );
 
       const finalStats = await loadStats();
       const finalCount = finalStats.compressions.length;
 
-      assert.strictEqual(finalCount, initialCount + 3, 'Should have 3 more compressions');
+      assert.strictEqual(
+        finalCount,
+        initialCount + 3,
+        "Should have 3 more compressions",
+      );
     });
   });
 
-  describe('Summary Accumulation', () => {
-    test('should accumulate summary statistics correctly', async () => {
+  describe("Summary Accumulation", () => {
+    test("should accumulate summary statistics correctly", async () => {
       const stats = await loadStats();
 
       const manualSum = {
         totalCompressions: stats.compressions.length,
-        totalOriginalTokens: stats.compressions.reduce((sum, c) => sum + c.originalTokens, 0),
-        totalCompressedTokens: stats.compressions.reduce((sum, c) => sum + c.compressedTokens, 0),
-        totalTokensSaved: stats.compressions.reduce((sum, c) => sum + c.tokensSaved, 0)
+        totalOriginalTokens: stats.compressions.reduce(
+          (sum, c) => sum + c.originalTokens,
+          0,
+        ),
+        totalCompressedTokens: stats.compressions.reduce(
+          (sum, c) => sum + c.compressedTokens,
+          0,
+        ),
+        totalTokensSaved: stats.compressions.reduce(
+          (sum, c) => sum + c.tokensSaved,
+          0,
+        ),
       };
 
-      assert.strictEqual(stats.summary.totalCompressions, manualSum.totalCompressions, 'Total compressions should match');
-      assert.strictEqual(stats.summary.totalOriginalTokens, manualSum.totalOriginalTokens, 'Total original tokens should match');
-      assert.strictEqual(stats.summary.totalCompressedTokens, manualSum.totalCompressedTokens, 'Total compressed tokens should match');
-      assert.strictEqual(stats.summary.totalTokensSaved, manualSum.totalTokensSaved, 'Total tokens saved should match');
+      assert.strictEqual(
+        stats.summary.totalCompressions,
+        manualSum.totalCompressions,
+        "Total compressions should match",
+      );
+      assert.strictEqual(
+        stats.summary.totalOriginalTokens,
+        manualSum.totalOriginalTokens,
+        "Total original tokens should match",
+      );
+      assert.strictEqual(
+        stats.summary.totalCompressedTokens,
+        manualSum.totalCompressedTokens,
+        "Total compressed tokens should match",
+      );
+      assert.strictEqual(
+        stats.summary.totalTokensSaved,
+        manualSum.totalTokensSaved,
+        "Total tokens saved should match",
+      );
     });
   });
 });

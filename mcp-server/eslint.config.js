@@ -1,34 +1,34 @@
 module.exports = [
   {
-    ignores: ['node_modules/**', '.compression-stats.json']
+    ignores: ["node_modules/**", ".compression-stats.json"],
   },
   {
-    files: ['**/*.js'],
+    files: ["**/*.js"],
     languageOptions: {
       ecmaVersion: 2022,
-      sourceType: 'commonjs',
+      sourceType: "commonjs",
       globals: {
-        console: 'readonly',
-        process: 'readonly',
-        require: 'readonly',
-        module: 'readonly',
-        __dirname: 'readonly',
-        exports: 'readonly',
-        setTimeout: 'readonly',
-        clearTimeout: 'readonly',
-        setInterval: 'readonly',
-        clearInterval: 'readonly',
-        setImmediate: 'readonly',
-        clearImmediate: 'readonly',
-        Buffer: 'readonly'
-      }
+        console: "readonly",
+        process: "readonly",
+        require: "readonly",
+        module: "readonly",
+        __dirname: "readonly",
+        exports: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
+        setImmediate: "readonly",
+        clearImmediate: "readonly",
+        Buffer: "readonly",
+      },
     },
     rules: {
-      'no-unused-vars': 'warn',
-      'no-undef': 'error',
-      'no-console': 'off',
-      'semi': ['error', 'always'],
-      'quotes': ['warn', 'single', { 'avoidEscape': true }]
-    }
-  }
+      "no-unused-vars": "warn",
+      "no-undef": "error",
+      "no-console": "off",
+      semi: ["error", "always"],
+      quotes: ["warn", "single", { avoidEscape: true }],
+    },
+  },
 ];

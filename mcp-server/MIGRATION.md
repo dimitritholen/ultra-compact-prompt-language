@@ -20,6 +20,7 @@ This guide provides step-by-step instructions for migrating existing test files 
 - Familiarity with the `assert` module
 
 **Verify your Node.js version:**
+
 ```bash
 node --version  # Should be v18.0.0 or higher
 ```
@@ -27,6 +28,7 @@ node --version  # Should be v18.0.0 or higher
 ## Quick Start
 
 1. **Update package.json scripts:**
+
    ```json
    {
      "scripts": {
@@ -54,9 +56,10 @@ node --version  # Should be v18.0.0 or higher
 Before migrating, analyze your current test file:
 
 **Current test file (`test-integration.js`):**
+
 ```javascript
 #!/usr/bin/env node
-const assert = require('assert');
+const assert = require("assert");
 
 // Custom test tracking
 let testResults = { passed: 0, failed: 0, tests: [] };
@@ -73,13 +76,13 @@ function recordTest(name, passed, error = null) {
 }
 
 async function testDateParsing() {
-  console.log('\nTask 001: Date Parsing Tests');
+  console.log("\nTask 001: Date Parsing Tests");
   try {
-    const result = parseFlexibleDate('2025-01-01');
+    const result = parseFlexibleDate("2025-01-01");
     assert.ok(result instanceof Date);
-    recordTest('Parse ISO date', true);
+    recordTest("Parse ISO date", true);
   } catch (error) {
-    recordTest('Parse ISO date', false, error);
+    recordTest("Parse ISO date", false, error);
   }
 }
 
@@ -88,7 +91,9 @@ async function testDateParsing() {
   await testDateParsing();
   // ... more test functions
 
-  console.log(`\nTests: ${testResults.passed} passed, ${testResults.failed} failed`);
+  console.log(
+    `\nTests: ${testResults.passed} passed, ${testResults.failed} failed`,
+  );
   process.exit(testResults.failed > 0 ? 1 : 0);
 })();
 ```
@@ -96,27 +101,34 @@ async function testDateParsing() {
 ### Step 2: Convert to node:test Structure
 
 **Migrated test file (`test-integration.test.js`):**
-```javascript
-import { describe, test, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
 
-describe('Date Parsing Tests', () => {
-  test('should parse ISO date', () => {
-    const result = parseFlexibleDate('2025-01-01');
+```javascript
+import {
+  describe,
+  test,
+  before,
+  after,
+  beforeEach,
+  afterEach,
+} from "node:test";
+import assert from "node:assert/strict";
+
+describe("Date Parsing Tests", () => {
+  test("should parse ISO date", () => {
+    const result = parseFlexibleDate("2025-01-01");
     assert.ok(result instanceof Date);
   });
 
-  test('should parse relative date', () => {
-    const result = parseFlexibleDate('-7d');
+  test("should parse relative date", () => {
+    const result = parseFlexibleDate("-7d");
     assert.ok(result instanceof Date);
     assert.ok(result < new Date());
   });
 
-  test('should handle invalid date', () => {
-    assert.throws(
-      () => parseFlexibleDate('invalid'),
-      { message: /Invalid date format/ }
-    );
+  test("should handle invalid date", () => {
+    assert.throws(() => parseFlexibleDate("invalid"), {
+      message: /Invalid date format/,
+    });
   });
 });
 ```
@@ -124,19 +136,20 @@ describe('Date Parsing Tests', () => {
 ### Step 3: Migrate Test Organization
 
 #### Before: Custom Test Functions
+
 ```javascript
 async function testFeatureA() {
-  console.log('\nFeature A Tests');
+  console.log("\nFeature A Tests");
   try {
     // test code
-    recordTest('Feature A works', true);
+    recordTest("Feature A works", true);
   } catch (error) {
-    recordTest('Feature A works', false, error);
+    recordTest("Feature A works", false, error);
   }
 }
 
 async function testFeatureB() {
-  console.log('\nFeature B Tests');
+  console.log("\nFeature B Tests");
   // similar pattern
 }
 
@@ -148,19 +161,20 @@ async function testFeatureB() {
 ```
 
 #### After: node:test describe/test blocks
-```javascript
-import { describe, test } from 'node:test';
-import assert from 'node:assert/strict';
 
-describe('Feature A', () => {
-  test('should work correctly', async () => {
+```javascript
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Feature A", () => {
+  test("should work correctly", async () => {
     // test code
     assert.ok(true);
   });
 });
 
-describe('Feature B', () => {
-  test('should work correctly', async () => {
+describe("Feature B", () => {
+  test("should work correctly", async () => {
     // test code
     assert.ok(true);
   });
@@ -170,6 +184,7 @@ describe('Feature B', () => {
 ### Step 4: Migrate Setup/Teardown
 
 #### Before: Manual Setup/Cleanup
+
 ```javascript
 const TEST_DIR = path.join(os.tmpdir(), `.test-${Date.now()}`);
 
@@ -194,14 +209,15 @@ async function cleanupTests() {
 ```
 
 #### After: Lifecycle Hooks
-```javascript
-import { describe, test, before, after } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
 
-describe('Integration Tests', () => {
+```javascript
+import { describe, test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+
+describe("Integration Tests", () => {
   let testDir;
 
   before(async () => {
@@ -213,11 +229,11 @@ describe('Integration Tests', () => {
     await fs.rm(testDir, { recursive: true, force: true });
   });
 
-  test('feature A', async () => {
+  test("feature A", async () => {
     // test code
   });
 
-  test('feature B', async () => {
+  test("feature B", async () => {
     // test code
   });
 });
@@ -226,8 +242,9 @@ describe('Integration Tests', () => {
 ### Step 5: Migrate Assertions
 
 #### Before: Basic assert module
+
 ```javascript
-const assert = require('assert');
+const assert = require("assert");
 
 // Loose equality (avoid this)
 assert.equal(result, expected);
@@ -235,8 +252,9 @@ assert.deepEqual(obj1, obj2);
 ```
 
 #### After: Strict assertions (recommended)
+
 ```javascript
-import assert from 'node:assert/strict';
+import assert from "node:assert/strict";
 
 // Strict equality (recommended)
 assert.strictEqual(result, expected);
@@ -246,48 +264,52 @@ assert.deepStrictEqual(obj1, obj2);
 ### Step 6: Handle Async Tests
 
 #### Before: Manual promise handling
+
 ```javascript
 async function testAsyncOperation() {
   try {
     const result = await someAsyncFunction();
-    assert.strictEqual(result, 'expected');
-    recordTest('Async operation', true);
+    assert.strictEqual(result, "expected");
+    recordTest("Async operation", true);
   } catch (error) {
-    recordTest('Async operation', false, error);
+    recordTest("Async operation", false, error);
   }
 }
 ```
 
 #### After: Native async support
+
 ```javascript
-test('async operation', async () => {
+test("async operation", async () => {
   const result = await someAsyncFunction();
-  assert.strictEqual(result, 'expected');
+  assert.strictEqual(result, "expected");
 });
 ```
 
 ### Step 7: Convert Module System (if needed)
 
 #### Option A: Keep CommonJS
-```javascript
-const { describe, test } = require('node:test');
-const assert = require('node:assert/strict');
 
-describe('CommonJS Test', () => {
-  test('works with require', () => {
+```javascript
+const { describe, test } = require("node:test");
+const assert = require("node:assert/strict");
+
+describe("CommonJS Test", () => {
+  test("works with require", () => {
     assert.ok(true);
   });
 });
 ```
 
 #### Option B: Convert to ES Modules
+
 ```javascript
 // Add "type": "module" to package.json OR use .mjs extension
-import { describe, test } from 'node:test';
-import assert from 'node:assert/strict';
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
 
-describe('ESM Test', () => {
-  test('works with import', () => {
+describe("ESM Test", () => {
+  test("works with import", () => {
     assert.ok(true);
   });
 });
@@ -298,29 +320,31 @@ describe('ESM Test', () => {
 ### Pattern 1: Try-Catch to Assertion
 
 #### Before:
+
 ```javascript
 try {
   await functionThatShouldThrow();
-  recordTest('Should throw error', false);
+  recordTest("Should throw error", false);
 } catch (error) {
-  assert.strictEqual(error.message, 'Expected error');
-  recordTest('Should throw error', true);
+  assert.strictEqual(error.message, "Expected error");
+  recordTest("Should throw error", true);
 }
 ```
 
 #### After:
+
 ```javascript
-test('should throw error', async () => {
-  await assert.rejects(
-    async () => await functionThatShouldThrow(),
-    { message: 'Expected error' }
-  );
+test("should throw error", async () => {
+  await assert.rejects(async () => await functionThatShouldThrow(), {
+    message: "Expected error",
+  });
 });
 ```
 
 ### Pattern 2: Custom Test Counters to Built-in Reporting
 
 #### Before:
+
 ```javascript
 let passed = 0;
 let failed = 0;
@@ -338,9 +362,10 @@ function runTest(name, fn) {
 ```
 
 #### After:
+
 ```javascript
 // node:test handles counting and reporting automatically
-test('test name', () => {
+test("test name", () => {
   // test code
 });
 ```
@@ -348,6 +373,7 @@ test('test name', () => {
 ### Pattern 3: Shared Test State
 
 #### Before:
+
 ```javascript
 let sharedState;
 
@@ -365,19 +391,20 @@ async function test2() {
 ```
 
 #### After:
+
 ```javascript
-describe('Tests with shared state', () => {
+describe("Tests with shared state", () => {
   let sharedState;
 
   before(async () => {
     sharedState = await initializeState();
   });
 
-  test('test 1', () => {
+  test("test 1", () => {
     // uses sharedState
   });
 
-  test('test 2', () => {
+  test("test 2", () => {
     // uses sharedState
   });
 });
@@ -386,15 +413,17 @@ describe('Tests with shared state', () => {
 ### Pattern 4: Conditional Test Execution
 
 #### Before:
+
 ```javascript
-if (process.platform === 'linux') {
+if (process.platform === "linux") {
   await testLinuxSpecific();
 }
 ```
 
 #### After:
+
 ```javascript
-test('linux-specific test', { skip: process.platform !== 'linux' }, () => {
+test("linux-specific test", { skip: process.platform !== "linux" }, () => {
   // linux-specific test code
 });
 ```
@@ -404,41 +433,43 @@ test('linux-specific test', { skip: process.platform !== 'linux' }, () => {
 ### Example 1: Simple Test File
 
 #### Before:
+
 ```javascript
 #!/usr/bin/env node
-const assert = require('assert');
+const assert = require("assert");
 
 function testAddition() {
-  console.log('Testing addition...');
+  console.log("Testing addition...");
   const result = 1 + 1;
   assert.strictEqual(result, 2);
-  console.log('✅ Addition test passed');
+  console.log("✅ Addition test passed");
 }
 
 function testSubtraction() {
-  console.log('Testing subtraction...');
+  console.log("Testing subtraction...");
   const result = 5 - 3;
   assert.strictEqual(result, 2);
-  console.log('✅ Subtraction test passed');
+  console.log("✅ Subtraction test passed");
 }
 
 testAddition();
 testSubtraction();
-console.log('All tests passed!');
+console.log("All tests passed!");
 ```
 
 #### After:
-```javascript
-import { describe, test } from 'node:test';
-import assert from 'node:assert/strict';
 
-describe('Math Operations', () => {
-  test('addition', () => {
+```javascript
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
+
+describe("Math Operations", () => {
+  test("addition", () => {
     const result = 1 + 1;
     assert.strictEqual(result, 2);
   });
 
-  test('subtraction', () => {
+  test("subtraction", () => {
     const result = 5 - 3;
     assert.strictEqual(result, 2);
   });
@@ -448,12 +479,13 @@ describe('Math Operations', () => {
 ### Example 2: File System Test
 
 #### Before:
+
 ```javascript
 #!/usr/bin/env node
-const assert = require('assert');
-const fs = require('fs').promises;
-const path = require('path');
-const os = require('os');
+const assert = require("assert");
+const fs = require("fs").promises;
+const path = require("path");
+const os = require("os");
 
 const TEST_DIR = path.join(os.tmpdir(), `test-${Date.now()}`);
 
@@ -466,11 +498,11 @@ async function cleanup() {
 }
 
 async function testFileCreation() {
-  const filePath = path.join(TEST_DIR, 'test.txt');
-  await fs.writeFile(filePath, 'content', 'utf8');
-  const content = await fs.readFile(filePath, 'utf8');
-  assert.strictEqual(content, 'content');
-  console.log('✅ File creation test passed');
+  const filePath = path.join(TEST_DIR, "test.txt");
+  await fs.writeFile(filePath, "content", "utf8");
+  const content = await fs.readFile(filePath, "utf8");
+  assert.strictEqual(content, "content");
+  console.log("✅ File creation test passed");
 }
 
 (async () => {
@@ -484,14 +516,15 @@ async function testFileCreation() {
 ```
 
 #### After:
-```javascript
-import { describe, test, before, after } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import os from 'node:os';
 
-describe('File Operations', () => {
+```javascript
+import { describe, test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+
+describe("File Operations", () => {
   let testDir;
 
   before(async () => {
@@ -503,11 +536,11 @@ describe('File Operations', () => {
     await fs.rm(testDir, { recursive: true, force: true });
   });
 
-  test('file creation', async () => {
-    const filePath = path.join(testDir, 'test.txt');
-    await fs.writeFile(filePath, 'content', 'utf8');
-    const content = await fs.readFile(filePath, 'utf8');
-    assert.strictEqual(content, 'content');
+  test("file creation", async () => {
+    const filePath = path.join(testDir, "test.txt");
+    await fs.writeFile(filePath, "content", "utf8");
+    const content = await fs.readFile(filePath, "utf8");
+    assert.strictEqual(content, "content");
   });
 });
 ```
@@ -515,6 +548,7 @@ describe('File Operations', () => {
 ### Example 3: Error Handling Test
 
 #### Before:
+
 ```javascript
 async function testErrorHandling() {
   let errorThrown = false;
@@ -522,20 +556,20 @@ async function testErrorHandling() {
     await functionThatThrows();
   } catch (error) {
     errorThrown = true;
-    assert.strictEqual(error.message, 'Expected error');
+    assert.strictEqual(error.message, "Expected error");
   }
-  assert.ok(errorThrown, 'Expected error to be thrown');
-  console.log('✅ Error handling test passed');
+  assert.ok(errorThrown, "Expected error to be thrown");
+  console.log("✅ Error handling test passed");
 }
 ```
 
 #### After:
+
 ```javascript
-test('error handling', async () => {
-  await assert.rejects(
-    async () => await functionThatThrows(),
-    { message: 'Expected error' }
-  );
+test("error handling", async () => {
+  await assert.rejects(async () => await functionThatThrows(), {
+    message: "Expected error",
+  });
 });
 ```
 
@@ -544,16 +578,18 @@ test('error handling', async () => {
 ### Pitfall 1: Forgetting to await async tests
 
 **Wrong:**
+
 ```javascript
-test('async test', () => {
-  someAsyncFunction();  // Missing await!
-  assert.ok(true);      // Runs before async function completes
+test("async test", () => {
+  someAsyncFunction(); // Missing await!
+  assert.ok(true); // Runs before async function completes
 });
 ```
 
 **Correct:**
+
 ```javascript
-test('async test', async () => {
+test("async test", async () => {
   await someAsyncFunction();
   assert.ok(true);
 });
@@ -562,22 +598,24 @@ test('async test', async () => {
 ### Pitfall 2: Not cleaning up resources
 
 **Wrong:**
+
 ```javascript
-describe('Tests', () => {
+describe("Tests", () => {
   before(async () => {
     await createResource();
     // No cleanup defined!
   });
 
-  test('uses resource', () => {
+  test("uses resource", () => {
     // test code
   });
 });
 ```
 
 **Correct:**
+
 ```javascript
-describe('Tests', () => {
+describe("Tests", () => {
   let resource;
 
   before(async () => {
@@ -588,7 +626,7 @@ describe('Tests', () => {
     await resource.cleanup();
   });
 
-  test('uses resource', () => {
+  test("uses resource", () => {
     // test code
   });
 });
@@ -597,38 +635,40 @@ describe('Tests', () => {
 ### Pitfall 3: Sharing mutable state between tests
 
 **Wrong:**
-```javascript
-describe('Tests', () => {
-  const sharedArray = [];  // Mutable state shared across tests
 
-  test('test 1', () => {
+```javascript
+describe("Tests", () => {
+  const sharedArray = []; // Mutable state shared across tests
+
+  test("test 1", () => {
     sharedArray.push(1);
     assert.strictEqual(sharedArray.length, 1);
   });
 
-  test('test 2', () => {
+  test("test 2", () => {
     // sharedArray still has item from test 1!
-    assert.strictEqual(sharedArray.length, 0);  // FAILS
+    assert.strictEqual(sharedArray.length, 0); // FAILS
   });
 });
 ```
 
 **Correct:**
+
 ```javascript
-describe('Tests', () => {
+describe("Tests", () => {
   let sharedArray;
 
   beforeEach(() => {
-    sharedArray = [];  // Fresh array for each test
+    sharedArray = []; // Fresh array for each test
   });
 
-  test('test 1', () => {
+  test("test 1", () => {
     sharedArray.push(1);
     assert.strictEqual(sharedArray.length, 1);
   });
 
-  test('test 2', () => {
-    assert.strictEqual(sharedArray.length, 0);  // PASSES
+  test("test 2", () => {
+    assert.strictEqual(sharedArray.length, 0); // PASSES
   });
 });
 ```
@@ -636,20 +676,22 @@ describe('Tests', () => {
 ### Pitfall 4: Using loose equality assertions
 
 **Wrong:**
+
 ```javascript
-test('comparison', () => {
-  assert.equal(1, '1');  // Passes due to type coercion
-  assert.deepEqual({ a: 1 }, { a: '1' });  // Passes
+test("comparison", () => {
+  assert.equal(1, "1"); // Passes due to type coercion
+  assert.deepEqual({ a: 1 }, { a: "1" }); // Passes
 });
 ```
 
 **Correct:**
-```javascript
-import assert from 'node:assert/strict';
 
-test('comparison', () => {
-  assert.strictEqual(1, 1);  // Fails if types differ
-  assert.deepStrictEqual({ a: 1 }, { a: 1 });  // Strict comparison
+```javascript
+import assert from "node:assert/strict";
+
+test("comparison", () => {
+  assert.strictEqual(1, 1); // Fails if types differ
+  assert.deepStrictEqual({ a: 1 }, { a: 1 }); // Strict comparison
 });
 ```
 
@@ -658,6 +700,7 @@ test('comparison', () => {
 **Issue:** Mixing CommonJS and ES Modules
 
 **Solution:** Be consistent:
+
 - Either use `require()` everywhere (CommonJS)
 - Or use `import` everywhere + `"type": "module"` in package.json
 - Or use `.mjs` extension for ES Modules
@@ -665,27 +708,33 @@ test('comparison', () => {
 ## Testing Your Migration
 
 ### Step 1: Run a single test file
+
 ```bash
 node --test test-integration.test.js
 ```
 
 ### Step 2: Run all tests
+
 ```bash
 npm test
 ```
 
 ### Step 3: Run with coverage
+
 ```bash
 npm run test:coverage
 ```
 
 ### Step 4: Run in watch mode (during development)
+
 ```bash
 npm run test:watch
 ```
 
 ### Step 5: Verify test output
+
 Look for:
+
 - ✓ All tests passing
 - ✓ Test count matches original
 - ✓ No unhandled promise rejections
@@ -710,14 +759,17 @@ Use this checklist for each test file:
 ## Resources
 
 ### Official Documentation
+
 - [Node.js Test Runner Docs](https://nodejs.org/api/test.html)
 - [Node.js Assert Module](https://nodejs.org/api/assert.html)
 
 ### Example Files in This Project
+
 - `test-example.test.mjs` - Comprehensive examples of node:test patterns (ES modules)
 - `test-hooks-template.mjs` - Reusable lifecycle hook templates (ES modules)
 
 ### Command Reference
+
 ```bash
 # Run all tests
 npm test
@@ -752,6 +804,7 @@ If you encounter issues during migration:
 **Migration Status Tracking:**
 
 Current test files to migrate:
+
 - `test-integration.js`
 - `test-cost-tracking.js`
 - `test-cost-reporting.js`
@@ -767,6 +820,7 @@ Current test files to migrate:
 - `test-stats-retention.js`
 
 **Next Steps:**
+
 1. Start with simplest test file (e.g., `test-schema-validation.js`)
 2. Migrate one file at a time
 3. Verify each migration works before proceeding

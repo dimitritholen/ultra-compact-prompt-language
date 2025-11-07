@@ -17,20 +17,49 @@
 Created a new function that implements a three-tier fallback strategy:
 
 ```javascript
-async function recordCompressionWithFallback(filePath, compressedContent, level, format, include, exclude, limit) {
+async function recordCompressionWithFallback(
+  filePath,
+  compressedContent,
+  level,
+  format,
+  include,
+  exclude,
+  limit,
+) {
   try {
-    const originalContent = await readOriginalContent(filePath, include, exclude, limit);
+    const originalContent = await readOriginalContent(
+      filePath,
+      include,
+      exclude,
+      limit,
+    );
 
     if (originalContent && originalContent.length > 0) {
       // Tier 1: Accurate recording with real token counts
-      await recordCompression(filePath, originalContent, compressedContent, level, format);
+      await recordCompression(
+        filePath,
+        originalContent,
+        compressedContent,
+        level,
+        format,
+      );
     } else {
       // Tier 2: Fallback to estimation (empty content)
-      await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+      await recordCompressionWithEstimation(
+        filePath,
+        compressedContent,
+        level,
+        format,
+      );
     }
   } catch (error) {
     // Tier 3: Fallback to estimation (read failed)
-    await recordCompressionWithEstimation(filePath, compressedContent, level, format);
+    await recordCompressionWithEstimation(
+      filePath,
+      compressedContent,
+      level,
+      format,
+    );
   }
 }
 ```
@@ -41,9 +70,9 @@ When original content cannot be read, statistics are estimated using typical com
 
 ```javascript
 const estimationMultipliers = {
-  'minimal': 10.0,   // 90% typical reduction
-  'signatures': 6.0, // 83% typical reduction
-  'full': 4.0        // 75% typical reduction
+  minimal: 10.0, // 90% typical reduction
+  signatures: 6.0, // 83% typical reduction
+  full: 4.0, // 75% typical reduction
 };
 ```
 
