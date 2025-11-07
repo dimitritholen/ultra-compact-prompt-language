@@ -265,7 +265,7 @@ async function detectLLMClient() {
         version: process.env.CLAUDE_DESKTOP_VERSION,
       });
       // Claude Desktop typically uses Sonnet as default
-      cachedLLMClient = { client: "claude-desktop", model: "claude-sonnet-4" };
+      cachedLLMClient = { client: "claude-desktop", model: DEFAULT_MODEL };
       await endTimer("completed", {
         method: "claude_desktop",
         ...cachedLLMClient,
@@ -277,7 +277,7 @@ async function detectLLMClient() {
     if (process.env.VSCODE_PID || process.env.CLINE_VERSION) {
       const version = process.env.CLINE_VERSION || "unknown";
       await logger.info("Detected Claude Code/VSCode", { version });
-      cachedLLMClient = { client: "claude-code", model: "claude-sonnet-4" };
+      cachedLLMClient = { client: "claude-code", model: DEFAULT_MODEL };
       await endTimer("completed", { method: "vscode", ...cachedLLMClient });
       return cachedLLMClient;
     }
