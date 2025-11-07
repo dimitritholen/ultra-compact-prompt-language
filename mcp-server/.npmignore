@@ -1,11 +1,85 @@
-# Don't publish these files to npm
-*.tgz
-node_modules/
-.DS_Store
-.env
-.env.*
-*.log
+# Test files and directories
 test/
 tests/
 *.test.js
+*.test.mjs
 *.spec.js
+*.spec.mjs
+coverage/
+.nyc_output/
+*-results.txt
+*-test-results.txt
+test-*.json
+
+# Development and build tools
+.github/
+.vscode/
+.idea/
+eslint.config.js
+.eslintrc.*
+.eslintcache
+
+# Documentation (keep README.md, exclude internal docs)
+docs/
+MIGRATION.md
+MANUAL-TEST-GUIDE-*.md
+STATS-ENHANCEMENT-PLAN.md
+CONFIG-PATH-RESOLUTION.md
+LLM-DETECTION-AND-COST-SAVINGS.md
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# CI/CD
+.travis.yml
+.circleci/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Logs and runtime data
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pids/
+*.pid
+
+# Statistics files (user-generated)
+stats.json
+stats-*.json
+
+# Temporary and cache files
+tmp/
+temp/
+*.tmp
+.cache/
+.npm/
+
+# IDE and OS files
+*.swp
+*.swo
+*.swn
+*.bak
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Development dependencies
+node_modules/
+
+# Package artifacts
+*.tgz
+
+# Internal development tools
+pricing-sources.json
+
+# Task tracking
+.tasks/

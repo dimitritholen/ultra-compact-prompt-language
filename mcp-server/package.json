@@ -37,12 +37,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ultra-compact-prompt-language.git",
+    "url": "https://github.com/dimitritholen/ultra-compact-prompt-language.git",
     "directory": "mcp-server"
   },
-  "homepage": "https://github.com/yourusername/ultra-compact-prompt-language#readme",
+  "homepage": "https://github.com/dimitritholen/ultra-compact-prompt-language#readme",
   "bugs": {
-    "url": "https://github.com/yourusername/ultra-compact-prompt-language/issues"
+    "url": "https://github.com/dimitritholen/ultra-compact-prompt-language/issues"
   },
   "engines": {
     "node": ">=16.0.0"
