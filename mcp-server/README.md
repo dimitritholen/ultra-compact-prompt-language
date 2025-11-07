@@ -84,7 +84,8 @@ The MCP server is **fully self-documenting** with enhanced schema discoverabilit
 - Pagination guidelines and token limit warnings
 - Best practices and common examples
 
-**You don't need to add anything to your system prompt!** See [docs/MCP-SELF-DOCUMENTING.md](../docs/MCP-SELF-DOCUMENTING.md) for details.
+**You don't need to add anything to your system prompt!**
+The MCP server is self-documenting.
 
 ### What's New in v1.3 (2025-01-06)
 
@@ -97,14 +98,12 @@ The MCP server is **fully self-documenting** with enhanced schema discoverabilit
 - **Configuration System**: Override model detection with `~/.ucpl/compress/config.json`
 - **Enhanced Error Messages**: Clear, actionable error messages for date parsing and configuration issues
 
-**Pricing Support for 7 LLM Models**:
+**Pricing Support for 16 LLM Models** (verified 2025-11-07):
 
-- Claude Sonnet 4 ($3.00/M tokens) - Claude Opus 4 ($15.00/M tokens)
-- GPT-4o ($2.50/M tokens) - GPT-4o Mini ($0.15/M tokens)
-- Gemini 2.0 Flash ($0.10/M tokens)
-- OpenAI o1 ($15.00/M tokens) - OpenAI o1-mini ($3.00/M tokens)
-
-See [TEST-COVERAGE-REPORT.md](./TEST-COVERAGE-REPORT.md) for implementation details and test coverage.
+**Anthropic**: Claude Sonnet 4.5 ($3.00), Opus 4.1 ($15.00), Haiku 4.5 ($1.00)
+**OpenAI GPT**: GPT-4.1 ($2.00), GPT-5 ($1.25), Mini/Nano variants
+**OpenAI o-series**: o3 ($0.40), o3-mini ($1.10), o4-mini ($0.60)
+**Google Gemini**: 2.5 Flash ($0.30), 2.5 Pro ($1.25), 2.5 Flash-Lite ($0.10)
 
 ### What's New in v1.2 (2025-11-05)
 
@@ -116,8 +115,6 @@ See [TEST-COVERAGE-REPORT.md](./TEST-COVERAGE-REPORT.md) for implementation deta
 - Defined output schema for structured responses
 - Added tool annotations (audience, priority, behavioral hints)
 - All parameter descriptions compressed while maintaining clarity
-
-See [docs/MCP-DISCOVERABILITY-IMPROVEMENTS.md](../docs/MCP-DISCOVERABILITY-IMPROVEMENTS.md) for technical details.
 
 ### Codex / Other MCP Clients
 
@@ -404,20 +401,29 @@ Create a config file to override automatic detection:
 
 ```json
 {
-  "model": "gpt-4o"
+  "model": "claude-sonnet-4-5"
 }
 ```
 
-**Supported Models:**
-| Model ID | Name | Price per M tokens |
-|----------|------|-------------------|
-| `claude-sonnet-4` | Claude Sonnet 4 | $3.00 |
-| `claude-opus-4` | Claude Opus 4 | $15.00 |
-| `gpt-4o` | GPT-4o | $2.50 |
-| `gpt-4o-mini` | GPT-4o Mini | $0.15 |
-| `gemini-2.0-flash` | Gemini 2.0 Flash | $0.10 |
-| `o1` | OpenAI o1 | $15.00 |
-| `o1-mini` | OpenAI o1-mini | $3.00 |
+**Supported Models** (prices verified 2025-11-07):
+
+| Model ID | Name | Price/MTok |
+|----------|------|------------|
+| `claude-sonnet-4-5` | Claude Sonnet 4.5 | $3.00 |
+| `claude-opus-4-1` | Claude Opus 4.1 | $15.00 |
+| `claude-haiku-4-5` | Claude Haiku 4.5 | $1.00 |
+| `gpt-4-1` | GPT-4.1 | $2.00 |
+| `gpt-5` | GPT-5 | $1.25 |
+| `o3` | OpenAI o3 | $0.40 |
+| `gemini-2-5-flash` | Gemini 2.5 Flash | $0.30 |
+| `gemini-2-5-pro` | Gemini 2.5 Pro | $1.25 |
+
+<details>
+<summary>View all 16 supported models</summary>
+
+Additional models: `gpt-4-1-mini` ($0.40), `gpt-4-1-nano` ($0.10), `gpt-5-mini` ($0.25), `gpt-5-nano` ($0.05), `o3-mini` ($1.10), `o4-mini` ($0.60), `gemini-2-5-flash-lite` ($0.10), plus legacy models for backward compatibility.
+
+</details>
 
 **Steps to Configure:**
 
@@ -430,64 +436,21 @@ Create a config file to override automatic detection:
 2. Create the config file:
 
    ```bash
-   echo '{"model": "gpt-4o"}' > ~/.ucpl/compress/config.json
+   echo '{"model": "claude-sonnet-4-5"}' > ~/.ucpl/compress/config.json
    ```
 
-3. Restart your MCP client (Claude Desktop, Claude Code, etc.)
-
-4. Verify in logs:
+3. Restart your MCP client and verify in logs:
    ```
-   [INFO] Using model from config file: gpt-4o
+   [INFO] Using model from config file: claude-sonnet-4-5
    ```
 
-**Invalid Config Fallback:**
-If the config file exists but contains an invalid model ID, the server will:
+**Note:** Invalid model IDs in config will log a warning and fall back to automatic detection.
 
-1. Log a warning: `[WARN] Unknown model in config: xyz, falling back to env detection`
-2. Continue with environment variable detection
-3. If no env vars found, use default model
-
-**Config Schema:**
-
-```json
-{
-  "type": "object",
-  "properties": {
-    "model": {
-      "type": "string",
-      "enum": [
-        "claude-sonnet-4",
-        "claude-opus-4",
-        "gpt-4o",
-        "gpt-4o-mini",
-        "gemini-2.0-flash",
-        "o1",
-        "o1-mini"
-      ],
-      "description": "LLM model to use for cost calculations"
-    }
-  },
-  "required": ["model"]
-}
-```
-
-### Environment Variables for Custom Models
-
-If you're using a custom client or want to set the model via environment variables:
-
-**For Anthropic Models:**
-
+**Environment Variables** (alternative to config file):
 ```bash
-export ANTHROPIC_MODEL="claude-sonnet-4"
+export ANTHROPIC_MODEL="claude-sonnet-4-5"  # For Anthropic models
+export OPENAI_MODEL="gpt-4-1"               # For OpenAI models
 ```
-
-**For OpenAI Models:**
-
-```bash
-export OPENAI_MODEL="gpt-4o"
-```
-
-**Note:** Config file always takes precedence over environment variables.
 
 ## Workflow Integration
 
@@ -566,201 +529,28 @@ export OPENAI_MODEL="gpt-4o"
 
 4. **Check file paths are accessible** from the working directory
 
-### LLM Detection Issues (NEW)
+### Common Issues
 
-**Problem:** Cost tracking shows "unknown" model or incorrect pricing
+**Model detection/pricing issues:**
+- Check logs for detection status: `[INFO] Using model: ...`
+- Override with config file: `~/.ucpl/compress/config.json`
+- Verify model ID from supported list above
+- Restart MCP client after config changes
 
-**Solutions:**
+**Date query errors:**
+- Use ISO dates (`2025-01-01`), relative time (`7 days ago`), or `relativeDays: 7`
+- Ensure startDate < endDate
+- Use `relativeDays` between 1-365
 
-1. **Check detection in server logs:**
+**Cost tracking shows zero:**
+- Legacy compressions (pre-v1.3) lack cost data - this is normal
+- Check model detection in logs
+- Reinstall if needed: `npm install -g ucpl-compress-mcp`
 
-   ```
-   [INFO] Detected Claude Desktop (version: 1.2.3)
-   [INFO] Using model: claude-sonnet-4
-   ```
-
-2. **Verify environment variables:**
-
-   ```bash
-   # For Claude Desktop
-   echo $CLAUDE_DESKTOP_VERSION
-
-   # For Claude Code / VSCode
-   echo $VSCODE_PID
-   echo $CLINE_VERSION
-
-   # Custom model overrides
-   echo $ANTHROPIC_MODEL
-   echo $OPENAI_MODEL
-   ```
-
-3. **Check config file (if using manual override):**
-
-   ```bash
-   cat ~/.ucpl/compress/config.json
-   ```
-
-   Should contain valid JSON:
-
-   ```json
-   {
-     "model": "claude-sonnet-4"
-   }
-   ```
-
-4. **Verify model ID is supported:**
-   - Valid IDs: `claude-sonnet-4`, `claude-opus-4`, `gpt-4o`, `gpt-4o-mini`, `gemini-2.0-flash`, `o1`, `o1-mini`
-   - Check server.js line 35-43 for full MODEL_PRICING list
-
-5. **If detection fails, create config file:**
-
-   ```bash
-   mkdir -p ~/.ucpl/compress
-   echo '{"model": "claude-sonnet-4"}' > ~/.ucpl/compress/config.json
-   ```
-
-6. **Restart MCP client** after config changes
-
-### Date Query Parsing Issues (NEW)
-
-**Problem:** Error when using custom date ranges like "Show me stats from last week"
-
-**Common Issues & Solutions:**
-
-1. **Invalid date format:**
-
-   ```
-   Error: Invalid date format: "xyz"
-   ```
-
-   **Fix:** Use supported formats:
-   - ISO: `"2025-01-01"` or `"2025-01-01T10:00:00Z"`
-   - Relative: `"7 days ago"`, `"yesterday"`, `"last week"`
-   - Simple: Use `relativeDays: 7` parameter instead
-
-2. **Date range backwards (startDate > endDate):**
-
-   ```
-   Error: Invalid date range: startDate is after endDate
-   ```
-
-   **Fix:** Ensure startDate comes before endDate:
-
-   ```json
-   {
-     "startDate": "2025-01-01",
-     "endDate": "2025-01-06"
-   }
-   ```
-
-3. **relativeDays out of range:**
-
-   ```
-   Error: relativeDays must be a number between 1 and 365
-   ```
-
-   **Fix:** Use value between 1-365:
-
-   ```json
-   {
-     "relativeDays": 30
-   }
-   ```
-
-4. **Ambiguous natural language:**
-
-   ```
-   [WARN] Could not parse relative time: "sometime last year"
-   ```
-
-   **Fix:** Use more specific expressions:
-   - "7 days ago" (not "a week ago")
-   - "30 days ago" (not "last month")
-   - Or use ISO dates for precision
-
-5. **Future endDate warning:**
-
-   ```
-   [WARN] endDate is in the future, using current time instead
-   ```
-
-   **Fix:** This is not an error - server automatically adjusts to current time
-
-### Cost Tracking Shows Zero (NEW)
-
-**Problem:** Statistics show `costSavingsUSD: 0` or cost fields are missing
-
-**Possible Causes:**
-
-1. **Legacy statistics (pre-v1.3):**
-   - Compressions done before v1.3 don't have cost data
-   - Solution: This is normal, new compressions will include cost tracking
-
-2. **Model detection failed:**
-   - Check logs for: `[WARN] LLM detection failed`
-   - Solution: Follow "LLM Detection Issues" steps above
-
-3. **Unknown model ID:**
-   - Check logs for: `[WARN] Unknown model 'xyz', using default`
-   - Solution: Update config file with valid model ID
-
-4. **Invalid token counts:**
-   - Rare: Token counting failed, falling back to estimate
-   - Check logs for: `[WARN] Token counting failed`
-   - Solution: Reinstall `js-tiktoken` dependency:
-     ```bash
-     npm install -g ucpl-compress-mcp
-     ```
-
-### Config File Issues (NEW)
-
-**Problem:** Config file not being read or causing errors
-
-**Solutions:**
-
-1. **Check file exists:**
-
-   ```bash
-   ls -la ~/.ucpl/compress/config.json
-   ```
-
-2. **Validate JSON syntax:**
-
-   ```bash
-   cat ~/.ucpl/compress/config.json | python3 -m json.tool
-   ```
-
-   Should output formatted JSON without errors
-
-3. **Check file permissions:**
-
-   ```bash
-   chmod 644 ~/.ucpl/compress/config.json
-   ```
-
-4. **Look for warning in logs:**
-
-   ```
-   [WARN] Config file error: Unexpected token
-   ```
-
-   Indicates invalid JSON syntax
-
-5. **Example valid config:**
-
-   ```json
-   {
-     "model": "gpt-4o"
-   }
-   ```
-
-6. **To reset config:**
-
-   ```bash
-   rm ~/.ucpl/compress/config.json
-   ```
-
-   Server will fall back to automatic detection
+**Config file issues:**
+- Validate JSON: `cat ~/.ucpl/compress/config.json | python3 -m json.tool`
+- Reset: `rm ~/.ucpl/compress/config.json`
+- Example: `{"model": "claude-sonnet-4-5"}`
 
 ## Technical Details
 
