@@ -31,7 +31,7 @@ function getServerModule() {
 
 const { MODEL_PRICING } = require(SERVER_PATH);
 
-const DEFAULT_MODEL = "claude-sonnet-4";
+const DEFAULT_MODEL = "claude-sonnet-4-5";
 const CONFIG_FILE = path.join(os.homedir(), ".ucpl", "compress", "config.json");
 
 /**
@@ -64,7 +64,7 @@ describe("LLM Client Detection", () => {
     const { detectLLMClient } = getServerModule();
     const result = await detectLLMClient();
     assert.strictEqual(result.client, "unknown");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("Claude Desktop detection", async () => {
@@ -72,7 +72,7 @@ describe("LLM Client Detection", () => {
     const { detectLLMClient } = getServerModule();
     const result = await detectLLMClient();
     assert.strictEqual(result.client, "claude-desktop");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("Claude Code detection (VSCODE_PID)", async () => {
@@ -80,7 +80,7 @@ describe("LLM Client Detection", () => {
     const { detectLLMClient } = getServerModule();
     const result = await detectLLMClient();
     assert.strictEqual(result.client, "claude-code");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("Claude Code detection (CLINE_VERSION)", async () => {
@@ -88,7 +88,7 @@ describe("LLM Client Detection", () => {
     const { detectLLMClient } = getServerModule();
     const result = await detectLLMClient();
     assert.strictEqual(result.client, "claude-code");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("ANTHROPIC_MODEL env var", async () => {
@@ -129,7 +129,7 @@ describe("Cost Calculation", () => {
       const tokensSaved = 1_000_000; // 1 million tokens
       const result = await calculateCostSavings(tokensSaved, "claude-sonnet-4");
       assert.strictEqual(result.costSavingsUSD, 3.0);
-      assert.strictEqual(result.model, "claude-sonnet-4");
+      assert.strictEqual(result.model, "claude-sonnet-4-5");
       assert.strictEqual(result.pricePerMTok, 3.0);
     });
 
@@ -212,7 +212,7 @@ describe("Config File Error Handling", () => {
 
     // Should fallback to environment detection
     assert.strictEqual(result.client, "unknown");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("should handle file permission errors", async () => {

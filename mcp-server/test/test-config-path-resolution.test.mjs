@@ -35,7 +35,7 @@ const MODEL_PRICING = {
   o1: { pricePerMTok: 15.0, name: "OpenAI o1" },
   "o1-mini": { pricePerMTok: 3.0, name: "OpenAI o1-mini" },
 };
-const DEFAULT_MODEL = "claude-sonnet-4";
+const DEFAULT_MODEL = "claude-sonnet-4-5";
 
 // Production config path (same as server.js)
 const PRODUCTION_CONFIG_DIR = path.join(os.homedir(), ".ucpl", "compress");
@@ -255,7 +255,7 @@ describe("Config Path Resolution - Integration Tests", () => {
     });
 
     assert.strictEqual(result.client, "claude-desktop");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("should handle malformed JSON config gracefully", async () => {
@@ -302,7 +302,7 @@ describe("Config Path Resolution - Integration Tests", () => {
     });
 
     assert.strictEqual(result.client, "claude-code");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("should handle empty config file gracefully", async () => {
@@ -315,7 +315,7 @@ describe("Config Path Resolution - Integration Tests", () => {
     });
 
     assert.strictEqual(result.client, "claude-code");
-    assert.strictEqual(result.model, "claude-sonnet-4");
+    assert.strictEqual(result.model, "claude-sonnet-4-5");
   });
 
   test("should prioritize config over environment variables", async () => {

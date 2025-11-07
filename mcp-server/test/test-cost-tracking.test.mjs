@@ -44,7 +44,7 @@ const {
   MODEL_PRICING,
 } = require(SERVER_PATH);
 
-const DEFAULT_MODEL = "claude-sonnet-4";
+const DEFAULT_MODEL = "claude-sonnet-4-5";
 
 describe("Cost Tracking Integration", () => {
   let TEST_STATS_DIR;

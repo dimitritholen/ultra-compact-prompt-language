@@ -35,7 +35,7 @@ function getServerModule() {
 
 const { parseFlexibleDate, MODEL_PRICING } = require(SERVER_PATH);
 
-const DEFAULT_MODEL = "claude-sonnet-4";
+const DEFAULT_MODEL = "claude-sonnet-4-5";
 
 // Production config file path (used by detectLLMClient)
 const PRODUCTION_CONFIG_FILE = path.join(
@@ -253,7 +253,7 @@ describe("MCP Statistics Enhancement - Integration Tests", () => {
       const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, "unknown");
-      assert.strictEqual(result.model, "claude-sonnet-4");
+      assert.strictEqual(result.model, "claude-sonnet-4-5");
     });
 
     test("should detect Claude Desktop from env var", async () => {
@@ -261,7 +261,7 @@ describe("MCP Statistics Enhancement - Integration Tests", () => {
       const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, "claude-desktop");
-      assert.strictEqual(result.model, "claude-sonnet-4");
+      assert.strictEqual(result.model, "claude-sonnet-4-5");
     });
 
     test("should detect Claude Code from VSCODE_PID", async () => {
@@ -269,7 +269,7 @@ describe("MCP Statistics Enhancement - Integration Tests", () => {
       const { detectLLMClient } = getServerModule();
       const result = await detectLLMClient();
       assert.strictEqual(result.client, "claude-code");
-      assert.strictEqual(result.model, "claude-sonnet-4");
+      assert.strictEqual(result.model, "claude-sonnet-4-5");
     });
 
     test("should use config file override", async () => {
@@ -305,7 +305,7 @@ describe("MCP Statistics Enhancement - Integration Tests", () => {
       const { calculateCostSavings } = getServerModule();
       const result = await calculateCostSavings(1_000_000, "claude-sonnet-4");
       assert.strictEqual(result.costSavingsUSD, 3.0);
-      assert.strictEqual(result.model, "claude-sonnet-4");
+      assert.strictEqual(result.model, "claude-sonnet-4-5");
       assert.strictEqual(result.pricePerMTok, 3.0);
     });
 
