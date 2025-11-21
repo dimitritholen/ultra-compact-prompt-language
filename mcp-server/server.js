@@ -1449,7 +1449,7 @@ class MCPServer {
             format: {
               type: "string",
               description:
-                'Output format. Use "summary" for quick overview, "text" for compressed content, "json" for structured data.',
+                'Output format. Use "summary" for quick overview, "text" for compressed content, "compact" for bulk scanning with minimal overhead, "json" for structured data.',
               default: "text",
               oneOf: [
                 {
@@ -1461,6 +1461,11 @@ class MCPServer {
                   const: "summary",
                   title: "Summary",
                   description: "Statistics and file list (1-3K tokens)",
+                },
+                {
+                  const: "compact",
+                  title: "Compact",
+                  description: "Ultra-minimal format optimized for bulk directory scanning (lowest overhead)",
                 },
                 {
                   const: "json",
@@ -2049,6 +2054,7 @@ class MCPServer {
         // Auto-apply limit based on file count and compression level
         if (fileCount > 10) {
           const level = args.level || "full";
+          const format = args.format || "text";
 
           // Calculate safe limit based on compression level
           if (level === "minimal") {
@@ -2060,9 +2066,11 @@ class MCPServer {
             appliedLimit = 20; // Full compression includes more content
           }
 
-          // For summary format, use smaller limit (it still needs to compress files for stats)
-          if (args.format === "summary") {
+          // Adjust limits for specific formats
+          if (format === "summary") {
             appliedLimit = 30; // Summary shows stats for first 30 files + total count
+          } else if (format === "compact") {
+            appliedLimit = 50; // Compact format has minimal overhead, can handle more files
           }
 
           await logger.info(

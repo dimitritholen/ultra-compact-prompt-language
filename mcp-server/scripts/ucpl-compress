@@ -213,8 +213,8 @@ class ContextCompressor:
         """Extract import/require statements."""
         imports = []
 
-        # ES6 imports: import X from 'Y'
-        import_pattern = r"import\s+(?:{[^}]+}|[\w*]+)\s+from\s+['\"]([^'\"]+)['\"]"
+        # ES6 imports: import X from 'Y' or import type { X } from 'Y'
+        import_pattern = r"import\s+(?:type\s+)?(?:{[^}]+}|[\w*]+)\s+from\s+['\"]([^'\"]+)['\"]"
         imports.extend(re.findall(import_pattern, code))
 
         # CommonJS: require('X')
@@ -228,23 +228,26 @@ class ContextCompressor:
         classes = []
 
         # Match: class ClassName extends BaseClass {
-        class_pattern = r"(?:export\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{"
+        # Also match: class ClassName implements Interface {
+        class_pattern = r"(?:export\s+)?class\s+(\w+)(?:\s+(?:extends|implements)\s+([\w,\s]+))?\s*\{"
 
         for match in re.finditer(class_pattern, code):
             class_name = match.group(1)
-            base_class = match.group(2)
+            base_or_interface = match.group(2).strip() if match.group(2) else None
             start_pos = match.end()
 
-            # Find class body (simplified - just get methods)
+            # Find class body (simplified - just get methods and properties)
             methods = self._extract_class_methods(code, start_pos)
+            properties = self._extract_class_properties(code, start_pos)
 
             # Extract JSDoc if available
             jsdoc = self._extract_jsdoc(code, match.start())
 
             classes.append({
                 "name": class_name,
-                "base": base_class,
+                "base": base_or_interface,
                 "methods": methods,
+                "properties": properties,
                 "doc": jsdoc
             })
 
@@ -267,12 +270,20 @@ class ContextCompressor:
         class_body = code[start_pos:end_pos]
 
         # Match methods: methodName(params) { or async methodName(params) {
-        method_pattern = r"(?:async\s+)?(?:static\s+)?(\w+)\s*\(([^)]*)\)\s*(?::\s*(\w+))?\s*\{"
+        # Also handle TypeScript's explicit this parameter: methodName(this: Type, params) {
+        method_pattern = r"(?:async\s+)?(?:static\s+)?(\w+)\s*\((?:this:\s*[\w<>\[\]]+,\s*)?([^)]*)\)\s*(?::\s*[^{]+)?\s*\{"
 
         for match in re.finditer(method_pattern, class_body):
             method_name = match.group(1)
-            params = match.group(2)
-            return_type = match.group(3)
+
+            # Skip control flow keywords that might match the pattern
+            if method_name in ['if', 'for', 'while', 'switch', 'catch']:
+                continue
+
+            params = match.group(2).strip()
+            # Extract return type if present (more flexible pattern)
+            return_type_match = re.search(r"\):\s*([^{]+)", match.group(0))
+            return_type = return_type_match.group(1).strip() if return_type_match else None
 
             # Skip constructors in minimal mode
             if self.level == "minimal" and method_name in ["constructor"]:
@@ -289,6 +300,63 @@ class ContextCompressor:
             })
 
         return methods
+
+    def _extract_class_properties(self, code: str, start_pos: int) -> List[Dict]:
+        """Extract class properties with type annotations."""
+        properties = []
+
+        # Find the class body (until matching closing brace)
+        brace_count = 1
+        end_pos = start_pos
+        while end_pos < len(code) and brace_count > 0:
+            if code[end_pos] == '{':
+                brace_count += 1
+            elif code[end_pos] == '}':
+                brace_count -= 1
+            end_pos += 1
+
+        class_body = code[start_pos:end_pos]
+
+        # Match properties at the class level (not nested in objects)
+        # Track brace depth to only match top-level properties
+        lines = class_body.split('\n')
+        brace_depth = 0
+
+        for line in lines:
+            # Track nesting level
+            brace_depth += line.count('{') - line.count('}')
+
+            # Only match properties at the top level (depth 0 before incrementing)
+            if brace_depth == 1:
+                # Match: propertyName: Type = ...
+                # Type must be a valid identifier (not array literal or object)
+                property_pattern = r"^\s*(?:readonly\s+)?(?:public\s+|private\s+|protected\s+)?(\w+)\s*:\s*([\w<>\[\]]+)\s*(?:=|;)?"
+                match = re.match(property_pattern, line)
+
+                if match:
+                    prop_name = match.group(1)
+                    prop_type = match.group(2)
+
+                    # Skip if type looks like a literal value (starts with [, {, ", ')
+                    if prop_type.startswith(('[', '{', '"', "'")):
+                        continue
+
+                    # Skip if this looks like a method (has opening paren before colon)
+                    if '(' in line[:line.find(':')] if ':' in line else False:
+                        continue
+
+                    # Skip common non-property keywords
+                    if prop_name in ['if', 'for', 'while', 'switch', 'return', 'const', 'let', 'var']:
+                        continue
+
+                    # Must have valid TypeScript type (starts with uppercase or known primitives)
+                    if prop_type[0].isupper() or prop_type in ['string', 'number', 'boolean', 'any', 'void', 'unknown', 'never']:
+                        properties.append({
+                            "name": prop_name,
+                            "type": prop_type
+                        })
+
+        return properties
 
     def _extract_js_functions(self, code: str) -> List[Dict]:
         """Extract standalone function definitions."""
@@ -396,12 +464,23 @@ class ContextCompressor:
         output = f"## `{class_info['name']}`"
 
         if class_info['base']:
-            output += f"(extends {class_info['base']})"
+            # Handle both extends and implements
+            output += f" ({class_info['base']})"
 
         output += "\n\n"
 
         if self.level == "full" and class_info['doc']:
             output += f"{class_info['doc']}\n\n"
+
+        # Add properties if available
+        if class_info.get('properties'):
+            output += "**Properties**:\n"
+            for prop in class_info['properties'][:10]:
+                output += f"- `{prop['name']}: {prop['type']}`\n"
+
+            if len(class_info['properties']) > 10:
+                output += f"  _(+{len(class_info['properties'])-10} more properties)_\n"
+            output += "\n"
 
         if class_info['methods']:
             output += "**Methods**:\n"
@@ -1552,17 +1631,17 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
         return json.dumps(output, indent=2)
 
     elif format == "summary":
-        # Lightweight summary - designed to stay under token limits
+        # Lightweight summary - optimized for token efficiency (removed emojis, compressed layout)
         output = ""
 
-        # Show overview
+        # Show overview (removed emoji prefix)
         if total_files is not None:
-            output += f"📊 SUMMARY: {total_files} files found\n\n"
-
+            output += f"SUMMARY: {total_files} files"
             if total_files != len(results):
-                output += f"Showing stats for files {offset+1}-{offset+len(results)}\n\n"
+                output += f" (showing {offset+1}-{offset+len(results)})"
+            output += "\n"
         else:
-            output += f"📊 SUMMARY: {len(results)} files\n\n"
+            output += f"SUMMARY: {len(results)} files\n"
 
         # Calculate totals
         total_orig = 0
@@ -1576,39 +1655,72 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
             total_orig += result.original_tokens
             total_comp += result.compressed_tokens
 
-        # Overall stats
+        # Overall stats (compressed to single line)
         if total_orig > 0:
             total_savings = ((total_orig - total_comp) / total_orig * 100)
-            output += f"📈 COMPRESSION STATS:\n"
-            output += f"  Original tokens:    {total_orig:,}\n"
-            output += f"  Compressed tokens:  {total_comp:,}\n"
-            output += f"  Savings:            {total_savings:.1f}%\n"
+            output += f"Stats: {total_orig:,} → {total_comp:,} tokens ({total_savings:.1f}% savings)"
             if error_count > 0:
-                output += f"  Errors:             {error_count}\n"
-            output += "\n"
+                output += f" | {error_count} errors"
+            output += "\n\n"
 
-        # Show first 10 files as sample
+        # Show first 5 files as sample (reduced from 10)
         if len(results) > 0:
-            output += f"📄 SAMPLE FILES (first {min(10, len(results))}):\n"
-            for i, result in enumerate(results[:10]):
+            output += f"Files (first {min(5, len(results))}):\n"
+            for i, result in enumerate(results[:5]):
                 if result.error:
                     output += f"  {i+1}. {result.file} - ERROR\n"
                 else:
                     output += f"  {i+1}. {result.file} ({result.original_tokens} → {result.compressed_tokens} tokens, {result.savings_pct:.0f}% savings)\n"
 
-            if len(results) > 10:
-                output += f"  ... and {len(results) - 10} more files\n"
+            if len(results) > 5:
+                output += f"  ... and {len(results) - 5} more files\n"
             output += "\n"
 
-        # Pagination hint
+        # Pagination hint (shortened)
         if total_files is not None and offset + len(results) < total_files:
             remaining = total_files - offset - len(results)
-            output += f"💡 TIP: {remaining} more files available. Use compress_code_context with:\n"
-            output += f"  - offset={offset + len(results)}, limit={min(remaining, len(results))}\n"
-        elif total_files is not None and total_files > len(results):
-            output += f"💡 TIP: To compress files, use compress_code_context with:\n"
-            output += f"  - level='minimal', limit=30 (for quick overview)\n"
-            output += f"  - level='full', limit=20 (for detailed analysis)\n"
+            output += f"Next: offset={offset + len(results)} ({remaining} remaining)\n"
+
+        return output
+
+    elif format == "compact":
+        # Ultra-minimal format optimized for bulk directory scanning
+        # No markdown, minimal whitespace, plain text structure
+        output = ""
+
+        # Minimal header
+        if total_files is not None and total_files != len(results):
+            output += f"=== FILES {offset+1}-{offset+len(results)} OF {total_files} ===\n\n"
+
+        for result in results:
+            if result.error:
+                output += f"{result.file}\nERROR: {result.error}\n\n"
+                continue
+
+            # Remove all markdown formatting from compressed content
+            content = result.compressed_content
+
+            # Strip markdown headers (# and ##)
+            content = re.sub(r'^#+\s+', '', content, flags=re.MULTILINE)
+
+            # Strip bold markers
+            content = content.replace('**', '')
+
+            # Strip bullets (convert to plain list)
+            content = re.sub(r'^\s*[-*]\s+', '', content, flags=re.MULTILINE)
+
+            # Strip separators
+            content = re.sub(r'^-{40,}\s*$', '', content, flags=re.MULTILINE)
+
+            # Remove excessive blank lines (more than 2 consecutive)
+            content = re.sub(r'\n{3,}', '\n\n', content)
+
+            output += content.strip() + "\n\n"
+
+        # Minimal pagination hint
+        if total_files is not None and offset + len(results) < total_files:
+            next_offset = offset + len(results)
+            output += f"=== Use offset={next_offset} limit={len(results)} for next batch ===\n"
 
         return output
 
@@ -1616,8 +1728,9 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
         # Full compressed content
         output = ""
 
+        # Shortened pagination header (was: "Showing files X-Y of Z total")
         if total_files is not None and total_files != len(results):
-            output += f"# Showing files {offset+1}-{offset+len(results)} of {total_files} total\n\n"
+            output += f"# Files {offset+1}-{offset+len(results)} of {total_files}\n\n"
 
         for result in results:
             if result.error:
@@ -1625,14 +1738,16 @@ def format_output(results: List[CompressionResult], format: str, verbose: bool =
                 continue
 
             output += result.compressed_content
-            output += "\n" + "-" * 80 + "\n\n"
+            # Reduced separator (was: 80 dashes, now: 40 dashes)
+            output += "\n" + "-" * 40 + "\n\n"
 
             if verbose:
                 output += f"# Stats: {result.original_tokens} → {result.compressed_tokens} tokens "
                 output += f"({result.savings_pct:.1f}% savings)\n\n"
 
+        # Shortened pagination hint (was: "Use --offset X --limit Y to see more files")
         if total_files is not None and offset + len(results) < total_files:
-            output += f"\n# (Use --offset {offset + len(results)} --limit {len(results)} to see more files)\n"
+            output += f"\n# Next: --offset {offset + len(results)}\n"
 
         return output
 
@@ -1684,9 +1799,9 @@ LLM Tool Integration:
 
     parser.add_argument(
         "-f", "--format",
-        choices=["text", "json", "summary"],
+        choices=["text", "json", "summary", "compact"],
         default="text",
-        help="Output format (default: text)"
+        help="Output format (default: text). Use 'compact' for bulk directory scanning with minimal overhead."
     )
 
     parser.add_argument(
